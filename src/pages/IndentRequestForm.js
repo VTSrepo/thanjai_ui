@@ -14,7 +14,7 @@ import {
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 
-const IndentRequestForm = ({user}) => {
+const IndentRequestForm = ({ user }) => {
   const navigate = useNavigate(); // Replace useHistory with useNavigate
   const [formData, setFormData] = useState({
     itemName: "",
@@ -26,6 +26,12 @@ const IndentRequestForm = ({user}) => {
     note2: "",
     requestedFor: "Self",
   });
+
+  console.log(user);
+
+  const [items, setItems] = useState([
+    { itemCode: 1, itemName: "Samosa", itemCost: 10 },
+  ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,9 +51,18 @@ const IndentRequestForm = ({user}) => {
     console.log(formData);
   };
 
+  const handleBack = () =>{
+    if(user.role === "admin"){
+      navigate("/admin")
+    } else {
+      navigate("/home")
+    }    
+  }
+
   return (
     <>
-      <ResponsiveAppBar onLogout={handleLogout} user={user}/> {/* Show AdminAppBar */}
+      <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
+      {/* Show AdminAppBar */}
       <Container maxWidth="sm">
         <Box mt={4}>
           <Typography variant="h5" gutterBottom>
@@ -55,21 +70,27 @@ const IndentRequestForm = ({user}) => {
           </Typography>
           <form onSubmit={handleSubmit}>
             <Grid2 container spacing={2}>
-              {/* Item Name */}
-              <Grid2 item xs={12}>
-                <TextField
-                  label="Item Name"
-                  variant="outlined"
-                  fullWidth
-                  name="itemName"
-                  value={formData.itemName}
-                  onChange={handleChange}
-                  required
-                />
+              <Grid2 item size={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Item Name</InputLabel>
+                  <Select
+                    name="itemName"
+                    value={formData.itemName}
+                    onChange={handleChange}
+                    label="Item Name"
+                    required
+                  >
+                    {items.map((item, index) => (
+                      <MenuItem key={index} value={item.itemCode}>
+                        {item.itemName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid2>
 
               {/* Unit of Measure */}
-              <Grid2 item xs={12}>
+              <Grid2 item size={12}>
                 <TextField
                   label="Unit of Measure"
                   variant="outlined"
@@ -80,23 +101,24 @@ const IndentRequestForm = ({user}) => {
                   required
                 />
               </Grid2>
-
+              {user && (user.role === "kitchen" || user.role === "admin") && (
+                <Grid2 item size={12}>
+                  <TextField
+                    label="Quantity Received"
+                    variant="outlined"
+                    fullWidth
+                    name="qtyReceived"
+                    value={formData.qtyReceived}
+                    onChange={handleChange}
+                    type="number"
+                    required
+                  />
+                </Grid2>
+              )}
               {/* Quantity Received */}
-              <Grid2 item xs={12}>
-                <TextField
-                  label="Quantity Received"
-                  variant="outlined"
-                  fullWidth
-                  name="qtyReceived"
-                  value={formData.qtyReceived}
-                  onChange={handleChange}
-                  type="number"
-                  required
-                />
-              </Grid2>
 
               {/* Quantity Required */}
-              <Grid2 item xs={12}>
+              <Grid2 item size={12}>
                 <TextField
                   label="Qty Required"
                   variant="outlined"
@@ -109,8 +131,8 @@ const IndentRequestForm = ({user}) => {
                 />
               </Grid2>
 
-              {/* Quantity Agreed by Kitchen */}
-              <Grid2 item xs={12}>
+              {user && (user.role === "kitchen" || user.role === "admin") && (
+              <Grid2 item size={12}>
                 <TextField
                   label="Qty Agreed by Kitchen"
                   variant="outlined"
@@ -121,38 +143,10 @@ const IndentRequestForm = ({user}) => {
                   type="number"
                   required
                 />
-              </Grid2>
-
-              {/* Note 1 */}
-              <Grid2 item xs={12}>
-                <TextField
-                  label="Note 1"
-                  variant="outlined"
-                  fullWidth
-                  name="note1"
-                  value={formData.note1}
-                  onChange={handleChange}
-                  multiline
-                  rows={4}
-                />
-              </Grid2>
-
-              {/* Note 2 */}
-              <Grid2 item xs={12}>
-                <TextField
-                  label="Note 2"
-                  variant="outlined"
-                  fullWidth
-                  name="note2"
-                  value={formData.note2}
-                  onChange={handleChange}
-                  multiline
-                  rows={4}
-                />
-              </Grid2>
+              </Grid2>)}
 
               {/* Requested For */}
-              <Grid2 item xs={12}>
+              <Grid2 item size={12}>
                 <FormControl fullWidth>
                   <InputLabel>Requested For</InputLabel>
                   <Select
@@ -168,17 +162,60 @@ const IndentRequestForm = ({user}) => {
                 </FormControl>
               </Grid2>
 
+              {user && (user.role === "branch" || user.role === "admin") && (
+              <Grid2 item size={12}>
+                <TextField
+                  label="Branch Notes"
+                  variant="outlined"
+                  fullWidth
+                  name="note1"
+                  value={formData.note1}
+                  onChange={handleChange}
+                  multiline
+                  rows={4}
+                />
+              </Grid2>)}
+
+
+              {/* Note 2 */}
+              {user && (user.role === "kitchen" || user.role === "admin") && (
+              <Grid2 item size={12}>
+                <TextField
+                  label="Kitchen Notes"
+                  variant="outlined"
+                  fullWidth
+                  name="note2"
+                  value={formData.note2}
+                  onChange={handleChange}
+                  multiline
+                  rows={4}
+                />
+              </Grid2>)}
+
+              <Grid2 item size={6}>
+                <Button
+                  variant="contained"
+                  color="primary"                                  
+                  fullWidth
+                  onClick={handleBack}
+                >
+                  Back
+                </Button>
+              </Grid2>
+
               {/* Submit Button */}
-              <Grid2 item xs={12}>
+              <Grid2 item size={6}>
                 <Button
                   variant="contained"
                   color="primary"
                   type="submit"
+                  disabled="true"
                   fullWidth
                 >
                   Submit
                 </Button>
               </Grid2>
+
             </Grid2>
           </form>
         </Box>

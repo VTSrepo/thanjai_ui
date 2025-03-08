@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { Container, createTheme, ThemeProvider } from "@mui/material"; // Import necessary components
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
-import IndentRequestForm from './pages/IndentRequestForm';
+import IndentRequestForm from "./pages/IndentRequestForm";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -28,6 +33,19 @@ function App() {
     typography: {
       fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
     },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            backgroundColor: '#ffa133', // Default background color for all buttons
+            color: '#fff', // Default text color for buttons
+            '&:hover': {
+              backgroundColor: '#1565c0', // Hover state background color
+            },
+          },
+        },
+      },
+    },
   });
 
   return (
@@ -38,16 +56,40 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login setUser={setUser} />} />
             <Route
-              path="/home"
-              element={<ProtectedRoute element={<Home user={user} setUser={setUser} />} role="user" />}
+              path="/indents"
+              element={<IndentRequestForm user={user} setUser={setUser} />}
             />
             <Route
+              path="/home"
+              element={<Home user={user} setUser={setUser} />}
+            />
+            
+            {/* <Route
+              path="/home"
+              element={<ProtectedRoute element={<Home user={user} setUser={setUser} />} role="branch" />}
+            /> */}
+            <Route
               path="/admin"
-              element={<ProtectedRoute element={<Admin user={user} setUser={setUser} />} role="admin" />}
+              element={
+                <ProtectedRoute
+                  element={<Admin user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }
             />
             <Route
               path="/indent-create"
-              element={<ProtectedRoute element={<IndentRequestForm user={user} setUser={setUser} />} role="admin" />}
+              element={
+                <ProtectedRoute
+                  element={
+                    <IndentRequestForm
+                      user={user}
+                      setUser={setUser}
+                      role="admin"
+                    />
+                  }
+                />
+              }
             />
             <Route path="/" element={<Navigate to="/login" />} />
           </Routes>

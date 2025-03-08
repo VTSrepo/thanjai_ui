@@ -16,7 +16,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
   };
 
   return (
-    <AppBar position="sticky">
+    <AppBar position="sticky" sx={{ backgroundColor: '#ffa133' }}>
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>          
           {user && user.role === "admin" ? "Admin Dashboard" : "User Dashboard"}
@@ -37,8 +37,8 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               <MenuItem component={Link} to="/home" onClick={handleMenuClose}>
                 Home
               </MenuItem>
-              <MenuItem component={Link} to="/profile" onClick={handleMenuClose}>
-                Profile
+              <MenuItem component={Link} to="/indents" onClick={handleMenuClose}>
+              Indents
               </MenuItem>
               {user && user.role === "admin" && (
                 <MenuItem component={Link} to="/admin" onClick={handleMenuClose}>
@@ -56,7 +56,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
             <Button color="inherit" component={Link} to="/home">
               Home
             </Button>
-            <Button color="inherit" component={Link} to="/profile">
+            <Button color="inherit" component={Link} to="/indents">
               Indents
             </Button>
             {user && user.role === "admin" && (
