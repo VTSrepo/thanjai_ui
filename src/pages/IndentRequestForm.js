@@ -61,7 +61,7 @@ const IndentRequestForm = ({ user }) => {
 
   return (
     <>
-      <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
+      <ResponsiveAppBar onLogout={handleLogout} user={user} />
       {/* Show AdminAppBar */}
       <Container maxWidth="sm">
         <Box mt={4}>

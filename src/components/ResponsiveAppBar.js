@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { AppBar, Toolbar, Typography, IconButton, Menu, MenuItem, Button, useMediaQuery } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem,
+  Button,
+  useMediaQuery,
+} from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { Link } from "react-router-dom"; // Using Link for routing
 
@@ -16,9 +25,9 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
   };
 
   return (
-    <AppBar position="sticky" sx={{ backgroundColor: '#ffa133' }}>
+    <AppBar position="sticky" sx={{ backgroundColor: "#ffa133" }}>
       <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>          
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
           {user && user.role === "admin" ? "Admin Dashboard" : "User Dashboard"}
         </Typography>
 
@@ -33,19 +42,43 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
-              {/* Menu Items */}
-              <MenuItem component={Link} to="/home" onClick={handleMenuClose}>
-                Home
-              </MenuItem>
-              <MenuItem component={Link} to="/indents" onClick={handleMenuClose}>
-              Indents
+              {user && user.role === "branch" && (
+                <MenuItem component={Link} to="/home" onClick={handleMenuClose}>
+                  Home
+                </MenuItem>
+              )}
+              <MenuItem
+                component={Link}
+                to="/indents"
+                onClick={handleMenuClose}
+              >
+                Indents
               </MenuItem>
               {user && user.role === "admin" && (
-                <MenuItem component={Link} to="/admin" onClick={handleMenuClose}>
+                <MenuItem
+                  component={Link}
+                  to="/admin"
+                  onClick={handleMenuClose}
+                >
                   Admin Home
                 </MenuItem>
               )}
-              <MenuItem onClick={() => { onLogout(); handleMenuClose(); }}>
+              {user && user.role === "admin" && (
+                <MenuItem
+                  component={Link}
+                  to="/product-create"
+                  onClick={handleMenuClose}
+                >
+                  Product Master
+                </MenuItem>
+              )}
+              
+              <MenuItem
+                onClick={() => {
+                  onLogout();
+                  handleMenuClose();
+                }}
+              >
                 Logout
               </MenuItem>
             </Menu>
@@ -53,22 +86,33 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
         ) : (
           // For larger screens, show the regular navigation bar
           <>
-            <Button color="inherit" component={Link} to="/home">
-              Home
-            </Button>
-            <Button color="inherit" component={Link} to="/indents">
-              Indents
-            </Button>
+            {user && user.role === "branch" && (
+              <Button color="inherit" component={Link} to="/home">
+                Home
+              </Button>
+            )}
+
             {user && user.role === "admin" && (
               <Button color="inherit" component={Link} to="/admin">
                 Admin Home
               </Button>
             )}
+            <Button color="inherit" component={Link} to="/indents">
+              Indents
+            </Button>
+
+            {user && user.role === "admin" && (
+              <Button color="inherit" component={Link} to="/product-create">
+                Product Master
+              </Button>
+            )}
+           
             <Button color="inherit" onClick={onLogout}>
               Logout
             </Button>
           </>
         )}
+        
       </Toolbar>
     </AppBar>
   );

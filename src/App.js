@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import IndentRequestForm from "./pages/IndentRequestForm";
+import ProductForm from "./pages/ProductForm";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -37,10 +38,10 @@ function App() {
       MuiButton: {
         styleOverrides: {
           root: {
-            backgroundColor: '#ffa133', // Default background color for all buttons
-            color: '#fff', // Default text color for buttons
-            '&:hover': {
-              backgroundColor: '#1565c0', // Hover state background color
+            backgroundColor: "#ffa133", // Default background color for all buttons
+            color: "#fff", // Default text color for buttons
+            "&:hover": {
+              backgroundColor: "#1565c0", // Hover state background color
             },
           },
         },
@@ -63,11 +64,16 @@ function App() {
               path="/home"
               element={<Home user={user} setUser={setUser} />}
             />
-            
-            {/* <Route
-              path="/home"
-              element={<ProtectedRoute element={<Home user={user} setUser={setUser} />} role="branch" />}
-            /> */}
+
+            <Route
+              path="/product-create"
+              element={
+                <ProtectedRoute
+                  element={<ProductForm user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }
+            />
             <Route
               path="/admin"
               element={
