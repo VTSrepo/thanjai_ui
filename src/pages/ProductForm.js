@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   TextField,
   MenuItem,
@@ -7,28 +8,61 @@ import {
   FormControl,
   Button,
   Grid2,
-  Typography, Box, Container
+  Typography,
+  Box,
+  Container,
 } from "@mui/material";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import { Padding } from "@mui/icons-material";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
+import Loader from "../components/Loader";
 
 function ProductForm({ user }) {
+  const location = useLocation(); // Access the location object
+  const { selectedRow } = location.state || {}; // Extract the selected row from location state
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+  const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
+  console.log(org_id);
   const [formData, setFormData] = useState({
-    product_name: "",
-    uom: "",
-    bu_id: "",
-    stock_in_hand: "",
-    min_stock: "",
-    max_stock: "",
-    reorder_level: "",
-    billing_flag: "",
-    product_price: "",
-    gst_value: "",
-    prod_name_invoice: "",
-    account_code: "",
+    product_id: null,
+    product_name: null,
+    uom: null,
+    bu_id: null,
+    stock_in_hand: null,
+    min_stock: null,
+    max_stock: null,
+    reorder_level: null,
+    billing_flag: null,
+    product_price: null,
+    gst_value: null,
+    prod_name_invoice: null,
+    account_code: null,
+    org_id: org_id,
+    branch_id: branch_id,
   });
+
+  useEffect(() => {
+    if (selectedRow) {
+      setFormData({
+        product_id: selectedRow.product_id,
+        product_name: selectedRow.product_name,
+        uom: selectedRow.uom,
+        bu_id: selectedRow.bu_id,
+        stock_in_hand: selectedRow.stock_in_hand,
+        min_stock: selectedRow.min_stock,
+        max_stock: selectedRow.max_stock,
+        reorder_level: selectedRow.reorder_level,
+        billing_flag: selectedRow.billing_flag,
+        product_price: selectedRow.product_price,
+        gst_value: selectedRow.gst_value,
+        prod_name_invoice: selectedRow.prod_name_invoice,
+        account_code: selectedRow.account_code,
+        org_id: org_id,
+        branch_id: branch_id,
+      });
+    }
+  }, [selectedRow]);
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -51,12 +85,24 @@ function ProductForm({ user }) {
       [name]: value,
     });
   };
+  const API_URL = "http://localhost:4002/v1"; // Change this to your actual API URL
 
-  const handleSave = () => {
-    // Logic to save the form data
-    console.log("Form data saved:", formData);
+  const handleSave = async () => {        
+    setLoading(true);
+    const response = await axios.post(`${API_URL}/product`, {
+      product: formData,
+    });
+    if (response.data && response.data) {
+      setLoading(false);      
+      navigate("/product-master");
+    } else {
+      throw new Error("Product Creation failed: No token received");
+    }
   };
 
+  const handleCancel = () => {
+    navigate("/product-master");
+  };
   return (
     <>
       <ResponsiveAppBar onLogout={handleLogout} user={user} />
@@ -103,8 +149,7 @@ function ProductForm({ user }) {
                   </Select>
                 </FormControl>
               </Grid2>
-           
-            
+
               <Grid2 item size={12}>
                 <TextField
                   label="Stock In Hand"
@@ -150,7 +195,7 @@ function ProductForm({ user }) {
                 />
               </Grid2>
 
-              <Grid2 item size={12}>
+              {/* <Grid2 item size={12}>
                 <FormControl fullWidth>
                   <InputLabel>Part Of Billing</InputLabel>
                   <Select
@@ -166,10 +211,8 @@ function ProductForm({ user }) {
                     ))}
                   </Select>
                 </FormControl>
-              </Grid2>
-           
+              </Grid2> */}
 
-          
               <Grid2 item size={12}>
                 <TextField
                   label="Product Price"
@@ -178,7 +221,6 @@ function ProductForm({ user }) {
                   onChange={handleChange}
                   fullWidth
                   type="number"
-                  InputProps={{ inputProps: { min: 0 } }}
                 />
               </Grid2>
               <Grid2 item size={12}>
@@ -210,15 +252,24 @@ function ProductForm({ user }) {
                   fullWidth
                 />
               </Grid2>
-              </Grid2>
+            </Grid2>
             <div style={{ marginTop: 20 }}>
               <Button
                 variant="contained"
                 color="success"
-                disabled={!formData.product_name || !formData.bu_id}
+                //disabled={!formData.product_name || !formData.bu_id}
                 onClick={handleSave}
               >
-                <i className="fa-solid fa-paper-plane mar5r"></i> Save
+                Save
+              </Button>
+
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleCancel}
+                sx={{ ml: 2 }}
+              >
+                Cancel
               </Button>
             </div>
           </form>

@@ -44,8 +44,8 @@ const Login = ({ setUser }) => {
       // Check if the response contains the token (JWT or similar)
       if (response.data && response.data) {
         // You could store the token in localStorage, sessionStorage, or a global state management solution (like Redux or Context API)
-        localStorage.setItem("user", response.data.user);
-        return response.data.data; // Return the response data (which may include user info and token)
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        return response.data; // Return the response data (which may include user info and token)
       } else {
         throw new Error("Login failed: No token received");
       }

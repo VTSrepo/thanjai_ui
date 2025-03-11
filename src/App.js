@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import IndentRequestForm from "./pages/IndentRequestForm";
 import ProductForm from "./pages/ProductForm";
+import ProductMaster from './pages/ProductMaster'
 
 function App() {
   const [user, setUser] = useState(null);
@@ -79,6 +80,15 @@ function App() {
               element={
                 <ProtectedRoute
                   element={<Admin user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }
+            />
+            <Route
+              path="/product-master"
+              element={
+                <ProtectedRoute
+                  element={<ProductMaster user={user} setUser={setUser} />}
                   role="admin"
                 />
               }

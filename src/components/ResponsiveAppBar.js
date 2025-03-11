@@ -47,13 +47,13 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                   Home
                 </MenuItem>
               )}
-              <MenuItem
+              {/* <MenuItem
                 component={Link}
                 to="/indents"
                 onClick={handleMenuClose}
               >
                 Indents
-              </MenuItem>
+              </MenuItem> */}
               {user && user.role === "admin" && (
                 <MenuItem
                   component={Link}
@@ -66,7 +66,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               {user && user.role === "admin" && (
                 <MenuItem
                   component={Link}
-                  to="/product-create"
+                  to="/product-master"
                   onClick={handleMenuClose}
                 >
                   Product Master
@@ -102,7 +102,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
             </Button>
 
             {user && user.role === "admin" && (
-              <Button color="inherit" component={Link} to="/product-create">
+              <Button color="inherit" component={Link} to="/product-master">
                 Product Master
               </Button>
             )}
