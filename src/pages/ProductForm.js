@@ -16,6 +16,8 @@ import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 import Loader from "../components/Loader";
 
+import { getBu, referenceRecord, getCategoryList } from "../utilities/service";
+
 function ProductForm({ user }) {
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
@@ -23,12 +25,15 @@ function ProductForm({ user }) {
   const navigate = useNavigate();
   const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
   const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
-  console.log(org_id);
+  const [bu, setBu] = useState([]);
+  const [uom, setUOM] = useState([]);
+  const [categoryList, setcategoryList] = useState([]);
   const [formData, setFormData] = useState({
     product_id: null,
     product_name: null,
     uom: null,
     bu_id: null,
+    category_code:null,
     stock_in_hand: null,
     min_stock: null,
     max_stock: null,
@@ -43,12 +48,46 @@ function ProductForm({ user }) {
   });
 
   useEffect(() => {
+    const getBuData = async () => {
+      try {
+        const result = await getBu();
+        setBu(result.businesses);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    const getUOM  =  async() =>{
+      try {
+        const result = await referenceRecord('UOM');
+        setUOM(result.refences);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    const getCategory  =  async() =>{
+      try {
+        const result = await getCategoryList('UOM');
+        setcategoryList(result.categories);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    getBuData();
+    getUOM();
+    getCategory();
+  }, []);
+
+  useEffect(() => {   
     if (selectedRow) {
       setFormData({
         product_id: selectedRow.product_id,
         product_name: selectedRow.product_name,
         uom: selectedRow.uom,
         bu_id: selectedRow.bu_id,
+        category_code:selectedRow.category_code,
         stock_in_hand: selectedRow.stock_in_hand,
         min_stock: selectedRow.min_stock,
         max_stock: selectedRow.max_stock,
@@ -61,22 +100,13 @@ function ProductForm({ user }) {
         org_id: org_id,
         branch_id: branch_id,
       });
-    }
+    }    
   }, [selectedRow]);
 
   const handleLogout = () => {
-    navigate("/login"); // Use navigate to go to the login page
-  };
-
-  const [bu, setBu] = useState([
-    { bu_id: "1", bu_name: "BU 1" },
-    { bu_id: "2", bu_name: "BU 2" },
-  ]);
-
-  const [prdTypes, setPrdTypes] = useState([
-    { ref_code: "1", ref_desc: "Type 1" },
-    { ref_code: "2", ref_desc: "Type 2" },
-  ]);
+    navigate("/login");
+  }; 
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,13 +117,13 @@ function ProductForm({ user }) {
   };
   const API_URL = "http://localhost:4002/v1"; // Change this to your actual API URL
 
-  const handleSave = async () => {        
+  const handleSave = async () => {
     setLoading(true);
     const response = await axios.post(`${API_URL}/product`, {
       product: formData,
     });
     if (response.data && response.data) {
-      setLoading(false);      
+      setLoading(false);
       navigate("/product-master");
     } else {
       throw new Error("Product Creation failed: No token received");
@@ -123,25 +153,51 @@ function ProductForm({ user }) {
                   required
                 />
               </Grid2>
-              <Grid2 item size={12}>
-                <TextField
-                  label="UOM"
-                  name="uom"
-                  value={formData.uom}
-                  onChange={handleChange}
-                  fullWidth
-                />
-              </Grid2>
+              {uom && <Grid2 item size={12}>
+              <FormControl fullWidth required>
+                  <InputLabel>UOM</InputLabel>
+                  <Select
+                    label="UOM"
+                    name="uom"
+                    value={formData.uom  || ''}
+                    onChange={handleChange}
+                  >
+                    {uom?.map((mode) => (
+                      <MenuItem key={mode.ref_code} value={mode.ref_code}>
+                        {mode.ref_desc}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid2>}
+
+              {categoryList && <Grid2 item size={12}>
+              <FormControl fullWidth required>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    label="Category Code"
+                    name="category_code"
+                    value={formData.category_code || ''}
+                    onChange={handleChange}
+                  >
+                    {categoryList?.map((mode) => (
+                      <MenuItem key={mode.category_code} value={mode.category_code}>
+                        {mode.category_name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid2>}
               <Grid2 item size={12}>
                 <FormControl fullWidth required>
                   <InputLabel>BU</InputLabel>
                   <Select
                     label="BU"
                     name="bu_id"
-                    value={formData.bu_id}
-                    onChange={handleChange}
+                    value={formData.bu_id || ''}
+                    onChange={handleChange}                    
                   >
-                    {bu.map((mode) => (
+                    {bu?.map((mode) => (
                       <MenuItem key={mode.bu_id} value={mode.bu_id}>
                         {mode.bu_name}
                       </MenuItem>
@@ -193,25 +249,7 @@ function ProductForm({ user }) {
                   type="number"
                   InputProps={{ inputProps: { min: 0 } }}
                 />
-              </Grid2>
-
-              {/* <Grid2 item size={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Part Of Billing</InputLabel>
-                  <Select
-                    label="Part Of Billing"
-                    name="billing_flag"
-                    value={formData.billing_flag}
-                    onChange={handleChange}
-                  >
-                    {prdTypes.map((type) => (
-                      <MenuItem key={type.ref_code} value={type.ref_code}>
-                        {type.ref_desc}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid2> */}
+              </Grid2>              
 
               <Grid2 item size={12}>
                 <TextField

@@ -51,13 +51,12 @@ const ProductMaster = ({ user }) => {
     <>
       <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
       {/* Show AdminAppBar */}
-      <Box sx={{ mt: 8, padding: 2 }}>
+      <Box sx={{ mt: 4, padding: 2 }}>
        
 
         <Button
           variant="contained"
-          color="secondary"
-          sx={{ mt: 2 }}
+          color="secondary"          
           onClick={createIndent}
         >
           Add Product
