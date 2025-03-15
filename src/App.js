@@ -52,7 +52,7 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Router>
+      
         {/* Change the maxWidth to "xl" for a desktop layout */}
         <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
           <Routes>
@@ -110,7 +110,7 @@ function App() {
             <Route path="/" element={<Navigate to="/login" />} />
           </Routes>
         </Container>
-      </Router>
+      
     </ThemeProvider>
   );
 }
