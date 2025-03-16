@@ -12,6 +12,10 @@ import {
   Grid2,
 } from "@mui/material";
 
+import {  DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+
 import axios from "axios";
 import IndentTable from "../components/IndentTable";
 import ItemAdd from "./ItemAdd";
@@ -49,6 +53,14 @@ const CreateIndent = ({ user }) => {
     });
   };
 
+  const handleChangeDeliveryTime = (e) => {
+    
+    setFormData({
+      ...formData,
+      "delivery_by_datetime": e,
+    });
+  };
+
   const handleBack = () => {
     if (user.role === "admin") {
       navigate("/admin");
@@ -61,10 +73,10 @@ const CreateIndent = ({ user }) => {
   const addRow = (item) => {
     // Define the object structure to be added
     const newRow = {
-      id: rows.length + 1, 
-      item_name:item.item.product_name,
-      item_code:item.item.product_id,
-      ...item
+      id: rows.length + 1,
+      item_name: item.item.product_name,
+      item_code: item.item.product_id,
+      ...item,
     };
 
     // Step 3: Update the rows state to add the new row
@@ -72,19 +84,23 @@ const CreateIndent = ({ user }) => {
   };
 
   const updateShowAdd = (item) => {
-    if(item?.qty_ordered){
+    if (item?.qty_ordered) {
       addRow(item);
-    } 
+    }
     console.log(item);
     setShowAdd(false);
   };
 
-  const alterRows = (item)=>{    
-    const updatedRows = rows.filter((row) => row.product_id !== item.product_id);
+  const alterRows = (item) => {
+    const updatedRows = rows.filter(
+      (row) => row.product_id !== item.product_id
+    );
 
     // Update the state with the new array (without the deleted item)
     setRows(updatedRows);
-  }
+  };
+
+  const currentDate = new Date();
 
   //if (loading) return <Loader />; // Show loader while data is being fetched
 
@@ -100,7 +116,7 @@ const CreateIndent = ({ user }) => {
             <form onSubmit={handleSubmit}>
               <Grid2 container spacing={4}>
                 {/* Requested For */}
-                <Grid2 item size={3}>
+                <Grid2 item size={12}>
                   <FormControl fullWidth>
                     <InputLabel>Requested For</InputLabel>
                     <Select
@@ -115,24 +131,18 @@ const CreateIndent = ({ user }) => {
                     </Select>
                   </FormControl>
                 </Grid2>
+               
 
-                <Grid2 item size={3}>
-                  <TextField
-                    autoFocus
-                    required
-                    margin="dense"
-                    id="delivery_by_datetime"
-                    name="delivery_by_datetime"
-                    label="Delivery By"
-                    fullWidth
-                    type="date"
-                    InputLabelProps={{
-                      shrink: true
-                   }}
-                    value={formData.delivery_by_datetime || ''}
-                    variant="standard"
-                    onChange={handleChange}
-                  />
+                <Grid2 item size={12}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DateTimePicker
+                      label="Select Date"
+                      value={formData.delivery_by_datetime || ""}
+                      onChange={handleChangeDeliveryTime}
+                      minDateTime={currentDate} // Disable all previous dates
+                      renderInput={(params) => <TextField {...params} />}
+                    />
+                  </LocalizationProvider>
                 </Grid2>
                 <Grid2 item size={3}>
                   <Button
@@ -158,7 +168,7 @@ const CreateIndent = ({ user }) => {
               </Grid2>
             </form>
           </Box>
-          <IndentTable data={rows} sendToParent={alterRows}/>
+          <IndentTable data={rows} sendToParent={alterRows} />
         </Box>
       )}
       {showAdd && (
