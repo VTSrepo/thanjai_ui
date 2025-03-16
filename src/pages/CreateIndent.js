@@ -12,7 +12,7 @@ import {
   Grid2,
 } from "@mui/material";
 
-import {  DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
@@ -28,36 +28,50 @@ const CreateIndent = ({ user }) => {
   const [formData, setFormData] = useState({
     self_customer: "Self",
     delivery_by_datetime: null,
+    customer_name: null,
   });
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
   };
 
-  const createIndent = () => {
+  const addItem = () => {
     //navigate("/indents-item");
     setShowAdd(true);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission logic here
-    console.log(formData);
+  const createIndent = () => {
+    //submit api
+    console.log(formData)
+    const payload = formData;
+    payload.details = rows;
+    console.log(payload)
   };
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    if(name === 'self_customer'){
+      setFormData({
+        ...formData,
+        [name]: value,
+        customer_name:null,
+        customer_address:null,
+        customer_phone:null,
+        customer_pin:null
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
+    
   };
 
   const handleChangeDeliveryTime = (e) => {
-    
     setFormData({
       ...formData,
-      "delivery_by_datetime": e,
+      delivery_by_datetime: e,
     });
   };
 
@@ -78,7 +92,6 @@ const CreateIndent = ({ user }) => {
       item_code: item.item.product_id,
       ...item,
     };
-
     // Step 3: Update the rows state to add the new row
     setRows([...rows, newRow]);
   };
@@ -86,8 +99,7 @@ const CreateIndent = ({ user }) => {
   const updateShowAdd = (item) => {
     if (item?.qty_ordered) {
       addRow(item);
-    }
-    console.log(item);
+    }    
     setShowAdd(false);
   };
 
@@ -95,7 +107,6 @@ const CreateIndent = ({ user }) => {
     const updatedRows = rows.filter(
       (row) => row.product_id !== item.product_id
     );
-
     // Update the state with the new array (without the deleted item)
     setRows(updatedRows);
   };
@@ -113,26 +124,9 @@ const CreateIndent = ({ user }) => {
           </Typography>
 
           <Box sx={{ mt: 2 }}>
-            <form onSubmit={handleSubmit}>
-              <Grid2 container spacing={4}>
+            <form >
+              <Grid2 container spacing={6}>
                 {/* Requested For */}
-                <Grid2 item size={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>Requested For</InputLabel>
-                    <Select
-                      name="requestedFor"
-                      value={formData.self_customer}
-                      onChange={handleChange}
-                      label="Requested For"
-                      required
-                    >
-                      <MenuItem value="Self">Self</MenuItem>
-                      <MenuItem value="Customer">Customer</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid2>
-               
-
                 <Grid2 item size={12}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DateTimePicker
@@ -144,31 +138,97 @@ const CreateIndent = ({ user }) => {
                     />
                   </LocalizationProvider>
                 </Grid2>
-                <Grid2 item size={3}>
+
+                <Grid2 item size={12}>
+                  <FormControl>
+                    <InputLabel>Requested For</InputLabel>
+                    <Select
+                      name="self_customer"
+                      value={formData.self_customer}
+                      onChange={handleChange}
+                      label="Requested For"
+                      required
+                    >
+                      <MenuItem value="Self">Self</MenuItem>
+                      <MenuItem value="Customer">Customer</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid2>
+
+                {formData.self_customer === "Customer" && (
+                  <Grid2 item size={12}>
+                    <TextField
+                      label="Customer Name"
+                      name="customer_name"
+                      value={formData.customer_name}
+                      onChange={handleChange}
+                      type="text"
+                    />
+                  </Grid2>
+                )}
+                {formData.self_customer === "Customer" && (
+                  <Grid2 item size={12}>
+                    <TextField
+                      label="Customer Address"
+                      name="customer_address"
+                      value={formData.customer_address}
+                      onChange={handleChange}
+                      type="text"
+                    />
+                  </Grid2>
+                )}
+
+                {formData.self_customer === "Customer" && (
+                  <Grid2 item size={12}>
+                    <TextField
+                      label="Customer Phone"
+                      name="customer_phone"
+                      value={formData.customer_phone}
+                      onChange={handleChange}
+                      type="number"
+                    />
+                  </Grid2>
+                )}
+                {formData.self_customer === "Customer" && (
+                  <Grid2 item size={12}>
+                    <TextField
+                      label="Customer Pin"
+                      name="customer_pin"
+                      value={formData.customer_pin}
+                      onChange={handleChange}
+                      type="text"
+                    />
+                  </Grid2>
+                )}
+
+                <Grid2 item size={12}>
                   <Button
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    onClick={addItem}
+                  >
+                    Add Item
+                  </Button>
+                </Grid2>
+              </Grid2>
+            </form>
+          </Box>
+          <Box sx={{ mt: 2 }}>
+            <IndentTable data={rows} sendToParent={alterRows} />
+
+            <Button
+            sx={{ mt: 2 }}
                     variant="contained"
                     color="primary"
                     type="submit"
                     onClick={createIndent}
                   >
-                    Add Item
+                    Submit
                   </Button>
-                </Grid2>
-
-                <Grid2 item size={6}>
-                  {/* <Button
-                        variant="contained"
-                        color="primary"                                  
-                        fullWidth
-                        onClick={handleBack}
-                      >
-                        Back
-                      </Button> */}
-                </Grid2>
-              </Grid2>
-            </form>
           </Box>
-          <IndentTable data={rows} sendToParent={alterRows} />
+
+          
         </Box>
       )}
       {showAdd && (
