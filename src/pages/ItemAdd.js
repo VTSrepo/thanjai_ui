@@ -17,32 +17,36 @@ import { getProducts } from "../utilities/service";
 
 import axios from "axios";
 
-const IndentRequestForm = ({ user }) => {
-  const location = useLocation(); // Access the location object
-  const { selectedRow } = location.state || {}; // Extract the selected row from location state
-  const [loading, setLoading] = useState(false);
+const ItemAdd = (props) => {
+  const { sendToParent } = props;
   const [productList, setProductList] = useState([]);
-  const navigate = useNavigate();
-  const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-  const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
 
   const [formData, setFormData] = useState({
-    item_code: null,
-    unitOfMeasure: null,
+    item:null,
+    //item_code: null,
+    uom: null,
     qty_ordered: null,
     mandatory_status: null,
   });
 
+  const [uom, setUom] = useState('');
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target;    
     setFormData({
       ...formData,
       [name]: value,
     });
   };
 
-  const handleLogout = () => {
-    navigate("/login"); // Use navigate to go to the login page
+  const handleProductNameChange = (e) => {
+    const { name, value } = e.target;    
+    setFormData({
+      ...formData,
+      item:value,
+     // item_code: value.product_id,
+      uom:value.uom
+    });
   };
 
   const handleSubmit = (e) => {
@@ -51,18 +55,13 @@ const IndentRequestForm = ({ user }) => {
     console.log(formData);
   };
 
-  const handleBack = () => {
-    // if (user.role === "admin") {
-    //   navigate("/admin");
-    // } else {
-    //   navigate("/home");
-    // }
-    navigate("/home");
+  const handleBack = () => {    
+    sendToParent(`Child clicked`);
   };
 
   const addItem = () => {
-    
-  }
+    sendToParent(formData);
+  };
 
   useEffect(() => {
     const getitems = async () => {
@@ -77,22 +76,21 @@ const IndentRequestForm = ({ user }) => {
     getitems();
   }, []);
 
-  useEffect(() => {
-    if (selectedRow) {
-      setFormData({
-        item_code: selectedRow.item_code,
-        unitOfMeasure: "",
-        qty_ordered: selectedRow.qty_ordered,
-        mandatory_status: selectedRow.mandatory_status,
-        org_id: org_id,
-        branch_id: branch_id,
-      });
-    }
-  }, [selectedRow]);
+  // useEffect(() => {
+  //   if (selectedRow) {
+  //     setFormData({
+  //       item_code: selectedRow.item_code,
+  //       unitOfMeasure: "",
+  //       qty_ordered: selectedRow.qty_ordered,
+  //       mandatory_status: selectedRow.mandatory_status,
+  //       org_id: org_id,
+  //       branch_id: branch_id,
+  //     });
+  //   }
+  // }, [selectedRow]);
 
   return (
     <>
-      <ResponsiveAppBar onLogout={handleLogout} user={user} />
       {/* Show AdminAppBar */}
       <Container maxWidth="sm">
         <Box mt={4}>
@@ -101,37 +99,37 @@ const IndentRequestForm = ({ user }) => {
           </Typography>
           <form onSubmit={handleSubmit}>
             <Grid2 container spacing={2}>
-              <Grid2 item size={12}>
+
+            <Grid2 item size={12}>
                 <FormControl fullWidth>
                   <InputLabel>Item Name</InputLabel>
                   <Select
-                    name="item_code"
-                    value={formData.item_code}
-                    onChange={handleChange}
+                    name="item"
+                    value={formData.item || ''}
+                    onChange={handleProductNameChange}
                     label="Item Name"
                     required
                   >
                     {productList.map((item, index) => (
-                      <MenuItem key={index} value={item.product_id}>
+                      <MenuItem key={index} value={item}>
                         {item.product_name}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </Grid2>
+              </Grid2>              
 
               {/* Unit of Measure */}
-              {/* <Grid2 item size={12}>
+              <Grid2 item size={12}>
                 <TextField
                   label="Unit of Measure"
                   variant="outlined"
                   fullWidth
                   name="unitOfMeasure"
-                  value={formData.unitOfMeasure}
-                  onChange={handleChange}
-                  required
+                  value={formData.uom || ''}                  
+                  disabled
                 />
-              </Grid2> */}
+              </Grid2>
 
               <Grid2 item size={12}>
                 <TextField
@@ -165,11 +163,13 @@ const IndentRequestForm = ({ user }) => {
                   variant="contained"
                   color="primary"
                   type="submit"
-                  disabled={formData.item_code === null || formData.qty_ordered === null}
+                  disabled={
+                    formData.item_code === null || formData.qty_ordered === null
+                  }
                   fullWidth
                   onClick={addItem}
                 >
-                  Submit
+                  Save
                 </Button>
               </Grid2>
             </Grid2>
@@ -180,4 +180,4 @@ const IndentRequestForm = ({ user }) => {
   );
 };
 
-export default IndentRequestForm;
+export default ItemAdd;

@@ -2,6 +2,7 @@ import React from "react";
 import { Typography, Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";  // Import useNavigate
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
+import NavTab from "../components/NavTab";
 import IndentTable from "../components/IndentTable";
 
 const Home = ({user}) => {
@@ -20,8 +21,7 @@ const Home = ({user}) => {
      
       
     </Box>
-
-     <Box sx={{ mt: 2, padding:2 }}> <IndentTable user={user}/></Box>
+    <NavTab/>     
     </>
   );
 };

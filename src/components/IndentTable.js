@@ -6,29 +6,25 @@ import { useNavigate } from "react-router-dom";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import DeleteIcon from '@mui/icons-material/Delete';
 
-const IndentTable = ({ user }) => {
-  console.log(user);
+const IndentTable = ({ user, data, sendToParent }) => {  
+  //const { sendToParent } = props;
   const [isAdmin, setIsAdmin] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const columns = [
     { field: "id", headerName: "ID", width: 70 },
-    { field: "itemName", headerName: "Item name", width: 130 },
+    { field: "item_code", headerName: "Item Code", width: 130 },
+    { field: "item_name", headerName: "Item name", width: 130 },
     { field: "uom", headerName: "UOM", width: 130 },
     {
-      field: "qtyRequired",
+      field: "qty_ordered",
       headerName: "Qty Required",
       type: "number",
       width: 90,
-      hide: isAdmin,
     },
-    {
-      field: "qtyReceived",
-      headerName: "Qty Received",
-      type: "number",
-      width: 90,
-    },
+    
     {
       field: "action",
       headerName: "Actions",
@@ -38,6 +34,19 @@ const IndentTable = ({ user }) => {
         <EditNoteIcon
           style={{ cursor: "pointer" }}
           onClick={() => handleEdit(params.row)}
+        /></Tooltip>
+      ),
+    },
+
+    {
+      field: "delete",
+      headerName: "",
+      width: 150,
+      renderCell: (params) => (
+        <Tooltip title="Edit">
+        <DeleteIcon
+          style={{ cursor: "pointer" }}
+          onClick={() => handleDelete(params.row)}
         /></Tooltip>
       ),
     },
@@ -57,39 +66,23 @@ const IndentTable = ({ user }) => {
   ];
   
 
-  const columnVisibilityModel = { approval: user?.role == "admin", action: user?.role == "admin" };
+  const columnVisibilityModel = { approval: user?.role == "admin"};
+
+  const handleDelete = (row)=>{
+    sendToParent(row)
+  }
 
   const handleEdit = async (row) => {
-    try {
-      // Make the API call to get product from ID
-      //await axios.delete(`https://jsonplaceholder.typicode.com/users/${id}`);
-
-      // After the successful API call, update the local state (remove the row)
-      //setRows(rows.filter((row) => row.id !== id));
-      navigate("/product-create", { state: { selectedRow: row } });
-    } catch (error) {
-      console.error("Error deleting row:", error);
-      alert("Failed to delete row.");
-    }
+    
   };
-
-  const rows = [
-    { id: 1, itemName: "Samosa", uom: "EA", qtyRequired: 35 },
-    { id: 2, itemName: "Chicken 65", uom: "Packet", qtyRequired: 42 },
-    { id: 3, itemName: "Batter", uom: "Bucket", qtyRequired: 45 },
-    { id: 4, itemName: "Parotta", uom: "EA", qtyRequired: 16 },
-    { id: 5, itemName: "Vada", uom: "EA", qtyRequired: null },
-    { id: 6, itemName: "Lassi", uom: "EA", qtyRequired: 150 },
-    { id: 7, itemName: "Cola", uom: "EA", qtyRequired: 44 },
-  ];
 
   const paginationModel = { page: 0, pageSize: 5 };
   return (
     <Paper sx={{ height: 400, width: "100%" }}>
       <DataGrid
-        rows={rows}
-        columns={columns}
-        columnVisibilityModel={columnVisibilityModel}
+        rows={data}
+        columns={columns}    
+        columnVisibilityModel={columnVisibilityModel}    
         initialState={{ pagination: { paginationModel } }}
         pageSizeOptions={[5, 10]}
         checkboxSelection
