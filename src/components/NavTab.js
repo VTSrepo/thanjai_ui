@@ -10,6 +10,7 @@ import ChecklistRtlIcon from '@mui/icons-material/ChecklistRtl';
 import CallReceivedIcon from '@mui/icons-material/CallReceived';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CreateIndent from "../pages/CreateIndent";
+import IndentListing from "../pages/IndentListing";
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -54,16 +55,20 @@ export default function NavTab() {
           },
         },    
       });
-  const [value, setValue] = React.useState(0);
+  const [value, setValue] = React.useState(3);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
+  const tabValue = (value)=>{
+    setValue(3);
+  }
+
   return (
     <ThemeProvider theme={theme}>
     <Box sx={{ width: "100%" }}>
-      <Box sx={{alignContent:'center'}}>
+      <Box sx={{alignContent:'center', mt:2}}>
         <Tabs
           value={value}
           onChange={handleChange}
@@ -113,7 +118,7 @@ export default function NavTab() {
         </Tabs>
       </Box>
       <CustomTabPanel value={value} index={0}>
-        <CreateIndent/>
+        <CreateIndent sendToParent={tabValue}/>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={1}>
         Item Two
@@ -122,7 +127,7 @@ export default function NavTab() {
         Item Three
       </CustomTabPanel>
       <CustomTabPanel value={value} index={3}>
-        Item Four
+       <IndentListing/>
       </CustomTabPanel>
     </Box>
     </ThemeProvider>

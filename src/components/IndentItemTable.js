@@ -8,7 +8,7 @@ import EditNoteIcon from "@mui/icons-material/EditNote";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import DeleteIcon from '@mui/icons-material/Delete';
 
-const IndentTable = ({ user, data, sendToParent }) => {  
+const IndentItemTable = ({ user, data, sendToParent }) => {  
   //const { sendToParent } = props;
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate(); 
@@ -25,25 +25,25 @@ const IndentTable = ({ user, data, sendToParent }) => {
       width: 90,
     },
     
-    {
-      field: "action",
-      headerName: "Actions",
-      width: 150,
-      renderCell: (params) => (
-        <Tooltip title="Edit">
-        <EditNoteIcon
-          style={{ cursor: "pointer" }}
-          onClick={() => handleEdit(params.row)}
-        /></Tooltip>
-      ),
-    },
+    // {
+    //   field: "action",
+    //   headerName: "Actions",
+    //   width: 150,
+    //   renderCell: (params) => (
+    //     <Tooltip title="Edit">
+    //     <EditNoteIcon
+    //       style={{ cursor: "pointer" }}
+    //       onClick={() => handleEdit(params.row)}
+    //     /></Tooltip>
+    //   ),
+    // },
 
     {
       field: "delete",
       headerName: "",
       width: 150,
       renderCell: (params) => (
-        <Tooltip title="Edit">
+        <Tooltip title="Delete">
         <DeleteIcon
           style={{ cursor: "pointer" }}
           onClick={() => handleDelete(params.row)}
@@ -69,16 +69,18 @@ const IndentTable = ({ user, data, sendToParent }) => {
   const columnVisibilityModel = { approval: user?.role == "admin"};
 
   const handleDelete = (row)=>{
+    row.delete = true
     sendToParent(row)
   }
 
   const handleEdit = async (row) => {
-    
+    row.delete = false
+    sendToParent(row)
   };
 
   const paginationModel = { page: 0, pageSize: 5 };
   return (
-    <Paper sx={{ height: 400, width: "100%" }}>
+    <Paper sx={{width: "100%" }}>
       <DataGrid
         rows={data}
         columns={columns}    
@@ -92,4 +94,4 @@ const IndentTable = ({ user, data, sendToParent }) => {
   );
 };
 
-export default IndentTable;
+export default IndentItemTable;

@@ -2,10 +2,9 @@ import React from "react";
 import { Typography, Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-import IndentTable from "../components/IndentTable";
+import IndentItemTable from "../components/IndentItemTable";
 
-const Admin = ({ user }) => {
-  console.log(user);
+const Admin = ({ user }) => {  
   const navigate = useNavigate(); // Replace useHistory with useNavigate
 
   const handleLogout = () => {
@@ -25,7 +24,7 @@ const Admin = ({ user }) => {
 
         {/* <Box sx={{ mt: 2, padding: 2 }}>
           
-          <IndentTable user={user} />
+          <IndentItemTable user={user} />
         </Box> */}
       </Box>
     </>

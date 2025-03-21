@@ -55,7 +55,6 @@ export const setSellingPrice = async (payload) => {
   }
 };
 
-
 export const getProducts = async () => {
   try {
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
@@ -64,5 +63,16 @@ export const getProducts = async () => {
   } catch (error) {
     console.error("Error fetching data:", error);
     throw error; // Rethrow error to be handled by calling components
+  }
+};
+
+export const createNewIndent = async (payload) => {
+  try {
+    const response = await axios.post(`${API_URL}/indent`, {
+      indent: payload,
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
   }
 };
