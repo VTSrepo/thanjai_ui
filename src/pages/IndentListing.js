@@ -1,60 +1,76 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import IndentListingtable from "../components/IndentListingTable";
 import Loader from "../components/Loader";
 
 import axios from "axios";
 import IndentDetail from "./IndentDetail";
+import { getListing } from "../utilities/service";
+import { useUser } from "../utilities/UserContext";
 
-const IndentListing = ({ user }) => {
+const IndentListing = ({tabValue}) => {
+ const { user, login, logout } = useUser();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isDetailView, setIsDetailView] = useState(false);
-  const [productList, setProductList] = useState([]);
+  const [indentList, setIndentList] = useState([]);
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
   };
 
-  const viewDetail = () =>{
+  const viewDetail = () => {
     setIsDetailView(true);
+  };
+
+  const getStatus = () =>{
+    switch(tabValue){      
+      case 1: return "C";
+      case 2: return "A";
+      case 3: return "D"
+    }
   }
 
   useEffect(() => {
-    const fetchData = async () => {
+    const getitems = async () => {
       try {
-        const API_URL = "http://localhost:4002/v1"; // Change this to your actual API URL
-        const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-        const response = await axios.get(`${API_URL}/products/${org_id}`);
-        const updatedData = response.data.products.map((item, index) => ({
+        const status = getStatus();
+        const params = { status: status };
+        const result = await getListing(params);
+        const updatedData = result.indents.map((item, index) => ({
           ...item,
           id: item.id || index + 1, // Appending a unique ID if it doesn't exist
         }));
-        setLoading(false);
-        // Set loading to false once data is loaded
-        setProductList(updatedData); // Set the response data into state
+        setIndentList(updatedData);
       } catch (err) {
-        //setError(err.message);   // Handle any errors
-        //setLoading(false);
+        console.log(err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchData(); // Call the function to fetch data
+    getitems(); // Call the function to fetch data
   }, []);
-  
 
   if (loading) return <Loader />; // Show loader while data is being fetched
 
   return (
-    <>     
-       {!isDetailView && (<Box sx={{ mt: 4, padding: 2 }}>
-        <IndentListingtable list={productList} sendToParent={viewDetail}/>
-      </Box>)}
+    <>
+     <Typography variant="h5" gutterBottom>
+                Indent Listings
+              </Typography>
+      {!isDetailView && (
+        <Box sx={{ mt: 4, padding: 2 }}>
+          <IndentListingtable list={indentList} sendToParent={viewDetail} />
+        </Box>
+      )}
 
-      {isDetailView && (<Box sx={{ mt: 4, padding: 2 }}>
-        <IndentDetail />
-      </Box>)}
+      {isDetailView && (
+        <Box sx={{ mt: 4, padding: 2 }}>
+          <IndentDetail />
+        </Box>
+      )}
     </>
   );
 };

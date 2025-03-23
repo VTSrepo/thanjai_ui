@@ -1,4 +1,4 @@
-import * as React from "react";
+import  React, {useEffect} from "react";
 import PropTypes from "prop-types";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -11,6 +11,7 @@ import CallReceivedIcon from '@mui/icons-material/CallReceived';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CreateIndent from "../pages/CreateIndent";
 import IndentListing from "../pages/IndentListing";
+import { useUser } from '../utilities/UserContext';
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -42,6 +43,7 @@ function a11yProps(index) {
 }
 
 export default function NavTab() {
+  const { user, login, logout } = useUser();
     const theme = createTheme({
         withDivider: {
             justifyContent: `space-between`,
@@ -55,7 +57,8 @@ export default function NavTab() {
           },
         },    
       });
-  const [value, setValue] = React.useState(3);
+      
+  const [value, setValue] = React.useState(null);
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -65,8 +68,17 @@ export default function NavTab() {
     setValue(3);
   }
 
+  useEffect(()=>{
+    if(user?.user_type === 'B'){
+      setValue(3);
+    }else {
+      setValue(1);
+    }
+  }, [])
+
   return (
     <ThemeProvider theme={theme}>
+      
     <Box sx={{ width: "100%" }}>
       <Box sx={{alignContent:'center', mt:2}}>
         <Tabs
@@ -86,7 +98,7 @@ export default function NavTab() {
                 <ShoppingCartIcon style={{ fontSize: 50 }}/>
               </Badge>
             }
-            
+            disabled={user?.user_type === 'K'}           
             {...a11yProps(0)}
           />
           <Tab
@@ -94,7 +106,8 @@ export default function NavTab() {
               <Badge badgeContent='A' color="primary">
                 <ChecklistRtlIcon style={{ fontSize: 50 }}/>
               </Badge>
-            }            
+            } 
+            disabled={user?.user_type === 'B'}           
             {...a11yProps(1)}
           />
         <Tab
@@ -103,7 +116,7 @@ export default function NavTab() {
                 <LocalShippingIcon style={{ fontSize: 50 }}/>
               </Badge>
             }
-            
+            disabled={user?.user_type === 'B'}           
             {...a11yProps(2)}
           />
           <Tab
@@ -112,7 +125,7 @@ export default function NavTab() {
                 <CallReceivedIcon style={{ fontSize: 50 }}/>
               </Badge>
             }
-            
+            disabled={user?.user_type === 'K'}           
             {...a11yProps(3)}
           />
         </Tabs>
@@ -121,13 +134,13 @@ export default function NavTab() {
         <CreateIndent sendToParent={tabValue}/>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={1}>
-        Item Two
+      <IndentListing tabValue={1}/>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={2}>
-        Item Three
+        <IndentListing tabValue={2}/>
       </CustomTabPanel>
       <CustomTabPanel value={value} index={3}>
-       <IndentListing/>
+       <IndentListing tabValue={3}/>
       </CustomTabPanel>
     </Box>
     </ThemeProvider>

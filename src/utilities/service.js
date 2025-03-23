@@ -76,3 +76,14 @@ export const createNewIndent = async (payload) => {
     throw error;
   }
 };
+
+export const getListing = async (params) => {
+  try {
+    const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+    const response = await axios.get(`${API_URL}/indents/${org_id}?status=${params.status}`);
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Rethrow error to be handled by calling components
+  }
+};

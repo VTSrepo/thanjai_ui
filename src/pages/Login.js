@@ -8,11 +8,13 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { purple } from '@mui/material/colors';
+import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { purple } from "@mui/material/colors";
 import axios from "axios";
+import { useUser } from "../utilities/UserContext";
 
 const Login = ({ setUser }) => {
+  const { login } = useUser(); // Destructure login function from context
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -24,16 +26,16 @@ const Login = ({ setUser }) => {
   const theme = createTheme({
     palette: {
       primary: {
-        main: '#ffa133',
+        main: "#ffa133",
       },
       secondary: {
-        main: '#f44336',
+        main: "#f44336",
       },
-    },    
+    },
   });
 
   // Login function to make the POST request
-  const login = async () => {
+  const loginApi = async () => {
     try {
       const response = await axios.post(`${API_URL}/login`, {
         user: {
@@ -60,8 +62,8 @@ const Login = ({ setUser }) => {
   };
 
   const handleLogin = async () => {
-    const res = await login();
-
+    const res = await loginApi();
+    login(res.user); // Send data to context
     if (res.user.user_type === "A") {
       setUser({ username, role: "admin" });
       navigate("/admin");
@@ -76,44 +78,44 @@ const Login = ({ setUser }) => {
 
   return (
     <ThemeProvider theme={theme}>
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8, padding: 2 }}>
-        <div style={{ textAlign: "center" }}>
-          <img src="/logo.png" alt="Logo" />
-        </div>
+      <Container maxWidth="sm">
+        <Box sx={{ mt: 8, padding: 2 }}>
+          <div style={{ textAlign: "center" }}>
+            <img src="/logo.png" alt="Logo" />
+          </div>
 
-        <TextField
-          label="Username"
-          variant="outlined"
-          fullWidth
-          sx={{ mt: 2 }}
-          value={username}
-          onChange={handleChange}
-        />
-        <TextField
-          label="Password"
-          variant="outlined"
-          type="password"
-          fullWidth
-          sx={{ mt: 2 }}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {error && (
-          <Typography color="error" align="center">
-            {error}
-          </Typography>
-        )}
-        <Button
-          variant="contained"
-          fullWidth
-          sx={{ mt: 2 }}
-          onClick={handleLogin}
-        >
-          Login
-        </Button>
-      </Box>
-    </Container>
+          <TextField
+            label="Username"
+            variant="outlined"
+            fullWidth
+            sx={{ mt: 2 }}
+            value={username}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Password"
+            variant="outlined"
+            type="password"
+            fullWidth
+            sx={{ mt: 2 }}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && (
+            <Typography color="error" align="center">
+              {error}
+            </Typography>
+          )}
+          <Button
+            variant="contained"
+            fullWidth
+            sx={{ mt: 2 }}
+            onClick={handleLogin}
+          >
+            Login
+          </Button>
+        </Box>
+      </Container>
     </ThemeProvider>
   );
 };

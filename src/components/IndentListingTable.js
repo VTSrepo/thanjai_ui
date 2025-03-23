@@ -66,7 +66,7 @@ export default function IndentListingtable({ list, sendToParent }) {
           style={{ textDecoration: "underline", color: "#ffa133" }}
           onClick={() => handleView(params.row)}
         >
-          1234
+          {params.row.indent_number}
         </span>
       ),
     },

@@ -13,7 +13,7 @@ import IndentRequestForm from "./pages/IndentRequestForm";
 import ProductForm from "./pages/ProductForm";
 import ProductMaster from "./pages/ProductMaster";
 import IndentMaster from "./pages/IndentMaster";
-import NavTab from "./components/NavTab";
+import { UserProvider } from "./utilities/UserContext"
 
 function App() {
   const [user, setUser] = useState(null);
@@ -55,6 +55,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       {/* Change the maxWidth to "xl" for a desktop layout */}
+      <UserProvider>
       <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
         <Routes>
           <Route path="/login" element={<Login setUser={setUser} />} />
@@ -111,6 +112,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </Container>
+      </UserProvider>
     </ThemeProvider>
   );
 }
