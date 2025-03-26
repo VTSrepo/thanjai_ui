@@ -14,6 +14,20 @@ export const getBu = async () => {
   }
 };
 
+export const getEmployees = async () => {
+  try {
+    const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+    const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
+    const response = await axios.get(
+      `${API_URL}/employees/${org_id}?branch_id=${branch_id}`
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Rethrow error to be handled by calling components
+  }
+};
+
 export const getCategoryList = async () => {
   try {
     const response = await axios.get(`${API_URL}/category`);
@@ -77,10 +91,31 @@ export const createNewIndent = async (payload) => {
   }
 };
 
-export const getListing = async (params) => {
+export const getListing = (params) => {
+  const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+  return axios.get(`${API_URL}/indents/${org_id}?status=${params.status}`);
+};
+
+export const getJobListing = async () => {
   try {
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    const response = await axios.get(`${API_URL}/indents/${org_id}?status=${params.status}`);
+    const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
+    const response = await axios.get(
+      `${API_URL}/production-monitoring/${org_id}?branch_id=${branch_id}`
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Rethrow error to be handled by calling components
+  }
+};
+
+export const saveJob = async (params) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/production-monitoring`,
+      params
+    );
     return response.data; // Return only the data from the response
   } catch (error) {
     console.error("Error fetching data:", error);

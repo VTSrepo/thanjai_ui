@@ -8,13 +8,24 @@ import axios from "axios";
 import IndentDetail from "./IndentDetail";
 import { getListing } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
+import InfoDialog from "../components/InfoDialog";
 
-const IndentListing = ({tabValue}) => {
- const { user, login, logout } = useUser();
+const IndentListing = ({ tabValue }) => {
+  const { user, login, logout } = useUser();
+  const [openDialog, setOpenDialog] = useState(false);
+  const [message, setMessage] = useState(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isDetailView, setIsDetailView] = useState(false);
   const [indentList, setIndentList] = useState([]);
+
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+  };
+
+  const openCustomDialog = () => {
+    setOpenDialog(true);
+  };
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -24,13 +35,16 @@ const IndentListing = ({tabValue}) => {
     setIsDetailView(true);
   };
 
-  const getStatus = () =>{
-    switch(tabValue){      
-      case 1: return "C";
-      case 2: return "A";
-      case 3: return "D"
+  const getStatus = () => {
+    switch (tabValue) {
+      case 1:
+        return "C";
+      case 2:
+        return "A";
+      case 3:
+        return "D";
     }
-  }
+  };
 
   useEffect(() => {
     const getitems = async () => {
@@ -38,13 +52,14 @@ const IndentListing = ({tabValue}) => {
         const status = getStatus();
         const params = { status: status };
         const result = await getListing(params);
-        const updatedData = result.indents.map((item, index) => ({
+        const updatedData = result.data.indents.map((item, index) => ({
           ...item,
           id: item.id || index + 1, // Appending a unique ID if it doesn't exist
         }));
         setIndentList(updatedData);
       } catch (err) {
-        console.log(err);
+        setMessage(err.response?.data?.message)
+        openCustomDialog();
       } finally {
         setLoading(false);
       }
@@ -57,9 +72,9 @@ const IndentListing = ({tabValue}) => {
 
   return (
     <>
-     <Typography variant="h5" gutterBottom>
-                Indent Listings
-              </Typography>
+      <Typography variant="h5" gutterBottom>
+        Indent Listings
+      </Typography>
       {!isDetailView && (
         <Box sx={{ mt: 4, padding: 2 }}>
           <IndentListingtable list={indentList} sendToParent={viewDetail} />
@@ -71,6 +86,13 @@ const IndentListing = ({tabValue}) => {
           <IndentDetail />
         </Box>
       )}
+
+      <InfoDialog
+        open={openDialog}
+        onClose={handleDialogClose}
+        title="Information"
+        message={message}
+      />
     </>
   );
 };

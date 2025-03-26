@@ -13,7 +13,9 @@ import IndentRequestForm from "./pages/IndentRequestForm";
 import ProductForm from "./pages/ProductForm";
 import ProductMaster from "./pages/ProductMaster";
 import IndentMaster from "./pages/IndentMaster";
-import { UserProvider } from "./utilities/UserContext"
+import ProductionMonitor from "./pages/ProductionMonitor";
+import ProductionMonitorForm from './pages/ProductionMonitorForm';
+import { UserProvider } from "./utilities/UserContext";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -56,62 +58,85 @@ function App() {
     <ThemeProvider theme={theme}>
       {/* Change the maxWidth to "xl" for a desktop layout */}
       <UserProvider>
-      <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
-        <Routes>
-          <Route path="/login" element={<Login setUser={setUser} />} />
-          <Route
-            path="/indents"
-            element={<IndentMaster user={user} setUser={setUser} />}
-          />
-          <Route
-            path="/home"
-            element={<Home user={user} setUser={setUser} />}
-          />
+        <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
+          <Routes>
+            <Route path="/login" element={<Login setUser={setUser} />} />
+            <Route
+              path="/indents"
+              element={<IndentMaster user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/home"
+              element={<Home user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/production-monitor"
+              element={<ProductionMonitor user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/job-create"
+              element={<ProductionMonitorForm user={user} setUser={setUser} />}
+            />            
 
-          <Route
-            path="/product-create"
-            element={
-              <ProtectedRoute
-                element={<ProductForm user={user} setUser={setUser} />}
-                role="admin"
-              />
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute
-                element={<Admin user={user} setUser={setUser} />}
-                role="admin"
-              />
-            }
-          />
-          <Route
-            path="/product-master"
-            element={
-              <ProtectedRoute
-                element={<ProductMaster user={user} setUser={setUser} />}
-                role="admin"
-              />
-            }
-          />
-          <Route
-            path="/indent-create"
-            element={
-              <ProtectedRoute
-                element={
-                  <IndentRequestForm
-                    user={user}
-                    setUser={setUser}
-                    role="admin"
-                  />
-                }
-              />
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" />} />
-        </Routes>
-      </Container>
+            <Route
+              path="/product-create"
+              element={
+                <ProtectedRoute
+                  element={<ProductForm user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute
+                  element={<Admin user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }
+            />
+            <Route
+              path="/product-master"
+              element={
+                <ProtectedRoute
+                  element={<ProductMaster user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }
+            />
+            {/* <Route
+              path="/production-monitor"
+              element={
+                <ProtectedRoute
+                  element={
+                    <ProductionMonitor
+                      user={user}
+                      setUser={setUser}
+                      role="admin"
+                    />
+                  }
+                />
+              }
+            /> */}
+
+            <Route
+              path="/indent-create"
+              element={
+                <ProtectedRoute
+                  element={
+                    <IndentRequestForm
+                      user={user}
+                      setUser={setUser}
+                      role="admin"
+                    />
+                  }
+                />
+              }
+            />
+            <Route path="/" element={<Navigate to="/login" />} />
+          </Routes>
+        </Container>
       </UserProvider>
     </ThemeProvider>
   );

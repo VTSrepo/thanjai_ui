@@ -126,7 +126,7 @@ function ProductForm({ user }) {
       setLoading(false);
       navigate("/product-master");
     } else {
-      throw new Error("Product Creation failed: No token received");
+      throw new Error("Product Creation failed");
     }
   };
 

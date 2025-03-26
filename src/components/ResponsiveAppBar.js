@@ -27,8 +27,11 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
   return (
     <AppBar position="sticky" sx={{ backgroundColor: "#ffa133" }}>
       <Toolbar>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+        {/* <Typography variant="h6" sx={{ flexGrow: 1 }}>
           {user && user.role === "admin" ? "Admin Dashboard" : "User Dashboard"}
+        </Typography> */}
+         <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          Thanjai Caterers
         </Typography>
 
         {/* For mobile view, show the hamburger icon */}
@@ -47,13 +50,13 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                   Home
                 </MenuItem>
               )}
-              {/* <MenuItem
+              <MenuItem
                 component={Link}
-                to="/indents"
+                to="/production-monitor"
                 onClick={handleMenuClose}
               >
-                Indents
-              </MenuItem> */}
+                Production Monitor
+              </MenuItem>
               {user && user.role === "admin" && (
                 <MenuItem
                   component={Link}
@@ -72,7 +75,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                   Product Master
                 </MenuItem>
               )}
-              
+
               <MenuItem
                 onClick={() => {
                   onLogout();
@@ -100,19 +103,21 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
             <Button color="inherit" component={Link} to="/indents">
               Indents
             </Button>
+            <Button component={Link} to="/production-monitor" color="inherit">
+              Production Monitor
+            </Button>
 
             {user && user.role === "admin" && (
               <Button color="inherit" component={Link} to="/product-master">
                 Product Master
               </Button>
             )}
-           
+
             <Button color="inherit" onClick={onLogout}>
               Logout
             </Button>
           </>
         )}
-        
       </Toolbar>
     </AppBar>
   );
