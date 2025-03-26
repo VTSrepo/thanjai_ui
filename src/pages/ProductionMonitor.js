@@ -6,10 +6,11 @@ import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import Loader from "../components/Loader";
 import { getJobListing } from "../utilities/service";
 
-const ProductionMonitor = ({ user }) => {
+const ProductionMonitor = ({ user,dashboard }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [jobList, setJobList] = useState([]);
+  const [productSummary, setProductSummary] = useState({});
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -19,7 +20,7 @@ const ProductionMonitor = ({ user }) => {
     navigate("/job-create");
   };
 
-  useEffect(() => {
+  useEffect(() => {    
     const getJobs = async () => {
       try {
         setLoading(true);
@@ -39,11 +40,12 @@ const ProductionMonitor = ({ user }) => {
     getJobs();
   }, []);
 
+
   if (loading) return <Loader />; // Show loader while data is being fetched
 
   return (
     <>
-      <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
+      {(!dashboard)&&(<ResponsiveAppBar onLogout={handleLogout} user={user} />)}
       {/* Show AdminAppBar */}
       <Box sx={{ mt: 4, padding: 2 }}>
         <Button variant="contained" color="secondary" onClick={createJob}>
@@ -53,7 +55,7 @@ const ProductionMonitor = ({ user }) => {
           {" "}
           <ProductionMonitorTable list={jobList} />
         </Box>
-      </Box>
+      </Box>      
     </>
   );
 };

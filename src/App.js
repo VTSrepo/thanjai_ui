@@ -61,10 +61,10 @@ function App() {
         <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
           <Routes>
             <Route path="/login" element={<Login setUser={setUser} />} />
-            <Route
+            {/* <Route
               path="/indents"
               element={<IndentMaster user={user} setUser={setUser} />}
-            />
+            /> */}
             <Route
               path="/home"
               element={<Home user={user} setUser={setUser} />}
@@ -78,7 +78,7 @@ function App() {
               element={<ProductionMonitorForm user={user} setUser={setUser} />}
             />            
 
-            <Route
+            {/* <Route
               path="/product-create"
               element={
                 <ProtectedRoute
@@ -86,7 +86,7 @@ function App() {
                   role="admin"
                 />
               }
-            />
+            /> */}
             <Route
               path="/admin"
               element={
@@ -96,7 +96,7 @@ function App() {
                 />
               }
             />
-            <Route
+            {/* <Route
               path="/product-master"
               element={
                 <ProtectedRoute
@@ -104,7 +104,7 @@ function App() {
                   role="admin"
                 />
               }
-            />
+            /> */}
             {/* <Route
               path="/production-monitor"
               element={
@@ -120,7 +120,7 @@ function App() {
               }
             /> */}
 
-            <Route
+            {/* <Route
               path="/indent-create"
               element={
                 <ProtectedRoute
@@ -133,7 +133,7 @@ function App() {
                   }
                 />
               }
-            />
+            /> */}
             <Route path="/" element={<Navigate to="/login" />} />
           </Routes>
         </Container>

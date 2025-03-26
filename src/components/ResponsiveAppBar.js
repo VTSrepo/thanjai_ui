@@ -45,7 +45,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
-              {user && user.role === "branch" && (
+              {user && user?.user_type === "B" && (
                 <MenuItem component={Link} to="/home" onClick={handleMenuClose}>
                   Home
                 </MenuItem>
@@ -66,7 +66,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                   Admin Home
                 </MenuItem>
               )}
-              {user && user.role === "admin" && (
+              {/* {user && user.role === "admin" && (
                 <MenuItem
                   component={Link}
                   to="/product-master"
@@ -74,7 +74,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                 >
                   Product Master
                 </MenuItem>
-              )}
+              )} */}
 
               <MenuItem
                 onClick={() => {
@@ -100,18 +100,18 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                 Admin Home
               </Button>
             )}
-            <Button color="inherit" component={Link} to="/indents">
+            {/* <Button color="inherit" component={Link} to="/indents">
               Indents
-            </Button>
+            </Button> */}
             <Button component={Link} to="/production-monitor" color="inherit">
               Production Monitor
             </Button>
 
-            {user && user.role === "admin" && (
+            {/* {user && user.role === "admin" && (
               <Button color="inherit" component={Link} to="/product-master">
                 Product Master
               </Button>
-            )}
+            )} */}
 
             <Button color="inherit" onClick={onLogout}>
               Logout
