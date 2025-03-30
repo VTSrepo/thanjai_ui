@@ -1,21 +1,10 @@
 import React, { useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
-import {
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-  Button,
-  TextField,
-} from "@mui/material";
+import { Tooltip } from "@mui/material";
 
 import Paper from "@mui/material/Paper";
-import { getSellingPriceRecord, setSellingPrice } from "../utilities/service";
 import { useNavigate } from "react-router-dom";
-import EditNoteIcon from "@mui/icons-material/EditNote";
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityIcon from "@mui/icons-material/Visibility";
 
 export default function ProductionMonitorTable({ list }) {
   const paginationModel = { page: 0, pageSize: 10 };
@@ -29,8 +18,15 @@ export default function ProductionMonitorTable({ list }) {
     { field: "product_name", headerName: "Product Name", width: 200 },
     { field: "emp_name", headerName: "Emp Name", width: 200 },
     { field: "production_qty", headerName: "Production Qty", width: 130 },
-    { field: "damaged_qty", headerName: "Damaged Qty", width: 130, type: 'number', },
+    {
+      field: "damaged_qty",
+      headerName: "Damaged Qty",
+      width: 130,
+      type: "number",
+    },
     { field: "production_date", headerName: "Date", width: 130 },
+    { field: "start_time", headerName: "Start Time", width: 130 },
+    { field: "end_time", headerName: "End Time", width: 130 },
     {
       field: "remarks",
       headerName: "Remarks",

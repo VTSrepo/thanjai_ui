@@ -15,7 +15,8 @@ import {
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
-
+import { format,  utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import { parseISO } from 'date-fns'; 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
@@ -63,8 +64,10 @@ function ProductionMonitorForm({ user }) {
     product_id: null,
     product_name: null,
     production_date: currentDate,
-    start_time: new Date(),
-    end_time: new Date(),
+    start_time: null,    
+    display_start_time:null,
+    display_end_time:null,
+    end_time: null,
     production_qty: null,
     damaged_qty: null,
     emp_name: null,
@@ -95,6 +98,13 @@ function ProductionMonitorForm({ user }) {
     getProductList();
   }, []);
 
+  const convertTimeStringToDate = (timeStr) => {
+    const [hours, minutes, seconds] = timeStr.split("-").map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, seconds, 0); // Set the hours, minutes, and seconds
+    return date;
+  };
+
   useEffect(() => {
     if (selectedRow) {
       setIsFormDisabled(true);
@@ -103,8 +113,10 @@ function ProductionMonitorForm({ user }) {
         product_id: selectedRow.product_id,
         product_name: selectedRow.product_name,
         production_date: selectedRow.production_date,
-        start_time: new Date(),
-        end_time: new Date(),
+        start_time: selectedRow.start_time,
+        display_end_time:convertTimeStringToDate(selectedRow.end_time),
+        display_start_time:convertTimeStringToDate(selectedRow.start_time),
+        end_time: selectedRow.end_time,
         production_qty: selectedRow.production_qty,
         damaged_qty: selectedRow.damaged_qty,
         emp_name: selectedRow.emp_name,
@@ -115,16 +127,24 @@ function ProductionMonitorForm({ user }) {
   }, [selectedRow]);
 
   const handleChangeStartTime = (e) => {
+    //const parsedTime = parseISO(e);
+    // Convert the selected time to mm-hh-ss format
+    const formattedTime = format(e, 'HH-mm-ss');
+
     setFormData({
-      ...formData,
-      start_time: e,
+      ...formData,      
+      start_time:formattedTime,
+      display_start_time:e
+      
     });
   };
 
   const handleChangeEndTime = (e) => {
+    const formattedTime = format(e, 'HH-mm-ss');
     setFormData({
       ...formData,
-      end_time: e,
+      end_time: formattedTime,
+      display_end_time:e
     });
   };
 
@@ -187,6 +207,33 @@ function ProductionMonitorForm({ user }) {
           <form className="example-form" noValidate>
           <DisabledFormWrapper disabled={isFormDisabled}>
             <Grid2 container spacing={2}>
+            <Grid2 item size={12}>
+                <TextField
+                  type="date"
+                  value={formData.production_date}
+                  onChange={handleChange}
+                ></TextField>
+              </Grid2>
+              <Grid2 item size={12}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <TimePicker
+                    label="Start Time"
+                    value={formData.display_start_time}
+                    onChange={handleChangeStartTime}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+              </Grid2>
+              <Grid2 item size={12}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <TimePicker
+                    label="End Time"
+                    value={formData.display_end_time}
+                    onChange={handleChangeEndTime}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+              </Grid2>
               {uom && (
                 <Grid2 item size={12}>
                   <FormControl fullWidth required>
@@ -226,13 +273,7 @@ function ProductionMonitorForm({ user }) {
                   </FormControl>
                 </Grid2>
               )}
-              <Grid2 item size={12}>
-                <TextField
-                  type="date"
-                  value={formData.production_date}
-                  onChange={handleChange}
-                ></TextField>
-              </Grid2>
+              
               <Grid2 item size={12}>
                 <TextField
                   label="Production Qty"
@@ -256,26 +297,7 @@ function ProductionMonitorForm({ user }) {
                 />
               </Grid2>
 
-              <Grid2 item size={12}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <TimePicker
-                    label="Start Time"
-                    value={formData.start_time}
-                    onChange={handleChangeStartTime}
-                    renderInput={(params) => <TextField {...params} />}
-                  />
-                </LocalizationProvider>
-              </Grid2>
-              <Grid2 item size={12}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <TimePicker
-                    label="End Time"
-                    value={formData.end_time}
-                    onChange={handleChangeEndTime}
-                    renderInput={(params) => <TextField {...params} />}
-                  />
-                </LocalizationProvider>
-              </Grid2>
+              
             </Grid2>
             </DisabledFormWrapper>
             <div style={{ marginTop: 20 }}>

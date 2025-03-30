@@ -1,6 +1,8 @@
 import axios from "axios";
+import { format } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 
-const API_URL = "http://localhost:4002/v1";
+const API_URL = "http://192.169.177.188:4002/v1";
 
 // Function to handle GET request
 export const getBu = async () => {
@@ -121,4 +123,15 @@ export const saveJob = async (params) => {
     console.error("Error fetching data:", error);
     throw error; // Rethrow error to be handled by calling components
   }
+};
+
+
+// Function to convert UTC time to AEST
+export  const convertToTimeZone = (time) => {
+  const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Convert the time from UTC to the specified timezone (AEST here)
+  const zonedTime = utcToZonedTime(time, currentTimeZone);
+  
+  // Format the time to display in a readable format
+  return format(zonedTime, 'yyyy-MM-dd HH:mm:ssXXX');
 };

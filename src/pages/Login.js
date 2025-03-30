@@ -21,7 +21,7 @@ const Login = ({ setUser }) => {
   const navigate = useNavigate(); // Replace useHistory with useNavigate
 
   // Define the base URL for your API
-  const API_URL = "http://localhost:4002/v1"; // Change this to your actual API URL
+  const API_URL = "http://192.169.177.188:4002/v1"; // Change this to your actual API URL
 
   const theme = createTheme({
     palette: {
@@ -81,7 +81,7 @@ const Login = ({ setUser }) => {
       <Container maxWidth="sm">
         <Box sx={{ mt: 8, padding: 2 }}>
           <div style={{ textAlign: "center" }}>
-            <img src="/logo.png" alt="Logo" />
+            <img src="/v1/logo.PNG" alt="Logo" />
           </div>
 
           <TextField
