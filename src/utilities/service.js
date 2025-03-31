@@ -2,7 +2,7 @@ import axios from "axios";
 import { format } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 
-const API_URL = "http://192.169.177.188:4002/v1";
+const API_URL = "https://pm.thanjaicaterers.com/v1";
 
 // Function to handle GET request
 export const getBu = async () => {
