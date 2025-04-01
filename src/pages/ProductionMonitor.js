@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import Loader from "../components/Loader";
-import { getJobListing, convertToTimeZone } from "../utilities/service";
+import { getJobListing, getProductSummary} from "../utilities/service";
+import ProductionDataChart from "../components/ProductionDataChart";
 
-const ProductionMonitor = ({ user,dashboard }) => {
+
+const ProductionMonitor = ({ user, dashboard }) => { 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [jobList, setJobList] = useState([]);
@@ -20,7 +22,7 @@ const ProductionMonitor = ({ user,dashboard }) => {
     navigate("/job-create");
   };
 
-  useEffect(() => {    
+  useEffect(() => {
     const getJobs = async () => {
       try {
         setLoading(true);
@@ -32,12 +34,29 @@ const ProductionMonitor = ({ user,dashboard }) => {
         setJobList(updatedData);
       } catch (err) {
         console.log(err);
-      }finally{
+      } finally {
+        setLoading(false);
+      }
+    };
+
+
+    const getProductSummaryListing = async () => {
+      try {
+        setLoading(true);
+        const today = new Date().toISOString().split('T')[0];
+        console.log(today);
+        const result = await getProductSummary({date:'2025-03-28'});
+        
+        setProductSummary(result.businesses);
+      } catch (err) {
+        alert('No data for today')
+      } finally {
         setLoading(false);
       }
     };
 
     getJobs();
+    getProductSummaryListing()
   }, []);
 
 
@@ -45,7 +64,7 @@ const ProductionMonitor = ({ user,dashboard }) => {
 
   return (
     <>
-      {(!dashboard)&&(<ResponsiveAppBar onLogout={handleLogout} user={user} />)}
+      {!dashboard && <ResponsiveAppBar onLogout={handleLogout} user={user} />}
       {/* Show AdminAppBar */}
       <Box sx={{ mt: 4, padding: 2 }}>
         <Button variant="contained" color="secondary" onClick={createJob}>
@@ -55,7 +74,12 @@ const ProductionMonitor = ({ user,dashboard }) => {
           {" "}
           <ProductionMonitorTable list={jobList} />
         </Box>
-      </Box>      
+      </Box>
+      {user?.username === 'kumar@gmail.com' && (<div>
+        <h3>Production Qty vs Damaged Qty</h3>
+        <ProductionDataChart summary={productSummary}/>
+        
+      </div>)}
     </>
   );
 };

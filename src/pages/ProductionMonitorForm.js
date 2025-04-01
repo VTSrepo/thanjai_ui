@@ -168,15 +168,16 @@ function ProductionMonitorForm({ user }) {
         user_id: user_id,
       },
     };
+    console.log(payload)
 
-    const res = await saveJob(payload);
+    // const res = await saveJob(payload);
 
-    if (res.production) {
-      setLoading(false);
-      navigate("/production-monitor");
-    } else {
-      throw new Error("Product Creation failed");
-    }
+    // if (res.production) {
+    //   setLoading(false);
+    //   navigate("/production-monitor");
+    // } else {
+    //   throw new Error("Product Creation failed");
+    // }
   };
 
   const handleLogout = () => {
