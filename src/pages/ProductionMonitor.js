@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button } from "@mui/material";
+import { Box, Button, Grid2 } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import Loader from "../components/Loader";
-import { getJobListing, getProductSummary} from "../utilities/service";
-import ProductionDataChart from "../components/ProductionDataChart";
+import { getJobListing } from "../utilities/service";
 
-
-const ProductionMonitor = ({ user, dashboard }) => { 
+const ProductionMonitor = ({ user, dashboard }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [jobList, setJobList] = useState([]);
-  const [productSummary, setProductSummary] = useState({});
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -39,26 +36,8 @@ const ProductionMonitor = ({ user, dashboard }) => {
       }
     };
 
-
-    const getProductSummaryListing = async () => {
-      try {
-        setLoading(true);
-        const today = new Date().toISOString().split('T')[0];
-        console.log(today);
-        const result = await getProductSummary({date:'2025-03-28'});
-        
-        setProductSummary(result.businesses);
-      } catch (err) {
-        alert('No data for today')
-      } finally {
-        setLoading(false);
-      }
-    };
-
     getJobs();
-    getProductSummaryListing()
   }, []);
-
 
   if (loading) return <Loader />; // Show loader while data is being fetched
 
@@ -75,11 +54,6 @@ const ProductionMonitor = ({ user, dashboard }) => {
           <ProductionMonitorTable list={jobList} />
         </Box>
       </Box>
-      {user?.username === 'kumar@gmail.com' && (<div>
-        <h3>Production Qty vs Damaged Qty</h3>
-        <ProductionDataChart summary={productSummary}/>
-        
-      </div>)}
     </>
   );
 };

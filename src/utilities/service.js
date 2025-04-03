@@ -142,7 +142,7 @@ export const getProductSummary = async (param) => {
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
     const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     const response = await axios.get(
-      `${API_URL}/product-dashboard/${org_id}?production_date='${param.date}'`
+      `${API_URL}/product-dashboard/${org_id}?start_date='${param.start_date}'&&end_date='${param.end_date}'&&type=${param.type}`
     );
     return response.data; // Return only the data from the response
   } catch (error) {

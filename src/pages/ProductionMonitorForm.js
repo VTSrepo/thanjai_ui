@@ -78,8 +78,9 @@ function ProductionMonitorForm({ user }) {
   useEffect(() => {
     const getProductList = async () => {
       try {
-        const result = await getProducts("UOM");
-        setProducts(result.products);
+        const result = await getProducts();
+        const snackItems = result.products.filter(item => item.bu_id === 'TR002');
+        setProducts(snackItems);
       } catch (err) {
         console.log(err);
       }
