@@ -115,7 +115,7 @@ function ProductForm({ user }) {
       [name]: value,
     });
   };
-  const API_URL = "http://localhost:4002/v1"; // Change this to your actual API URL
+  const API_URL = "https://pm.thanjaicaterers.com/v1"; // Change this to your actual API URL
 
   const handleSave = async () => {
     setLoading(true);

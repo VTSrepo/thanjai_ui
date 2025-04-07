@@ -21,7 +21,7 @@ const Login = ({ setUser }) => {
   const navigate = useNavigate(); // Replace useHistory with useNavigate
 
   // Define the base URL for your API
-  const API_URL = "http://localhost:4002/v1"; // Change this to your actual API URL
+  const API_URL = "https://pm.thanjaicaterers.com/v1"; // Change this to your actual API URL
 
   const theme = createTheme({
     palette: {

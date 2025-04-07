@@ -25,7 +25,7 @@ const ProductMaster = ({ user }) => {
    
     const fetchData = async () => {
       try {
-        const API_URL = "http://localhost:4002/v1"; // Change this to your actual API URL
+        const API_URL = "https://pm.thanjaicaterers.com/v1"; // Change this to your actual API URL
         const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
         const response = await axios.get(`${API_URL}/products/${org_id}`);
         const updatedData = response.data.products.map((item, index) => ({
