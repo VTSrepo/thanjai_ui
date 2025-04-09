@@ -262,6 +262,7 @@ function ProductionMonitorForm({ user }) {
                 <Grid2 item size={12}>
                   <TextField
                     type="date"
+                    name="production_date"
                     value={formData.production_date}
                     onChange={handleChange}
                   ></TextField>
