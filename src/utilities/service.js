@@ -1,6 +1,6 @@
 import axios from "axios";
-import { format } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { format } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 
 export const API_URL = "https://pm.thanjaicaterers.com/v1";
 //export const API_URL = "http://localhost:4002/v1";
@@ -126,17 +126,15 @@ export const saveJob = async (params) => {
   }
 };
 
-
 // Function to convert UTC time to AEST
-export  const convertToTimeZone = (time) => {
+export const convertToTimeZone = (time) => {
   const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // Convert the time from UTC to the specified timezone (AEST here)
   const zonedTime = utcToZonedTime(time, currentTimeZone);
-  
-  // Format the time to display in a readable format
-  return format(zonedTime, 'yyyy-MM-dd HH:mm:ssXXX');
-};
 
+  // Format the time to display in a readable format
+  return format(zonedTime, "yyyy-MM-dd HH:mm:ssXXX");
+};
 
 export const getProductSummary = async (param) => {
   try {
@@ -149,5 +147,23 @@ export const getProductSummary = async (param) => {
   } catch (error) {
     console.error("Error fetching data:", error);
     throw error; // Rethrow error to be handled by calling components
+  }
+};
+
+export const getProductReport = async (param) => {
+  try {
+    const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+    const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
+    let url = `${API_URL}/production-report/${org_id}?start_date='${param.start_date}'&&end_date='${param.end_date}'`;
+    if (param.emp_id) {
+      url = url+`&&emp_id='${param.emp_id}'`;
+    }
+    if (param.product_id) {
+      url = url+`&&product_id='${param.product_id}'`;
+    }
+    const response = await axios.get(url);
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    throw error;
   }
 };

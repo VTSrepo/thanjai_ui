@@ -312,7 +312,7 @@ function ProductionMonitorForm({ user }) {
                     />
                   </LocalizationProvider>
                 </Grid2>
-                {uom && (
+                {empList && (
                   <Grid2 item size={12}>
                     <FormControl fullWidth required>
                       <InputLabel>Emp Name</InputLabel>

@@ -5,8 +5,10 @@ import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import Loader from "../components/Loader";
 import { getJobListing } from "../utilities/service";
+import { useUser } from "../utilities/UserContext";
 
-const ProductionMonitor = ({ user, dashboard }) => {
+const ProductionMonitor = ({  dashboard }) => {
+  const { user, login, logout } = useUser();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [jobList, setJobList] = useState([]);

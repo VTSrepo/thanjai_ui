@@ -30,7 +30,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
         {/* <Typography variant="h6" sx={{ flexGrow: 1 }}>
           {user && user.role === "admin" ? "Admin Dashboard" : "User Dashboard"}
         </Typography> */}
-         <Typography variant="h6" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Thanjai Caterers
         </Typography>
 
@@ -57,13 +57,23 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               >
                 Production Monitor
               </MenuItem>
-              {user && user.role === "admin" && (
+              {user && user?.user_type === "A" && (
                 <MenuItem
                   component={Link}
                   to="/admin"
                   onClick={handleMenuClose}
                 >
                   Admin Home
+                </MenuItem>
+              )}
+
+              {user && user?.user_type === "A" && (
+                <MenuItem
+                  component={Link}
+                  to="/reports"
+                  onClick={handleMenuClose}
+                >
+                  Reports
                 </MenuItem>
               )}
               {/* {user && user.role === "admin" && (
@@ -95,9 +105,14 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               </Button>
             )}
 
-            {user && user.role === "admin" && (
+            {user && user?.user_type === "A" && (
               <Button color="inherit" component={Link} to="/admin">
                 Admin Home
+              </Button>
+            )}
+            {user && user?.user_type === "A" && (
+              <Button color="inherit" component={Link} to="/reports">
+                Reports
               </Button>
             )}
             {/* <Button color="inherit" component={Link} to="/indents">

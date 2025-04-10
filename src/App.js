@@ -9,6 +9,7 @@ import { Container, createTheme, ThemeProvider } from "@mui/material"; // Import
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import Reports from "./pages/Reports";
 import IndentRequestForm from "./pages/IndentRequestForm";
 import ProductForm from "./pages/ProductForm";
 import ProductMaster from "./pages/ProductMaster";
@@ -92,6 +93,15 @@ function App() {
               element={
                 <ProtectedRoute
                   element={<Admin user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute
+                  element={<Reports user={user} setUser={setUser} />}
                   role="admin"
                 />
               }
