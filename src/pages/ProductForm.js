@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
-import Loader from "../components/Loader";
+import {API_URL} from '../utilities/service'
 
 import { getBu, referenceRecord, getCategoryList } from "../utilities/service";
 
@@ -114,8 +114,7 @@ function ProductForm({ user }) {
       ...formData,
       [name]: value,
     });
-  };
-  const API_URL = "https://pm.thanjaicaterers.com/v1"; // Change this to your actual API URL
+  };  
 
   const handleSave = async () => {
     setLoading(true);

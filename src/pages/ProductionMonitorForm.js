@@ -19,9 +19,8 @@ import { format, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { parseISO } from "date-fns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-
+import InfoDialog from "../components/InfoDialog";
 import { getProducts, getEmployees, saveJob } from "../utilities/service";
 
 function FormattedDate(date) {
@@ -50,6 +49,8 @@ function ProductionMonitorForm({ user }) {
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const currentDate = FormattedDate(new Date());
+  const [openDialog, setOpenDialog] = useState(false);
+  const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
@@ -107,6 +108,15 @@ function ProductionMonitorForm({ user }) {
     const date = new Date();
     date.setHours(hours, minutes, seconds, 0); // Set the hours, minutes, and seconds
     return date;
+  };
+
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+  };
+
+  const openSuccess = (message) => {
+    setMessage(message);
+    setOpenDialog(true);
   };
 
   useEffect(() => {
@@ -175,7 +185,8 @@ function ProductionMonitorForm({ user }) {
 
     if (res.production) {
       setLoading(false);
-      navigate("/production-monitor");
+      openSuccess("Job saved successfully.")
+      resetForm();
     } else {
       throw new Error("Product Creation failed");
     }
@@ -183,6 +194,20 @@ function ProductionMonitorForm({ user }) {
 
   const handleLogout = () => {
     navigate("/login");
+  };
+
+  const resetForm = () => {
+    setFormData({...formData,
+      product_id: null,
+      product_name: null,
+      start_time: null,
+      display_start_time: null,
+      display_end_time: null,
+      end_time: null,
+      production_qty: "",
+      damaged_qty: "",
+      remarks: null,
+    })
   };
 
   const handleProdQtyChange = (e) => {
@@ -204,8 +229,8 @@ function ProductionMonitorForm({ user }) {
 
       setFormData({
         ...formData,
-        production_qty:value,
-        damaged_qty:''
+        production_qty: value,
+        damaged_qty: "",
       });
     }
   };
@@ -369,11 +394,11 @@ function ProductionMonitorForm({ user }) {
                     !formData.product_id ||
                     !formData.production_date ||
                     !formData.production_qty ||
-                    error !== ''
+                    error !== ""
                   }
                   onClick={saveJobHandler}
                 >
-                  Save
+                  Save & Add
                 </Button>
               )}
 
@@ -383,11 +408,17 @@ function ProductionMonitorForm({ user }) {
                 onClick={handleCancel}
                 sx={{ ml: 2 }}
               >
-                Cancel
+                Finish Entry
               </Button>
             </div>
           </form>
         </Box>
+        <InfoDialog
+          open={openDialog}
+          onClose={handleDialogClose}
+          title="Information"
+          message={message}
+        />
       </Container>
     </>
   );

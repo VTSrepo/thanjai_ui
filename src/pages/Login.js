@@ -12,16 +12,14 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { purple } from "@mui/material/colors";
 import axios from "axios";
 import { useUser } from "../utilities/UserContext";
+import {API_URL} from '../utilities/service'
 
-const Login = ({ setUser }) => {
+const Login = ({ setUser }) => { 
   const { login } = useUser(); // Destructure login function from context
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate(); // Replace useHistory with useNavigate
-
-  // Define the base URL for your API
-  const API_URL = "https://pm.thanjaicaterers.com/v1"; // Change this to your actual API URL
 
   const theme = createTheme({
     palette: {
