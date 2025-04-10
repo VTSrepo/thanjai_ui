@@ -8,12 +8,22 @@ import {
   MenuItem,
   Button,
   useMediaQuery,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
 } from "@mui/material";
-import { Menu as MenuIcon } from "@mui/icons-material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { Menu as MenuIcon ,KeyboardArrowDown as ArrowDownIcon } from "@mui/icons-material";
 import { Link } from "react-router-dom"; // Using Link for routing
 
 const ResponsiveAppBar = ({ user, onLogout }) => {
   const [anchorEl, setAnchorEl] = useState(null); // State for the menu anchor element
+  const [employeeAnchorEl, setEmployeeAnchorEl] = useState(null);
+  const [mobileEmployeeAnchorEl, setMobileEmployeeAnchorEl] = useState(null);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm")); // Check if the screen is mobile-sized
 
   const handleMenuOpen = (event) => {
@@ -22,6 +32,22 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
 
   const handleMenuClose = () => {
     setAnchorEl(null); // Close the menu
+  };
+
+  const handleMobileEmployeeOpen = (event) => {
+    setMobileEmployeeAnchorEl(event.currentTarget);
+  };
+
+  const handleMobileEmployeeClose = () => {
+    setMobileEmployeeAnchorEl(null);
+  };
+
+  const handleEmployeeMenuOpen = (event) => {
+    setEmployeeAnchorEl(event.currentTarget);
+  };
+
+  const handleEmployeeMenuClose = () => {
+    setEmployeeAnchorEl(null);
   };
 
   return (
@@ -57,6 +83,49 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               >
                 Production Monitor
               </MenuItem>
+              {/* <MenuItem
+                component={Link}
+                to="/employee"
+                onClick={handleMenuClose}
+              >
+                Employee
+              </MenuItem> */}
+
+              {/* <MenuItem onClick={handleMobileEmployeeOpen}>
+                Employee <ArrowDownIcon fontSize="small" />
+              </MenuItem>
+              <Menu
+                anchorEl={mobileEmployeeAnchorEl}
+                open={Boolean(mobileEmployeeAnchorEl)}
+                onClose={handleMobileEmployeeClose}
+                anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
+              >
+                <MenuItem component={Link} to="/employee" onClick={handleMenuClose}>
+                  Employee Master
+                </MenuItem>
+              </Menu> */}
+
+              <Accordion sx={{ boxShadow: "none", background: "transparent" }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ pl: 2 }}>
+                  <Typography>Master</Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0 }}>
+                  <List>
+                  <Divider/>
+                    <ListItem button component={Link} to="/employee" onClick={handleMenuClose}>
+                      <ListItemText primary="Employee" />
+                    </ListItem>
+                    <Divider/>
+                    <ListItem button component={Link} to="/user" onClick={handleMenuClose}>
+                      <ListItemText primary="User" />
+                    </ListItem>
+                    <Divider/>
+                    {/* Add more sub-links here if needed */}
+                  </List>
+                </AccordionDetails>
+              </Accordion>
+
               {user && user.role === "admin" && (
                 <MenuItem
                   component={Link}
@@ -106,6 +175,57 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
             <Button component={Link} to="/production-monitor" color="inherit">
               Production Monitor
             </Button>
+            {/* <Button component={Link} to="/employee" color="inherit">
+              Employee
+            </Button> */}
+
+            <Button
+              color="inherit"
+              onClick={handleEmployeeMenuOpen}
+              endIcon={<ArrowDownIcon />}
+            >
+              Master
+            </Button>
+            <Menu
+              anchorEl={employeeAnchorEl}
+              open={Boolean(employeeAnchorEl)}
+              onClose={handleEmployeeMenuClose}
+              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+              transformOrigin={{ vertical: "top", horizontal: "left" }}
+            >
+              <MenuItem
+                component={Link}
+                to="/employee"
+                onClick={handleEmployeeMenuClose}
+              >
+                Employee
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/user"
+                onClick={handleEmployeeMenuClose}
+              >
+                User
+              </MenuItem>
+            </Menu>
+
+            {/* <Button
+              id="demo-customized-button"
+              onClick={handleClick}
+              endIcon={<KeyboardArrowDownIcon />}
+            >
+              Master
+            </Button>
+            <Menu
+              // id="demo-customized-menu"
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+            >
+              <MenuItem onClick={handleClose} >
+                Employee
+              </MenuItem>
+            </Menu> */}
 
             {/* {user && user.role === "admin" && (
               <Button color="inherit" component={Link} to="/product-master">

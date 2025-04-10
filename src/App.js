@@ -9,6 +9,7 @@ import { Container, createTheme, ThemeProvider } from "@mui/material"; // Import
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import Employee from "./pages/Employee"
 import IndentRequestForm from "./pages/IndentRequestForm";
 import ProductForm from "./pages/ProductForm";
 import ProductMaster from "./pages/ProductMaster";
@@ -16,13 +17,21 @@ import IndentMaster from "./pages/IndentMaster";
 import ProductionMonitor from "./pages/ProductionMonitor";
 import ProductionMonitorForm from './pages/ProductionMonitorForm';
 import { UserProvider } from "./utilities/UserContext";
+// import EmployeeForm from "./pages/EmployeeForm";
+import CreateEmployeeForm from "./pages/CreateEmployeeForm";
+import ViewEmployee from "./pages/ViewEmployee";
+import CreateUserForm from "./pages/CreateUserForm";
+import ViewUser from "./pages/ViewUser";
+import User from "./pages/User";
 
 function App() {
   const [user, setUser] = useState(null);
+  console.log("user",user)
 
   useEffect(() => {
     // Check if the token exists in localStorage
     const token = localStorage.getItem("authToken");
+    console.log("token",token)
     if (token) {
       // Assuming token-based authentication, extract user info from the token if needed
       setUser({ username: "user", role: "user" }); // Replace with actual token decoding logic for user role
@@ -32,6 +41,8 @@ function App() {
   const ProtectedRoute = ({ element, role }) => {
     return user && user.role === role ? element : <Navigate to="/login" />;
   };
+
+  console.log("user",user)
 
   // Create a theme for the app
   const theme = createTheme({
@@ -69,13 +80,22 @@ function App() {
               path="/home"
               element={<Home user={user} setUser={setUser} />}
             />
-            <Route
+            {/* <Route
               path="/production-monitor"
               element={<ProductionMonitor user={user} setUser={setUser} />}
-            />
+            /> */}
             <Route
               path="/job-create"
               element={<ProductionMonitorForm user={user} setUser={setUser} />}
+            />   
+
+            <Route
+              path="/employee-create"
+              element={<CreateEmployeeForm user={user} setUser={setUser} />}
+            /> 
+            <Route
+              path="/view-employee"
+              element={<ViewEmployee user={user} setUser={setUser} />}
             />            
 
             {/* <Route
@@ -95,6 +115,22 @@ function App() {
                   role="admin"
                 />
               }
+            />
+            <Route
+              path="/employee"
+              element={<Employee user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/user"
+              element={<User user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/create-user"
+              element={<CreateUserForm user={user} setUser={setUser} />}
+            />
+             <Route
+              path="/view-user"
+              element={<ViewUser user={user} setUser={setUser} />}
             />
             {/* <Route
               path="/product-master"
