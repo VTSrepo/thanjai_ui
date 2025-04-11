@@ -126,6 +126,19 @@ export const saveJob = async (params) => {
   }
 };
 
+export const saveTs = async (params) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/timesheet`,
+      params
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Rethrow error to be handled by calling components
+  }
+};
+
 // Function to convert UTC time to AEST
 export const convertToTimeZone = (time) => {
   const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -165,5 +178,19 @@ export const getProductReport = async (param) => {
     return response.data; // Return only the data from the response
   } catch (error) {
     throw error;
+  }
+};
+
+export const getTSListing = async () => {
+  try {
+    const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+    const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
+    const response = await axios.get(
+      `${API_URL}/timesheet/${org_id}?branch_id=${branch_id}`
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Rethrow error to be handled by calling components
   }
 };
