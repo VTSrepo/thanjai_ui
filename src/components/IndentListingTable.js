@@ -63,14 +63,18 @@ export default function IndentListingtable({ list, sendToParent }) {
       width: 200,
       renderCell: (params) => (
         <span
-          style={{ textDecoration: "underline", color: "#ffa133" }}
+          style={{
+            textDecoration: "underline",
+            color: "#ffa133",
+            cursor: 'pointer',
+          }}
           onClick={() => handleView(params.row)}
         >
           {params.row.indent_number}
         </span>
       ),
     },
-    { field: "indent_date", headerName: "Indent Status", width: 200 },
+    { field: "indent_date", headerName: "Indent Date", width: 200 },
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>

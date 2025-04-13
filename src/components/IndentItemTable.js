@@ -6,12 +6,11 @@ import { useNavigate } from "react-router-dom";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteIcon from "@mui/icons-material/Delete";
 
-const IndentItemTable = ({ user, data, sendToParent }) => {  
-  //const { sendToParent } = props;
+const IndentItemTable = ({ user, data, sendToParent, status }) => {  
   const [isAdmin, setIsAdmin] = useState(false);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();  
 
   const columns = [
     { field: "id", headerName: "ID", width: 70 },
@@ -24,19 +23,20 @@ const IndentItemTable = ({ user, data, sendToParent }) => {
       type: "number",
       width: 90,
     },
-    
-    // {
-    //   field: "action",
-    //   headerName: "Actions",
-    //   width: 150,
-    //   renderCell: (params) => (
-    //     <Tooltip title="Edit">
-    //     <EditNoteIcon
-    //       style={{ cursor: "pointer" }}
-    //       onClick={() => handleEdit(params.row)}
-    //     /></Tooltip>
-    //   ),
-    // },
+
+    {
+      field: "action",
+      headerName: "Actions",
+      width: 150,
+      renderCell: (params) => (
+        <Tooltip title="Edit">
+          <EditNoteIcon
+            style={{ cursor: "pointer" }}
+            onClick={() => handleEdit(params.row)}
+          />
+        </Tooltip>
+      ),
+    },
 
     {
       field: "delete",
@@ -44,10 +44,11 @@ const IndentItemTable = ({ user, data, sendToParent }) => {
       width: 150,
       renderCell: (params) => (
         <Tooltip title="Delete">
-        <DeleteIcon
-          style={{ cursor: "pointer" }}
-          onClick={() => handleDelete(params.row)}
-        /></Tooltip>
+          <DeleteIcon
+            style={{ cursor: "pointer" }}
+            onClick={() => handleDelete(params.row)}
+          />
+        </Tooltip>
       ),
     },
     {
@@ -56,35 +57,38 @@ const IndentItemTable = ({ user, data, sendToParent }) => {
       width: 150,
       renderCell: (params) => (
         <Tooltip title="Approve">
-        <PendingActionsIcon
-          style={{ cursor: "pointer" }}
-          onClick={() => handleEdit(params.row)}
-        />
+          <PendingActionsIcon
+            style={{ cursor: "pointer" }}
+            onClick={() => handleEdit(params.row)}
+          />
         </Tooltip>
       ),
     },
   ];
-  
 
-  const columnVisibilityModel = { approval: user?.role == "admin"};
+  const columnVisibilityModel = {
+    approval: user?.role == "admin",
+    action: !!status,
+    delete: !status,
+  };
 
-  const handleDelete = (row)=>{
-    row.delete = true
-    sendToParent(row)
-  }
+  const handleDelete = (row) => {
+    row.delete = true;
+    sendToParent(row);
+  };
 
   const handleEdit = async (row) => {
-    row.delete = false
-    sendToParent(row)
+    row.delete = false;
+    sendToParent(row);
   };
 
   const paginationModel = { page: 0, pageSize: 5 };
   return (
-    <Paper sx={{width: "100%" }}>
+    <Paper sx={{ width: "100%" }}>
       <DataGrid
         rows={data}
-        columns={columns}    
-        columnVisibilityModel={columnVisibilityModel}    
+        columns={columns}
+        columnVisibilityModel={columnVisibilityModel}
         initialState={{ pagination: { paginationModel } }}
         pageSizeOptions={[5, 10]}
         checkboxSelection

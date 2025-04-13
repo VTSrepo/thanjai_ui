@@ -12,19 +12,47 @@ import {
   Typography,
 } from "@mui/material";
 import { getProducts } from "../utilities/service";
+import { useUser } from "../utilities/UserContext";
 
 const ItemAdd = (props) => {
-  const { sendToParent, data } = props;
+  const { user, login, logout } = useUser();
+  const { sendToParent, data, indent_status } = props;
   const [productList, setProductList] = useState([]);
+  const [disableAction, setDisableAction] = useState(true);
 
   const [formData, setFormData] = useState({
+    id: null,
     item: null,
     item_code: null,
     uom: null,
     qty_ordered: null,
     mandatory_status: "N",
     item_cost: null,
+    qty_agreed_kitchen: null,
+    kitchen_remarks: null,
+    qty_received: null,
+    discrepancy_notes: null,
+    damage_notes: null,
   });
+
+  useEffect(() => {
+    if (data) {
+      const itemObj = getItem(data.item_code);
+      setFormData({
+        item: itemObj,
+        id: data.id,
+        item_code: itemObj?.product_id,
+        mandatory_status:data.mandatory_status,
+        uom: data.uom,
+        qty_ordered: data.qty_ordered,
+        qty_agreed_kitchen: data.qty_agreed_kitchen,
+        kitchen_remarks: data.kitchen_remarks,
+        qty_received: data.qty_received,
+        discrepancy_notes: data.discrepancy_notes,
+        damage_notes: data.damage_notes,
+      });
+    }
+  }, [productList]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,8 +76,6 @@ const ItemAdd = (props) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log(formData);
   };
 
   const handleBack = () => {
@@ -64,6 +90,7 @@ const ItemAdd = (props) => {
     return productList.find((item) => item.product_id === prodID);
   };
 
+  //Save an Item in Indent
   const addItem = () => {
     sendToParent(formData);
   };
@@ -79,14 +106,6 @@ const ItemAdd = (props) => {
     };
 
     getitems();
-    if (data) {
-      setFormData({
-        item: data.item,
-        item_code: data.item.product_id,
-        uom: data.uom,
-        qty_ordered: data.qty_ordered,
-      });
-    }
   }, []);
 
   return (
@@ -106,6 +125,7 @@ const ItemAdd = (props) => {
                     name="item"
                     value={formData.item_code || ""}
                     onChange={handleProductNameChange}
+                    disabled={indent_status !== null}
                     label="Item Name"
                     required
                   >
@@ -117,7 +137,6 @@ const ItemAdd = (props) => {
                   </Select>
                 </FormControl>
               </Grid2>
-
               {/* Unit of Measure */}
               <Grid2 item size={12}>
                 <TextField
@@ -129,7 +148,6 @@ const ItemAdd = (props) => {
                   disabled
                 />
               </Grid2>
-
               <Grid2 item size={12}>
                 <TextField
                   label="Quantity Ordered"
@@ -137,18 +155,19 @@ const ItemAdd = (props) => {
                   fullWidth
                   name="qty_ordered"
                   value={formData.qty_ordered}
+                  disabled={indent_status !== null}
                   onChange={handleChange}
                   type="number"
                   required
                 />
               </Grid2>
-
               <Grid2 item size={12}>
                 <FormControl fullWidth>
                   <InputLabel>Mandatory Status</InputLabel>
                   <Select
                     name="mandatory_status"
                     value={formData.mandatory_status || ""}
+                    disabled={indent_status !== null}
                     onChange={handleChange}
                     label="Mandatory Status"
                     required
@@ -158,9 +177,76 @@ const ItemAdd = (props) => {
                   </Select>
                 </FormControl>
               </Grid2>
-
+              {indent_status && (
+                <Grid2 item size={12}>
+                  <TextField
+                    label="Kitchen Agreed Quantity"
+                    variant="outlined"
+                    fullWidth
+                    name="qty_agreed_kitchen"
+                    value={formData.qty_agreed_kitchen}
+                    disabled={indent_status === "A" || indent_status === "D"}
+                    onChange={handleChange}
+                    type="number"
+                    required
+                  />
+                </Grid2>
+              )}
+              {indent_status && (
+                <Grid2 item size={12}>
+                  <TextField
+                    label="Kitchen Remarks"
+                    variant="outlined"
+                    fullWidth
+                    name="kitchen_remarks"
+                    value={formData.kitchen_remarks}
+                    disabled={indent_status === "A" || indent_status === "D"}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid2>
+              )}
+              {indent_status === "D" && (
+                <Grid2 item size={12}>
+                  <TextField
+                    label="Quantity Received"
+                    variant="outlined"
+                    fullWidth
+                    name="qty_received"
+                    value={formData.qty_received}
+                    onChange={handleChange}
+                    type="number"
+                    required
+                  />
+                </Grid2>
+              )}
+              {indent_status === "D" && (
+                <Grid2 item size={12}>
+                  <TextField
+                    label="Discrepancy Notes"
+                    variant="outlined"
+                    fullWidth
+                    name="discrepancy_notes"
+                    value={formData.discrepancy_notes}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid2>
+              )}
+              {indent_status === "D" && (
+                <Grid2 item size={12}>
+                  <TextField
+                    label="Damage Notes"
+                    variant="outlined"
+                    fullWidth
+                    name="damage_notes"
+                    value={formData.damage_notes}
+                    onChange={handleChange}
+                    required
+                  />
+                </Grid2>
+              )}
               {/* Quantity Received */}
-
               <Grid2 item size={6}>
                 <Button
                   variant="contained"
@@ -171,20 +257,51 @@ const ItemAdd = (props) => {
                   Back
                 </Button>
               </Grid2>
-
               {/* Submit Button */}
-              <Grid2 item size={6}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                  disabled={formData.qty_ordered === null}
-                  fullWidth
-                  onClick={addItem}
-                >
-                  Save
-                </Button>
-              </Grid2>
+              {user && user?.user_type === "B" && !indent_status && (
+                <Grid2 item size={6}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    disabled={!formData.qty_ordered}
+                    fullWidth
+                    onClick={addItem}
+                  >
+                    Save
+                  </Button>
+                </Grid2>
+              )}
+              
+              {user && user?.user_type === "K" && indent_status === "C" && (
+                <Grid2 item size={6}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    disabled={!formData.qty_agreed_kitchen}
+                    fullWidth
+                    onClick={addItem}
+                  >
+                    Save
+                  </Button>
+                </Grid2>
+              )}
+
+              {user && user?.user_type === "B" && indent_status === "D" && (
+                <Grid2 item size={6}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    type="submit"
+                    disabled={!formData.qty_received}
+                    fullWidth
+                    onClick={addItem}
+                  >
+                    Save
+                  </Button>
+                </Grid2>
+              )}
             </Grid2>
           </form>
         </Box>

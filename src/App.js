@@ -64,10 +64,10 @@ function App() {
         <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
           <Routes>
             <Route path="/login" element={<Login setUser={setUser} />} />
-            {/* <Route
+            <Route
               path="/indents"
               element={<IndentMaster user={user} setUser={setUser} />}
-            /> */}
+            />
             <Route
               path="/home"
               element={<Home user={user} setUser={setUser} />}

@@ -57,6 +57,13 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               >
                 Production Monitor
               </MenuItem>
+               <MenuItem
+                component={Link}
+                to="/indents"
+                onClick={handleMenuClose}
+              >
+                Indents
+              </MenuItem>
               <MenuItem
                 component={Link}
                 to="/ts"
@@ -122,9 +129,9 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                 Reports
               </Button>
             )}
-            {/* <Button color="inherit" component={Link} to="/indents">
+            <Button color="inherit" component={Link} to="/indents">
               Indents
-            </Button> */}
+            </Button>
             <Button component={Link} to="/production-monitor" color="inherit">
               Production Monitor
             </Button>

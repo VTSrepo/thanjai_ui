@@ -2,8 +2,8 @@ import axios from "axios";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 
-export const API_URL = "https://pm.thanjaicaterers.com/v1";
-//export const API_URL = "http://localhost:4002/v1";
+//export const API_URL = "https://pm.thanjaicaterers.com/v1";
+export const API_URL = "http://localhost:4002/v1";
 
 // Function to handle GET request
 export const getBu = async () => {
@@ -98,6 +98,12 @@ export const getListing = (params) => {
   const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
   return axios.get(`${API_URL}/indents/${org_id}?status=${params.status}`);
 };
+
+export const getIndentDetail = (params) => {
+  const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+  return axios.get(`${API_URL}/indentdetail/${org_id}?indent_number=${params}`);
+};
+
 
 export const getJobListing = async () => {
   try {

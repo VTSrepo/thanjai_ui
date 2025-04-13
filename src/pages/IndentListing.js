@@ -6,7 +6,7 @@ import Loader from "../components/Loader";
 
 import axios from "axios";
 import IndentDetail from "./IndentDetail";
-import { getListing } from "../utilities/service";
+import { getListing, getIndentDetail } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
 import InfoDialog from "../components/InfoDialog";
 
@@ -18,6 +18,7 @@ const IndentListing = ({ tabValue }) => {
   const [loading, setLoading] = useState(true);
   const [isDetailView, setIsDetailView] = useState(false);
   const [indentList, setIndentList] = useState([]);
+  const [indentNumber, setIndentNumber] = useState(null);
 
   const handleDialogClose = () => {
     setOpenDialog(false);
@@ -31,8 +32,15 @@ const IndentListing = ({ tabValue }) => {
     navigate("/login"); // Use navigate to go to the login page
   };
 
-  const viewDetail = () => {
+  const viewDetail = (record) => {
     setIsDetailView(true);
+    setIndentNumber(record.indent_number);
+  };
+
+  const closeDetail = () => {
+    
+    getitems()
+    setIsDetailView(false);
   };
 
   const getStatus = () => {
@@ -46,25 +54,26 @@ const IndentListing = ({ tabValue }) => {
     }
   };
 
-  useEffect(() => {
-    const getitems = async () => {
-      try {
-        const status = getStatus();
-        const params = { status: status };
-        const result = await getListing(params);
-        const updatedData = result.data.indents.map((item, index) => ({
-          ...item,
-          id: item.id || index + 1, // Appending a unique ID if it doesn't exist
-        }));
-        setIndentList(updatedData);
-      } catch (err) {
-        setMessage(err.response?.data?.message)
-        openCustomDialog();
-      } finally {
-        setLoading(false);
-      }
-    };
+  const getitems = async () => {
+    try {
+      const status = getStatus();
+      const params = { status: status };
+      const result = await getListing(params);
+      const updatedData = result.data.indents.map((item, index) => ({
+        ...item,
+        id: item.id || index + 1, // Appending a unique ID if it doesn't exist
+      }));
+      setIndentList(updatedData);
+    } catch (err) {
+      setMessage(err.response?.data?.message);
+      openCustomDialog();
+      setIndentList([])
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     getitems(); // Call the function to fetch data
   }, []);
 
@@ -83,7 +92,10 @@ const IndentListing = ({ tabValue }) => {
 
       {isDetailView && (
         <Box sx={{ mt: 4, padding: 2 }}>
-          <IndentDetail />
+          <IndentDetail
+            indentNumber={indentNumber}
+            sendToParent={closeDetail}
+          />
         </Box>
       )}
 

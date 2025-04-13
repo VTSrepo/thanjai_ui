@@ -125,12 +125,12 @@ const CreateIndent = ({ user, sendToParent }) => {
 
   const addRow = (item) => {
     // Define the object structure to be added
-    const newRow = {
-      id: rows.length + 1,
+    const newRow = {      
       item_name: item.item.product_name,
       item_code: item.item.product_id,
       ...item,
     };
+    newRow.id = rows.length+1
     // Step 3: Update the rows state to add the new row
     setRows([...rows, newRow]);
   };
@@ -316,7 +316,7 @@ const CreateIndent = ({ user, sendToParent }) => {
             </form>
           </Box>
           <Box sx={{ mt: 2, textAlign: "center" }}>
-            <IndentItemTable data={rows} sendToParent={alterRows} />
+            <IndentItemTable data={rows} sendToParent={alterRows}/>
 
             {formData.self_customer === "S" && (
               <Button
