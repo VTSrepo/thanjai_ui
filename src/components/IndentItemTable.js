@@ -21,7 +21,25 @@ const IndentItemTable = ({ user, data, sendToParent, status }) => {
       field: "qty_ordered",
       headerName: "Qty Required",
       type: "number",
-      width: 90,
+      width: 130,
+    },
+    {
+      field: "qty_agreed_kitchen",
+      headerName: "Kitchen Agreed Qty",
+      type: "number",
+      width: 200,
+    },
+    {
+      field: "qty_received",
+      headerName: "Qty Received",
+      type: "number",
+      width: 130,
+    },
+    {
+      field: "discrepancy_notes",
+      headerName: "Discrepancy Notes",
+      type: "number",
+      width: 200,
     },
 
     {

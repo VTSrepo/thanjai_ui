@@ -119,13 +119,13 @@ const ItemAdd = (props) => {
           <form onSubmit={handleSubmit}>
             <Grid2 container spacing={2}>
               <Grid2 item size={12}>
-                <FormControl fullWidth>
+                <FormControl fullWidth>                
                   <InputLabel>Item Name</InputLabel>
                   <Select
                     name="item"
                     value={formData.item_code || ""}
                     onChange={handleProductNameChange}
-                    disabled={indent_status !== null}
+                    disabled={indent_status != undefined}
                     label="Item Name"
                     required
                   >
@@ -155,7 +155,7 @@ const ItemAdd = (props) => {
                   fullWidth
                   name="qty_ordered"
                   value={formData.qty_ordered}
-                  disabled={indent_status !== null}
+                  disabled={indent_status != undefined}
                   onChange={handleChange}
                   type="number"
                   required
@@ -167,7 +167,7 @@ const ItemAdd = (props) => {
                   <Select
                     name="mandatory_status"
                     value={formData.mandatory_status || ""}
-                    disabled={indent_status !== null}
+                    disabled={indent_status != undefined}
                     onChange={handleChange}
                     label="Mandatory Status"
                     required

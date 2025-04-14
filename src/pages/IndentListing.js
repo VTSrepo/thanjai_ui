@@ -19,6 +19,7 @@ const IndentListing = ({ tabValue }) => {
   const [isDetailView, setIsDetailView] = useState(false);
   const [indentList, setIndentList] = useState([]);
   const [indentNumber, setIndentNumber] = useState(null);
+  const [listingLabel, setListingLabel] = useState(null);
 
   const handleDialogClose = () => {
     setOpenDialog(false);
@@ -46,10 +47,13 @@ const IndentListing = ({ tabValue }) => {
   const getStatus = () => {
     switch (tabValue) {
       case 1:
+        setListingLabel("Acknowledge by Kitchen")
         return "C";
       case 2:
+        setListingLabel("Dispatch by Kitchen")
         return "A";
       case 3:
+        setListingLabel("Receive by Branch")
         return "D";
     }
   };
@@ -77,12 +81,13 @@ const IndentListing = ({ tabValue }) => {
     getitems(); // Call the function to fetch data
   }, []);
 
+  
   if (loading) return <Loader />; // Show loader while data is being fetched
 
   return (
     <>
       <Typography variant="h5" gutterBottom>
-        Indent Listings
+        Indent Listings to {listingLabel}
       </Typography>
       {!isDetailView && (
         <Box sx={{ mt: 4, padding: 2 }}>

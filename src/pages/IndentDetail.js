@@ -86,7 +86,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
     const res = await createNewIndent(payload);
     if (res) {
       setMessage("Indent Updated");
-      setOpenDialog(true);      
+      setOpenDialog(true);
     } else {
       setMessage("Indent Acknowledgement Failure");
       setOpenDialog(true);
@@ -94,7 +94,6 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   };
 
   const actionIndent = async (action) => {
-    
     let payload = indentDetail;
     if (action === "accept") {
       payload.indent_details = rows;
@@ -109,9 +108,6 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
     }
 
     await updateIndent(payload);
-    // setMessage("Indent Updated");
-    //   setOpenDialog(true);
-      
   };
 
   if (loading) return <Loader />; // Show loader while data is being fetched
@@ -185,7 +181,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                 variant="contained"
                 color="primary"
                 sx={{ marginLeft: 2 }}
-                onClick={actionIndent("dispatch")}
+                onClick={()=>actionIndent("dispatch")}
               >
                 Dispatch
               </Button>
