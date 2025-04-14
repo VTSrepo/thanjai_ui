@@ -5,6 +5,30 @@ import { utcToZonedTime } from "date-fns-tz";
 //export const API_URL = "https://pm.thanjaicaterers.com/v1";
 export const API_URL = "http://localhost:4002/v1";
 
+export const getBranchLists = async () => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/branches/TR`
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Rethrow error to be handled by calling components
+  }
+};
+
+export const createNewEmployee = async (payload) => {
+  console.log("payload_data",payload)
+  try {
+    const response = await axios.post(
+      `${API_URL}/employee`,payload);
+    return response.data; 
+  } catch (error) {
+    console.error("Error Create Employee:", error);
+    throw error; 
+  }
+};
+
 // Function to handle GET request
 export const getBu = async () => {
   try {
@@ -23,6 +47,18 @@ export const getEmployees = async () => {
     const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     const response = await axios.get(
       `${API_URL}/employees/${org_id}?branch_id=${branch_id}`
+    );
+    return response.data; // Return only the data from the response
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Rethrow error to be handled by calling components
+  }
+};
+
+export const getEmployeesList = async () => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/employees/TR`
     );
     return response.data; // Return only the data from the response
   } catch (error) {
