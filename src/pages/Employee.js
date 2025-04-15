@@ -3,9 +3,8 @@ import { Typography, Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { CONFIG } from "../../src/config-global"
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import Loader from "../components/Loader";
-import { getJobListing, convertToTimeZone,getEmployeesList } from "../utilities/service";
+import { getJobListing,getEmployeesList } from "../utilities/service";
 import EmployeeTable from "../components/EmployeeTable";
 
 const Employee = ({ user,dashboard }) => {
@@ -13,12 +12,7 @@ const Employee = ({ user,dashboard }) => {
   document.title =`Employee Details | ${CONFIG.title.name}`
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [jobList, setJobList] = useState([]);
   const [empList, setEmpList] = useState([]);
-  const [productSummary, setProductSummary] = useState({});
-
-  console.log("empList",empList)
-  console.log("jobList",jobList)
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -29,23 +23,6 @@ const Employee = ({ user,dashboard }) => {
   };
 
   useEffect(() => {    
-    const getJobs = async () => {
-      try {
-        setLoading(true);
-        const result = await getJobListing();
-        // console.log("job_result",result)
-        const updatedData = result.productions.map((item, index) => ({
-          ...item,
-          id: item.id || index + 1, // Appending a unique ID if it doesn't exist
-        }));
-        setJobList(updatedData);
-      } catch (err) {
-        console.log(err);
-      }finally{
-        setLoading(false);
-      }
-    };
-
     const getEmployeesLists = async () => {
           try {
             setLoading(true);
@@ -62,10 +39,7 @@ const Employee = ({ user,dashboard }) => {
             setLoading(false);
           }
         };
-    
         getEmployeesLists();
-
-    getJobs();
   }, []);
 
 

@@ -42,11 +42,11 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
     setMobileEmployeeAnchorEl(null);
   };
 
-  const handleEmployeeMenuOpen = (event) => {
+  const handleMasterMenuOpen = (event) => {
     setEmployeeAnchorEl(event.currentTarget);
   };
 
-  const handleEmployeeMenuClose = () => {
+  const handleMasterMenuClose = () => {
     setEmployeeAnchorEl(null);
   };
 
@@ -121,6 +121,11 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                       <ListItemText primary="User" />
                     </ListItem>
                     <Divider/>
+                    <Divider/>
+                    <ListItem button component={Link} to="/category" onClick={handleMenuClose}>
+                      <ListItemText primary="Category" />
+                    </ListItem>
+                    <Divider/>
                     {/* Add more sub-links here if needed */}
                   </List>
                 </AccordionDetails>
@@ -181,7 +186,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
 
             <Button
               color="inherit"
-              onClick={handleEmployeeMenuOpen}
+              onClick={handleMasterMenuOpen}
               endIcon={<ArrowDownIcon />}
             >
               Master
@@ -189,23 +194,30 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
             <Menu
               anchorEl={employeeAnchorEl}
               open={Boolean(employeeAnchorEl)}
-              onClose={handleEmployeeMenuClose}
+              onClose={handleMasterMenuClose}
               anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
               transformOrigin={{ vertical: "top", horizontal: "left" }}
             >
               <MenuItem
                 component={Link}
                 to="/employee"
-                onClick={handleEmployeeMenuClose}
+                onClick={handleMasterMenuClose}
               >
                 Employee
               </MenuItem>
               <MenuItem
                 component={Link}
                 to="/user"
-                onClick={handleEmployeeMenuClose}
+                onClick={handleMasterMenuClose}
               >
                 User
+              </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/category"
+                onClick={handleMasterMenuClose}
+              >
+                Category
               </MenuItem>
             </Menu>
 

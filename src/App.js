@@ -23,6 +23,9 @@ import ViewEmployee from "./pages/ViewEmployee";
 import CreateUserForm from "./pages/CreateUserForm";
 import ViewUser from "./pages/ViewUser";
 import User from "./pages/User";
+import  Category  from "./pages/Category";
+import ViewCategory from "./pages/ViewCategory";
+import CreateCategoryForm from "./pages/CreateCategoryForm";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -131,6 +134,20 @@ function App() {
              <Route
               path="/view-user"
               element={<ViewUser user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/category"
+              element={<Category user={user} setUser={setUser} />}
+            />
+
+            <Route
+              path="/create-category"
+              element={<CreateCategoryForm user={user} setUser={setUser} />}
+            />
+
+              <Route
+              path="/view-category"
+              element={<ViewCategory user={user} setUser={setUser} />}
             />
             {/* <Route
               path="/product-master"
