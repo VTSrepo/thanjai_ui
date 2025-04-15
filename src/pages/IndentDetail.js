@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Button,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useNavigate } from "react-router-dom";
 import { getIndentDetail, createNewIndent } from "../utilities/service";
 import IndentItemTable from "../components/IndentItemTable";
@@ -143,11 +151,24 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                   />
                 </ListItem>
                 <ListItem>
-                  <ListItemText primary="Status" secondary="Created" />
+                  <ListItemText
+                    primary="Status"
+                    secondary={indentDetail?.status}
+                  />
                 </ListItem>
               </List>
             )}
           </Box>
+          {indentDetail?.customer_name && (<Box>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ pl: 2 }}>
+                <Typography>Customer</Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ p: 0 }}>
+                <Box x={{ ml: 2 }}>{indentDetail?.customer_name}</Box>               
+              </AccordionDetails>
+            </Accordion>
+          </Box>)}
           <Box sx={{ mt: 2 }}>
             <IndentItemTable
               data={rows}
@@ -181,7 +202,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                 variant="contained"
                 color="primary"
                 sx={{ marginLeft: 2 }}
-                onClick={()=>actionIndent("dispatch")}
+                onClick={() => actionIndent("dispatch")}
               >
                 Dispatch
               </Button>

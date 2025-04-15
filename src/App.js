@@ -9,8 +9,11 @@ import { Container, createTheme, ThemeProvider } from "@mui/material"; // Import
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+
 import Reports from "./pages/Reports";
+
 import Employee from "./pages/Employee"
+
 import IndentRequestForm from "./pages/IndentRequestForm";
 import ProductForm from "./pages/ProductForm";
 import ProductMaster from "./pages/ProductMaster";
@@ -135,8 +138,9 @@ function App() {
                   element={<Reports user={user} setUser={setUser} />}
                   role="admin"
                 />
-              }
-              path="/employee"
+              }/>
+              
+              <Route path="/employee"
               element={<Employee user={user} setUser={setUser} />}
             />
             <Route
