@@ -10,21 +10,72 @@ export const getBranchLists = async () => {
     const response = await axios.get(
       `${API_URL}/branches/TR`
     );
-    return response.data; // Return only the data from the response
+    return response.data; 
   } catch (error) {
-    console.error("Error fetching data:", error);
-    throw error; // Rethrow error to be handled by calling components
+    throw error; 
   }
 };
 
+export const getCategoriesList = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/categories`);
+    return response.data;
+  } catch (error) {
+    throw error; 
+  }
+};
+
+export const createNewCategory = async (payload) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/category`,payload);
+    return response.data; 
+  } catch (error) {
+    throw error; 
+  }
+};
+
+export const getUserLists = async () => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/users/TR`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    throw error; 
+  }
+};
+
+export const createNewUser = async (payload) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/createuser`,payload);
+    return response.data; 
+  } catch (error) {
+    throw error; 
+  }
+};
+
+export const updateUser = async (payload) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/updateuser`,payload);
+    return response.data; 
+  } catch (error) {
+    console.log("update user error",error)
+    throw error; 
+  }
+};
+
+
+
 export const createNewEmployee = async (payload) => {
-  console.log("payload_data",payload)
   try {
     const response = await axios.post(
       `${API_URL}/employee`,payload);
     return response.data; 
   } catch (error) {
-    console.error("Error Create Employee:", error);
     throw error; 
   }
 };

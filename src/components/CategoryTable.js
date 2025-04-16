@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Tooltip } from "@mui/material";
 
@@ -6,31 +6,23 @@ import Paper from "@mui/material/Paper";
 import { useNavigate } from "react-router-dom";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-export default function UserTable({ list }) {
+export default function CategoryTable({ list }) {
   const paginationModel = { page: 0, pageSize: 10 };
 
   const handleEdit = async (row) => {
-    navigate("/view-user", { state: { selectedRow: row } });
+    navigate("/view-category", { state: { selectedRow: row } });
   };
   const navigate = useNavigate();
 
   const columns = [
-    { field: "user_name", headerName: "User Name", width: 200 },
-    { field: "user_id", headerName: "User Id", width: 200 },
-    { field: "dob", headerName: "Date of Birth", width: 200 },
-    { field: "doj", headerName: "Date of Join", width: 200 },
-    { field: "mobile_no", headerName: "Mobile No", width: 200 },
-    { field: "home_contact_no", headerName: "Home Contact No", width: 200 },
-    { field: "branch_id", headerName: "Branch ID", width: 200 },
-    { field: "org_id", headerName: "Ord ID", width: 200 },
-    { field: "residence_address", headerName: "Residence Address", width: 200 },
-    { field: "email_id", headerName: "Email Id", width: 200 },
-    { field: "user_type", headerName: "User Type", width: 200 },
-    { field: "user_status", headerName: "User Status", width: 200 },
+    { field: "category_code", headerName: "Category Code", width: 400 },
+    { field: "category_name", headerName: "Category Name", width: 400 },
+    
+    { field: "active", headerName: "Active", width: 200 },
     {
       field: "action",
       headerName: "View",
-      width: 200,
+      width: 400,
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
