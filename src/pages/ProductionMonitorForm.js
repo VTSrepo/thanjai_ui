@@ -70,8 +70,8 @@ function ProductionMonitorForm({ user }) {
     display_start_time: null,
     display_end_time: null,
     end_time: null,
-    production_qty: null,
-    damaged_qty: null,
+    production_qty: 0,
+    damaged_qty: 0,
     emp_name: null,
     emp_id: null,
     remarks: null,
@@ -179,16 +179,15 @@ function ProductionMonitorForm({ user }) {
         user_id: user_id,
       },
     };
-    console.log(payload);
 
     const res = await saveJob(payload);
 
     if (res.production) {
       setLoading(false);
-      openSuccess("Job saved successfully.")
+      openSuccess("Job saved successfully.");
       resetForm();
     } else {
-      throw new Error("Product Creation failed");
+      openSuccess(res.response.data.message);
     }
   };
 
@@ -197,66 +196,53 @@ function ProductionMonitorForm({ user }) {
   };
 
   const resetForm = () => {
-    setFormData({...formData,
+    setFormData({
+      ...formData,
       product_id: null,
       product_name: null,
       start_time: null,
       display_start_time: null,
       display_end_time: null,
       end_time: null,
-      production_qty: "",
-      damaged_qty: "",
+      production_qty: 0,
+      damaged_qty: 0,
       remarks: null,
-    })
+    });
   };
 
   const handleProdQtyChange = (e) => {
     const min = 1;
     const { name, value } = e.target;
+    const val = String(Number(value));
 
-    if (value === "") {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-      setError("");
+    if (Number(val) <= 0 || isNaN(val)) {
+      setError(`Value must be at least ${min}`);
     } else {
-      if (Number(value) <= 0 || isNaN(value)) {
-        setError(`Value must be at least ${min}`);
-      } else {
-        setError("");
-      }
-
-      setFormData({
-        ...formData,
-        production_qty: value,
-        damaged_qty: "",
-      });
+      setError("");
     }
+
+    setFormData({
+      ...formData,
+      production_qty: val,
+      damaged_qty: 0,
+    });
   };
 
   const handleDamagedQtyChange = (e) => {
     const min = formData.production_qty;
     const { name, value } = e.target;
+    const val = String(Number(value));
 
-    if (value === "") {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-      setError("");
+    if (Number(val) < 0 || Number(val) > min || isNaN(val)) {
+      setError(`Value must be between 0 and ${min}`);
     } else {
-      if (Number(value) < 0 || Number(value) > min || isNaN(value)) {
-        setError(`Value must be between 0 and ${min}`);
-      } else {
-        setError("");
-      }
-
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
+      setError("");
     }
+
+    setFormData({
+      ...formData,
+      [name]: val,
+    });
   };
 
   const handleChange = (e) => {
@@ -307,6 +293,8 @@ function ProductionMonitorForm({ user }) {
                     <TimePicker
                       label="End Time"
                       value={formData.display_end_time}
+                      minTime={formData.display_start_time}
+                      disabled={!formData.display_start_time}
                       onChange={handleChangeEndTime}
                       renderInput={(params) => <TextField {...params} />}
                     />
@@ -376,6 +364,9 @@ function ProductionMonitorForm({ user }) {
                     onChange={handleDamagedQtyChange}
                     fullWidth
                     type="number"
+                    onWheel={(event) => {
+                      event.preventDefault();
+                    }}
                     InputLabelProps={{ shrink: true }}
                     InputProps={{
                       inputProps: { min: 0, max: formData.production_date },
@@ -394,6 +385,8 @@ function ProductionMonitorForm({ user }) {
                     !formData.product_id ||
                     !formData.production_date ||
                     !formData.production_qty ||
+                    !formData.start_time ||
+                    !formData.end_time ||
                     error !== ""
                   }
                   onClick={saveJobHandler}
@@ -408,7 +401,7 @@ function ProductionMonitorForm({ user }) {
                 onClick={handleCancel}
                 sx={{ ml: 2 }}
               >
-                Finish Entry
+                Exit
               </Button>
             </div>
           </form>

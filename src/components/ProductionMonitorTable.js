@@ -72,6 +72,21 @@ export default function ProductionMonitorTable({ list }) {
   const navigate = useNavigate();
 
   const columns = [
+    {
+      field: "action",
+      headerName: "View",
+      width: 150,
+      align: "center",
+      headerAlign: "center",
+      renderCell: (params) => (
+        <Tooltip title="View">
+          <VisibilityIcon
+            style={{ cursor: "pointer" }}
+            onClick={() => handleEdit(params.row)}
+          />
+        </Tooltip>
+      ),
+    },
     { field: "product_name", headerName: "Product Name", width: 200 },
     { field: "emp_name", headerName: "Emp Name", width: 200 },
     { field: "production_qty", headerName: "Production Qty", width: 130 },
@@ -95,21 +110,7 @@ export default function ProductionMonitorTable({ list }) {
       type: "number",
       width: 120,
     },
-    {
-      field: "action",
-      headerName: "View",
-      width: 150,
-      align: "center",
-      headerAlign: "center",
-      renderCell: (params) => (
-        <Tooltip title="View">
-          <VisibilityIcon
-            style={{ cursor: "pointer" }}
-            onClick={() => handleEdit(params.row)}
-          />
-        </Tooltip>
-      ),
-    },
+    
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
@@ -117,8 +118,7 @@ export default function ProductionMonitorTable({ list }) {
         rows={list}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}
-        pageSizeOptions={[5, 10]}
-        checkboxSelection
+        pageSizeOptions={[5, 10]}        
         sx={{ border: 0 }}
         slots={{
           toolbar: location.pathname === '/reports'? () =>  <CustomToolbar columns={columns} rows={list} />:null,
