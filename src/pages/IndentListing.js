@@ -39,21 +39,20 @@ const IndentListing = ({ tabValue }) => {
   };
 
   const closeDetail = () => {
-    
-    getitems()
+    getitems();
     setIsDetailView(false);
   };
 
   const getStatus = () => {
     switch (tabValue) {
       case 1:
-        setListingLabel("Acknowledge by Kitchen")
+        setListingLabel("Acknowledgement");
         return "C";
       case 2:
-        setListingLabel("Dispatch by Kitchen")
+        setListingLabel("Dispatching");
         return "A";
       case 3:
-        setListingLabel("Receive by Branch")
+        setListingLabel("Receiving");
         return "D";
     }
   };
@@ -69,9 +68,13 @@ const IndentListing = ({ tabValue }) => {
       }));
       setIndentList(updatedData);
     } catch (err) {
-      setMessage(err.response?.data?.message);
+      if (err.response.data.status === 404) {
+        setMessage("No Pending Indents");
+      } else {
+        setMessage(err.response?.data?.message);
+      }
       openCustomDialog();
-      setIndentList([])
+      setIndentList([]);
     } finally {
       setLoading(false);
     }
@@ -81,13 +84,12 @@ const IndentListing = ({ tabValue }) => {
     getitems(); // Call the function to fetch data
   }, []);
 
-  
   if (loading) return <Loader />; // Show loader while data is being fetched
 
   return (
     <>
       <Typography variant="h5" gutterBottom>
-        Indent Listings to {listingLabel}
+        Pending Indents for {listingLabel}
       </Typography>
       {!isDetailView && (
         <Box sx={{ mt: 4, padding: 2 }}>

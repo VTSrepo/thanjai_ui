@@ -66,16 +66,18 @@ const ItemAdd = (props) => {
 
   const validateFields = (name, value) => {
     switch (name) {
-      case "qty_ordered": {
+      case "qty_ordered":
         if (Number(value) <= 0) {
           setError(`Ordered Quantity must be greater than 0`);
         } else {
           setError("");
         }
         break;
-      }
-      case "qty_agreed_kitchen": {
-        if (Number(value) < 0 || value > formData.qty_ordered) {
+
+      case "qty_agreed_kitchen":
+        if (Number(value) < 0 || value == "") {
+          setError(`Invalid Qty Received value`);
+        } else if (value > formData.qty_ordered) {
           setError(
             `Kitchen Agreed Quantity must be <= ${formData.qty_ordered}`
           );
@@ -89,9 +91,11 @@ const ItemAdd = (props) => {
           }
         }
         break;
-      }
-      case "qty_received": {
-        if (Number(value) < 0 || value > formData.qty_agreed_kitchen) {
+
+      case "qty_received":
+        if (Number(value) < 0 || value == "") {
+          setError(`Invalid Qty Received value`);
+        } else if (value > formData.qty_agreed_kitchen) {
           setError(
             `Quantity Received cannot be greater than ${formData.qty_agreed_kitchen}`
           );
@@ -104,21 +108,20 @@ const ItemAdd = (props) => {
           }
         }
         break;
-      }
-      case "discrepancy_notes": {
+
+      case "discrepancy_notes":
         if (value == "" && qtyDiscrepancy) {
           setError("Please fill Discrepancy notes");
         } else {
           setError("");
         }
-      }
-      case "kitchen_remarks": {
+
+      case "kitchen_remarks":
         if (value == "" && qtyDiscrepancy) {
           setError("Please fill Kitchen Remarks");
         } else {
           setError("");
         }
-      }
     }
   };
 

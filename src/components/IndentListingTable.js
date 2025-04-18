@@ -82,8 +82,7 @@ export default function IndentListingtable({ list, sendToParent }) {
         rows={list}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}
-        pageSizeOptions={[5, 10]}
-        checkboxSelection
+        pageSizeOptions={[5, 10]}        
         sx={{ border: 0 }}
       />
     </Paper>

@@ -12,9 +12,9 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { purple } from "@mui/material/colors";
 import axios from "axios";
 import { useUser } from "../utilities/UserContext";
-import {API_URL} from '../utilities/service'
+import { API_URL } from "../utilities/service";
 
-const Login = ({ setUser }) => { 
+const Login = ({ setUser }) => {
   const { login } = useUser(); // Destructure login function from context
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -41,17 +41,19 @@ const Login = ({ setUser }) => {
           pwd: password,
         },
       });
-      // Check if the response contains the token (JWT or similar)
       if (response.data && response.data) {
-        // You could store the token in localStorage, sessionStorage, or a global state management solution (like Redux or Context API)
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        return response.data; // Return the response data (which may include user info and token)
+        if (response.data.status === 401) {
+          setError("Invalid Credentials");
+          return null;
+        } else {
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          return response.data; // Return the response data (which may include user info and token)
+        }
       } else {
         throw new Error("Login failed: No token received");
       }
     } catch (error) {
-      console.error("Login error:", error.message);
-      throw error; // Propagate the error so the caller can handle it (e.g., show error message)
+      setError("Invalid Credentials");
     }
   };
 
@@ -61,17 +63,19 @@ const Login = ({ setUser }) => {
 
   const handleLogin = async () => {
     const res = await loginApi();
-    login(res.user); // Send data to context
-    if (res.user.user_type === "A") {
-      setUser({ username, role: "admin" });
-      navigate("/admin");
-    } else if (res.user.user_type === "B") {
-      setUser({ username, role: "branch" });
-      navigate("/home");
-    } else {
-      setUser({ username, role: "kitchen" });
-      navigate("/home");
-    }
+    if(res){
+      login(res.user); // Send data to context
+      if (res.user.user_type === "A") {
+        setUser({ username, role: "admin" });
+        navigate("/admin");
+      } else if (res.user.user_type === "B") {
+        setUser({ username, role: "branch" });
+        navigate("/indents");
+      } else {
+        setUser({ username, role: "kitchen" });
+        navigate("/indents");
+      }
+    }    
   };
 
   return (
@@ -100,7 +104,7 @@ const Login = ({ setUser }) => {
             onChange={(e) => setPassword(e.target.value)}
           />
           {error && (
-            <Typography color="error" align="center">
+            <Typography sx={{marginTop:2}} color="error" align="center">
               {error}
             </Typography>
           )}

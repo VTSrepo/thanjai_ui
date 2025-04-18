@@ -89,7 +89,10 @@ const IndentItemTable = ({ user, data, sendToParent, status }) => {
     approval: user?.role == "admin",
     action: !!status,
     delete: !status,
-    id:false
+    id:false,
+    qty_agreed_kitchen:!!status,
+    qty_received:!!status && status === 'D',
+    discrepancy_notes:!!status && status === 'D'
   };
 
   const handleDelete = (row) => {
