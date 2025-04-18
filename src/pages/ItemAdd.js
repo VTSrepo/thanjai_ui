@@ -18,7 +18,8 @@ const ItemAdd = (props) => {
   const { user, login, logout } = useUser();
   const { sendToParent, data, indent_status } = props;
   const [productList, setProductList] = useState([]);
-  const [disableAction, setDisableAction] = useState(true);
+  const [qtyDiscrepancy, setQtyDiscrepancy] = useState(false);
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     id: null,
@@ -42,7 +43,7 @@ const ItemAdd = (props) => {
         item: itemObj,
         id: data.id,
         item_code: itemObj?.product_id,
-        mandatory_status:data.mandatory_status,
+        mandatory_status: data.mandatory_status,
         uom: data.uom,
         qty_ordered: data.qty_ordered,
         qty_agreed_kitchen: data.qty_agreed_kitchen,
@@ -60,6 +61,65 @@ const ItemAdd = (props) => {
       ...formData,
       [name]: value,
     });
+    validateFields(name, value);
+  };
+
+  const validateFields = (name, value) => {
+    switch (name) {
+      case "qty_ordered": {
+        if (Number(value) <= 0) {
+          setError(`Ordered Quantity must be greater than 0`);
+        } else {
+          setError("");
+        }
+        break;
+      }
+      case "qty_agreed_kitchen": {
+        if (Number(value) < 0 || value > formData.qty_ordered) {
+          setError(
+            `Kitchen Agreed Quantity must be <= ${formData.qty_ordered}`
+          );
+        } else {
+          setError("");
+          if (Number(value) < formData.qty_ordered) {
+            setQtyDiscrepancy(true);
+            setError("Please fill Kitchen Remarks");
+          } else {
+            setError("");
+          }
+        }
+        break;
+      }
+      case "qty_received": {
+        if (Number(value) < 0 || value > formData.qty_agreed_kitchen) {
+          setError(
+            `Quantity Received cannot be greater than ${formData.qty_agreed_kitchen}`
+          );
+        } else {
+          if (Number(value) < formData.qty_agreed_kitchen) {
+            setQtyDiscrepancy(true);
+            setError("Please fill Discrepancy notes");
+          } else {
+            setError("");
+          }
+        }
+        break;
+      }
+      case "discrepancy_notes": {
+        if (value == "" && qtyDiscrepancy) {
+          setError("Please fill Discrepancy notes");
+        } else {
+          setError("");
+        }
+      }
+      case "kitchen_remarks": {
+        if (value == "" && qtyDiscrepancy) {
+          setError("Please fill Kitchen Remarks");
+        } else {
+          setError("");
+        }
+      }
+    }
   };
 
   const handleProductNameChange = (e) => {
@@ -119,7 +179,7 @@ const ItemAdd = (props) => {
           <form onSubmit={handleSubmit}>
             <Grid2 container spacing={2}>
               <Grid2 item size={12}>
-                <FormControl fullWidth>                
+                <FormControl fullWidth>
                   <InputLabel>Item Name</InputLabel>
                   <Select
                     name="item"
@@ -192,6 +252,7 @@ const ItemAdd = (props) => {
                   />
                 </Grid2>
               )}
+
               {indent_status && (
                 <Grid2 item size={12}>
                   <TextField
@@ -246,6 +307,10 @@ const ItemAdd = (props) => {
                   />
                 </Grid2>
               )}
+              <div style={{ width: "100%" }}>
+                {error && <p style={{ color: "red" }}>{error}</p>}
+              </div>
+
               {/* Quantity Received */}
               <Grid2 item size={6}>
                 <Button
@@ -264,7 +329,11 @@ const ItemAdd = (props) => {
                     variant="contained"
                     color="primary"
                     type="submit"
-                    disabled={!formData.qty_ordered}
+                    disabled={
+                      !formData.item_code ||
+                      !formData.qty_ordered ||
+                      error !== ""
+                    }
                     fullWidth
                     onClick={addItem}
                   >
@@ -272,14 +341,14 @@ const ItemAdd = (props) => {
                   </Button>
                 </Grid2>
               )}
-              
+
               {user && user?.user_type === "K" && indent_status === "C" && (
                 <Grid2 item size={6}>
                   <Button
                     variant="contained"
                     color="primary"
                     type="submit"
-                    disabled={!formData.qty_agreed_kitchen}
+                    disabled={!formData.qty_agreed_kitchen || error !== ""}
                     fullWidth
                     onClick={addItem}
                   >
@@ -294,7 +363,7 @@ const ItemAdd = (props) => {
                     variant="contained"
                     color="primary"
                     type="submit"
-                    disabled={!formData.qty_received}
+                    disabled={!formData.qty_received || error !== ""}
                     fullWidth
                     onClick={addItem}
                   >

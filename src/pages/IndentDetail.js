@@ -118,6 +118,20 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
     await updateIndent(payload);
   };
 
+  const hasInvalidQtyReceived = rows?.some(
+    (item) =>
+      item.qty_received === null ||
+      item.qty_received === "" ||
+      item.qty_received === undefined
+  );
+
+  const hasInvalidKitchenQty = rows?.some(
+    (item) =>
+      item.qty_agreed_kitchen === null ||
+      item.qty_agreed_kitchen === "" ||
+      item.qty_agreed_kitchen === undefined
+  );
+ 
   if (loading) return <Loader />; // Show loader while data is being fetched
 
   return (
@@ -159,16 +173,21 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
               </List>
             )}
           </Box>
-          {indentDetail?.customer_name && (<Box>
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ pl: 2 }}>
-                <Typography>Customer</Typography>
-              </AccordionSummary>
-              <AccordionDetails sx={{ p: 0 }}>
-                <Box x={{ ml: 2 }}>{indentDetail?.customer_name}</Box>               
-              </AccordionDetails>
-            </Accordion>
-          </Box>)}
+          {indentDetail?.customer_name && (
+            <Box>
+              <Accordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ pl: 2 }}
+                >
+                  <Typography>Customer</Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 0 }}>
+                  <Box x={{ ml: 2 }}>{indentDetail?.customer_name}</Box>
+                </AccordionDetails>
+              </Accordion>
+            </Box>
+          )}
           <Box sx={{ mt: 2 }}>
             <IndentItemTable
               data={rows}
@@ -190,8 +209,8 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                 variant="contained"
                 color="primary"
                 sx={{ marginLeft: 2 }}
-                onClick={() => actionIndent("accept")}
-                disabled={!enableAccept}
+                disabled={hasInvalidKitchenQty}
+                onClick={() => actionIndent("accept")}                
               >
                 Accept
               </Button>
@@ -213,6 +232,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                 variant="contained"
                 color="primary"
                 sx={{ marginLeft: 2 }}
+                disabled={hasInvalidQtyReceived}
                 onClick={() => actionIndent("receive")}
               >
                 Update

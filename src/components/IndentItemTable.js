@@ -13,8 +13,21 @@ const IndentItemTable = ({ user, data, sendToParent, status }) => {
   const navigate = useNavigate();  
 
   const columns = [
-    { field: "id", headerName: "ID", width: 70 },
-    { field: "item_code", headerName: "Item Code", width: 130 },
+    {
+      field: "action",
+      headerName: "Actions",      
+      width: 120,
+      renderCell: (params) => (
+        <Tooltip title="Edit">
+          <EditNoteIcon
+            style={{ cursor: "pointer", marginLeft:5 }}
+            onClick={() => handleEdit(params.row)}
+          />
+        </Tooltip>
+      ),
+    },
+    { field: "id", headerName: "ID", width: 120 },
+    { field: "item_code", headerName: "Item Code", width: 150 },
     { field: "item_name", headerName: "Item name", width: 130 },
     { field: "uom", headerName: "UOM", width: 130 },
     {
@@ -42,19 +55,7 @@ const IndentItemTable = ({ user, data, sendToParent, status }) => {
       width: 200,
     },
 
-    {
-      field: "action",
-      headerName: "Actions",
-      width: 150,
-      renderCell: (params) => (
-        <Tooltip title="Edit">
-          <EditNoteIcon
-            style={{ cursor: "pointer" }}
-            onClick={() => handleEdit(params.row)}
-          />
-        </Tooltip>
-      ),
-    },
+    
 
     {
       field: "delete",
@@ -88,6 +89,7 @@ const IndentItemTable = ({ user, data, sendToParent, status }) => {
     approval: user?.role == "admin",
     action: !!status,
     delete: !status,
+    id:false
   };
 
   const handleDelete = (row) => {
@@ -109,7 +111,7 @@ const IndentItemTable = ({ user, data, sendToParent, status }) => {
         columnVisibilityModel={columnVisibilityModel}
         initialState={{ pagination: { paginationModel } }}
         pageSizeOptions={[5, 10]}
-        checkboxSelection
+        checkboxSelection={false}
         sx={{ border: 0 }}
       />
     </Paper>
