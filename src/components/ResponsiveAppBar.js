@@ -57,6 +57,13 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               >
                 Production Monitor
               </MenuItem>
+              <MenuItem
+                component={Link}
+                to="/ts"
+                onClick={handleMenuClose}
+              >
+                Timesheet
+              </MenuItem>
               {user && user?.user_type === "A" && (
                 <MenuItem
                   component={Link}
@@ -120,6 +127,9 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
             </Button> */}
             <Button component={Link} to="/production-monitor" color="inherit">
               Production Monitor
+            </Button>
+            <Button component={Link} to="/ts" color="inherit">
+              Timesheet
             </Button>
 
             {/* {user && user.role === "admin" && (

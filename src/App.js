@@ -16,6 +16,8 @@ import ProductMaster from "./pages/ProductMaster";
 import IndentMaster from "./pages/IndentMaster";
 import ProductionMonitor from "./pages/ProductionMonitor";
 import ProductionMonitorForm from './pages/ProductionMonitorForm';
+import TimesheetListing from "./pages/TimesheetListing";
+import TimesheetForm from "./pages/TimesheetForm";
 import { UserProvider } from "./utilities/UserContext";
 
 function App() {
@@ -75,9 +77,17 @@ function App() {
               element={<ProductionMonitor user={user} setUser={setUser} />}
             />
             <Route
+              path="/ts"
+              element={<TimesheetListing/>}
+            />
+            <Route
               path="/job-create"
               element={<ProductionMonitorForm user={user} setUser={setUser} />}
-            />            
+            />
+            <Route
+              path="/ts-create"
+              element={<TimesheetForm user={user} setUser={setUser} />}
+            />             
 
             {/* <Route
               path="/product-create"
