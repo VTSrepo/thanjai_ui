@@ -121,8 +121,7 @@ export const saveJob = async (params) => {
     );
     return response.data; // Return only the data from the response
   } catch (error) {
-    console.error("Error fetching data:", error);
-    throw error; // Rethrow error to be handled by calling components
+    return error;
   }
 };
 
