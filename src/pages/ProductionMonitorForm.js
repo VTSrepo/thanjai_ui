@@ -287,14 +287,12 @@ function ProductionMonitorForm({ user }) {
                       renderInput={(params) => <TextField {...params} />}
                     />
                   </LocalizationProvider>
-                </Grid2>
+                </Grid2>                
                 <Grid2 item size={12}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <TimePicker
                       label="End Time"
-                      value={formData.display_end_time}
-                      minTime={formData.display_start_time}
-                      disabled={!formData.display_start_time}
+                      value={formData.display_end_time}                      
                       onChange={handleChangeEndTime}
                       renderInput={(params) => <TextField {...params} />}
                     />
