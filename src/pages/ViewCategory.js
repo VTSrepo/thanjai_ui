@@ -36,8 +36,7 @@ function ViewCategory({ user }) {
   });
 
   useEffect(() => {
-    const selectedCatStatus =
-      selectedRow.active === "Y" ? "active" : "inactive";
+    const selectedCatStatus = selectedRow.active 
     setCatStatus(selectedCatStatus);
     if (selectedRow) {
       //   setHeading("View Employee");
@@ -54,7 +53,7 @@ function ViewCategory({ user }) {
     setLoading(true);
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
     const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
-    const category_status = catStatus === "active" ? "Y" : "N";
+    const category_status = catStatus === "Active" ? "A" : "I";
     const payload = {
       category: {
         category_name: formData.category_name,
@@ -126,12 +125,12 @@ function ViewCategory({ user }) {
                   onChange={(e) => setCatStatus(e.target.value)}
                 >
                   <FormControlLabel
-                    value="active"
+                    value="Active"
                     control={<Radio />}
                     label="Active"
                   />
                   <FormControlLabel
-                    value="inactive"
+                    value="Inactive"
                     control={<Radio />}
                     label="Inactive"
                   />

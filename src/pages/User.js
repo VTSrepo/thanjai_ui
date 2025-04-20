@@ -12,7 +12,7 @@ const User = ({ user,dashboard }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [userList, setUserList] = useState([]);
- 
+ console.log("userList",userList)
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
   };
@@ -29,8 +29,10 @@ const User = ({ user,dashboard }) => {
             const updateID = result.users.map((item, index) => ({
               ...item,
               id: item.id || index + 1, // Appending a unique ID if it doesn't exist
-              dob: item.dob ? item.dob.split("T")[0] : null,
-              doj: item.doj ? item.doj.split("T")[0] : null,
+              user_type: item.user_type === "A" ? "Admin" : item.user_type === "K" ? "Kitchen" : item.user_type === "B" ? "Branch" : "",
+              user_status: item.user_status === "A" ? "Active" :  item.user_status === "I" ? "Inactive" : ""
+              // dob: item.dob ? item.dob.split("T")[0] : null,
+              // doj: item.doj ? item.doj.split("T")[0] : null,
             }));
             setUserList(updateID);
           } catch (err) {

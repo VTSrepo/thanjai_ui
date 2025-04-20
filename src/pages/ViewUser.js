@@ -44,7 +44,10 @@ function ViewUser({ user }) {
     active: null,
     contact: null,
     branch_id: null,
+    user_status: null
   });
+
+  console.log("user_formData",formData)
 
   useEffect(() => {
     const getBranchList = async () => {
@@ -59,9 +62,10 @@ function ViewUser({ user }) {
   }, []);
 
   useEffect(() => {
-    console.log("selectedRow", selectedRow);
-    const selectedUserStatus = selectedRow.user_status === "A" ? "active" : "inactive";
-    const selectedUserType = selectedRow.user_type === "A" ? "admin" : selectedRow.user_type === "K" ? "kitchen" : selectedRow.user_type === "B" ? "branch" : ""
+    console.log("selectedRow_user", selectedRow);
+    const selectedUserStatus = selectedRow.user_status
+    const selectedUserType = selectedRow.user_type 
+    console.log("selectedUserStatus",selectedUserStatus)
     setUserStatus(selectedUserStatus);
     setUserType(selectedUserType);
     if (selectedRow) {
@@ -87,8 +91,8 @@ function ViewUser({ user }) {
       setLoading(true);
       try {
         const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-        const user_status = userStatus === "active" ? "A" : "I";
-        const user_type = userType === "admin" ? "A" : userType === "kitchen" ? "K" : userType === "branch" ? "B" : "";
+        const user_status = userStatus === "Active" ? "A" : "I";
+        const user_type = userType === "Admin" ? "A" : userType === "Kitchen" ? "K" : userType === "Branch" ? "B" : "";
         const user_id = selectedRow.user_id
     
         const payload = {
@@ -326,17 +330,17 @@ function ViewUser({ user }) {
                     onChange={(e) => setUserType(e.target.value)}
                   >
                     <FormControlLabel
-                      value="admin"
+                      value="Admin"
                       control={<Radio />}
                       label="Admin"
                     />
                     <FormControlLabel
-                      value="kitchen"
+                      value="Kitchen"
                       control={<Radio />}
                       label="Kitchen"
                     />
                     <FormControlLabel
-                      value="branch"
+                      value="Branch"
                       control={<Radio />}
                       label="Branch"
                     />
@@ -352,16 +356,16 @@ function ViewUser({ user }) {
                   row
                   aria-labelledby="demo-row-radio-buttons-group-label"
                   name="row-radio-buttons-group"
-                  value={userStatus}
+                  value={userStatus || ""}
                   onChange={(e) => setUserStatus(e.target.value)}
                 >
                   <FormControlLabel
-                    value="active"
+                    value="Active"
                     control={<Radio />}
                     label="Active"
                   />
                   <FormControlLabel
-                    value="inactive"
+                    value="Inactive"
                     control={<Radio />}
                     label="Inactive"
                   />

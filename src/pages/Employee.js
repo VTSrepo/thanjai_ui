@@ -13,6 +13,7 @@ const Employee = ({ user,dashboard }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [empList, setEmpList] = useState([]);
+  console.log("empList",empList)
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -30,6 +31,7 @@ const Employee = ({ user,dashboard }) => {
             const updateID = result.employees.map((item, index) => ({
               ...item,
               id: item.id || index + 1, // Appending a unique ID if it doesn't exist
+              active: item.active === "A" ? "Active" :  item.active === "I" ? "Inactive" : ""
             }));
             setEmpList(updateID);
           } catch (err) {

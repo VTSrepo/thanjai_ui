@@ -51,7 +51,7 @@ function CreateCategoryForm({ user }) {
   const saveCategoryHandler = async () => {
     setLoading(true);
     const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
-    const category_status = categoryStatus === "active" ? "Y" : "N";
+    const category_status = categoryStatus === "active" ? "A" : "I";
     const payload = {
       category: {
         category_name: formData.category_name,
