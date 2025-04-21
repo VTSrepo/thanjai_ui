@@ -22,6 +22,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import InfoDialog from "../components/InfoDialog";
 import { getProducts, getEmployees, saveJob } from "../utilities/service";
+import { useUser } from "../utilities/UserContext";
 
 function FormattedDate(date) {
   const year = date.getFullYear();
@@ -45,8 +46,9 @@ const DisabledFormWrapper = ({ children, disabled }) => {
   );
 };
 
-function ProductionMonitorForm({ user }) {
+function ProductionMonitorForm() {
   const location = useLocation(); // Access the location object
+  const { user, login, logout } = useUser();
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const currentDate = FormattedDate(new Date());
   const [openDialog, setOpenDialog] = useState(false);

@@ -22,6 +22,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import InfoDialog from "../components/InfoDialog";
 import { getEmployees, saveTs } from "../utilities/service";
+import { useUser } from "../utilities/UserContext";
 
 function FormattedDate(date) {
   const year = date.getFullYear();
@@ -45,15 +46,16 @@ const DisabledFormWrapper = ({ children, disabled }) => {
   );
 };
 
-function TimesheetForm({ user }) {
+function TimesheetForm() {
+  const { user, login, logout } = useUser();
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const currentDate = FormattedDate(new Date());
   const [openDialog, setOpenDialog] = useState(false);
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); 
-  const [empList, setEmpList] = useState([]);  
+  const navigate = useNavigate();
+  const [empList, setEmpList] = useState([]);
   const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [heading, setHeading] = useState("Job Create");
   const [error, setError] = useState("");
@@ -151,16 +153,19 @@ function TimesheetForm({ user }) {
       },
     };
     console.log(payload);
-
-    const res = await saveTs(payload);
-
-    if (res.timesheet) {
+    try {
+      const res = await saveTs(payload);
+      if (res.data.timesheet) {
+        setLoading(false);
+        openSuccess("TS saved successfully.");
+        resetForm();
+      } else {
+        setLoading(false);
+        openSuccess("TS saved failed.");
+      }
+    } catch (error) {
       setLoading(false);
-      openSuccess("TS saved successfully.");
-      resetForm();
-    } else {
-      setLoading(false);
-      openSuccess("TS saved failed.");
+      openSuccess(error.response.data.message);
     }
   };
 
@@ -170,11 +175,11 @@ function TimesheetForm({ user }) {
 
   const resetForm = () => {
     setFormData({
-      ...formData,      
+      ...formData,
       start_time: null,
       display_start_time: null,
       display_end_time: null,
-      end_time: null,      
+      end_time: null,
     });
   };
 
@@ -260,8 +265,10 @@ function TimesheetForm({ user }) {
                   variant="contained"
                   color="success"
                   disabled={
-                    !formData.emp_id ||                    
-                    !formData.cur_date ||                    
+                    !formData.emp_id ||
+                    !formData.cur_date ||
+                    !formData.start_time ||
+                    !formData.end_time ||
                     error !== ""
                   }
                   onClick={saveJobHandler}

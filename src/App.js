@@ -91,10 +91,10 @@ function App() {
               path="/home"
               element={<Home user={user} setUser={setUser} />}
             />
-            {/* <Route
+            <Route
               path="/production-monitor"
               element={<ProductionMonitor user={user} setUser={setUser} />}
-            /> */}
+            />
             <Route
               path="/ts"
               element={<TimesheetListing/>}
@@ -183,7 +183,7 @@ function App() {
                 />
               }
             /> */}
-            {/* <Route
+            <Route
               path="/production-monitor"
               element={
                 <ProtectedRoute
@@ -196,7 +196,7 @@ function App() {
                   }
                 />
               }
-            /> */}
+            />
 
             {/* <Route
               path="/indent-create"

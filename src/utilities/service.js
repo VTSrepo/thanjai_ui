@@ -217,17 +217,11 @@ export const saveJob = async (params) => {
   }
 };
 
-export const saveTs = async (params) => {
-  try {
-    const response = await axios.post(
-      `${API_URL}/timesheet`,
-      params
-    );
-    return response.data; // Return only the data from the response
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    throw error; // Rethrow error to be handled by calling components
-  }
+export const saveTs = async (params) => { 
+  return await axios.post(
+    `${API_URL}/timesheet`,
+    params
+  );
 };
 
 // Function to convert UTC time to AEST

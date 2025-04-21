@@ -53,7 +53,7 @@ const TimesheetListing = ({  dashboard }) => {
         </Button>
         <Box sx={{ mt: 2, padding: 2 }}>
           {" "}
-          <TSTable list={jobList} />
+          <TSTable list={jobList} user={user}/>
         </Box>
       </Box>
     </>
