@@ -51,7 +51,9 @@ function App() {
     return user && user.role === role ? element : <Navigate to="/login" />;
   };
 
-  console.log("user",user)
+  if(!user){
+    setUser(JSON.parse(localStorage.getItem("user")));
+  }
 
   // Create a theme for the app
   const theme = createTheme({

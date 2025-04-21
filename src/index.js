@@ -6,9 +6,10 @@ import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom'; // Import BrowserRouter for React Router
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+const base = process.env.NODE_ENV === 'production' ? '/v1' : '/';
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename="/v1"> {/* Wrap the App component with BrowserRouter */}
+    <BrowserRouter basename={base}> {/* Wrap the App component with BrowserRouter */}
       <App />
     </BrowserRouter>
   </React.StrictMode>

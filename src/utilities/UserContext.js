@@ -7,6 +7,9 @@ const UserContext = createContext();
 // Create a provider component
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null); // Default user is null (not logged in)
+  if(!user){
+    setUser(JSON.parse(localStorage.getItem("user")))
+  }
 
   const login = (userData) => {
     setUser(userData);

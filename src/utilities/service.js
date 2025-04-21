@@ -2,8 +2,7 @@ import axios from "axios";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 
-//export const API_URL = "https://pm.thanjaicaterers.com/v1";
-export const API_URL = "http://localhost:4002/v1";
+export const API_URL = process.env.REACT_APP_MODE  === "development" ?process.env.REACT_APP_API_URL_DEV:process.env.REACT_APP_API_URL_PROD;
 
 export const getBranchLists = async () => {
   try {
@@ -177,7 +176,7 @@ export const createNewIndent = async (payload) => {
     });
     return response.data;
   } catch (error) {
-    throw error;
+    return error;
   }
 };
 

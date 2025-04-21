@@ -88,13 +88,15 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                   Production Monitor
                 </MenuItem>
               )}
-              <MenuItem
-                component={Link}
-                to="/indents"
-                onClick={handleMenuClose}
-              >
-                Indents
-              </MenuItem>
+              {user && user?.user_type !== "A" && (
+                <MenuItem
+                  component={Link}
+                  to="/indents"
+                  onClick={handleMenuClose}
+                >
+                  Indents
+                </MenuItem>
+              )}
               {user && user?.user_type === "A" && (
                 <MenuItem component={Link} to="/ts" onClick={handleMenuClose}>
                   Timesheet
@@ -205,9 +207,11 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                 Reports
               </Button>
             )}
-            <Button color="inherit" component={Link} to="/indents">
-              Indents
-            </Button>
+            {user && user?.user_type !== "A" && (
+              <Button color="inherit" component={Link} to="/indents">
+                Indents
+              </Button>
+            )}
             {user && user?.user_type === "A" && (
               <Button component={Link} to="/production-monitor" color="inherit">
                 Production Monitor
