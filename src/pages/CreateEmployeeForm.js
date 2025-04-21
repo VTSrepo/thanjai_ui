@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { CONFIG } from "../../src/config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-
+import { useUser } from "../utilities/UserContext";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 
 import { createNewEmployee, getBranchLists } from "../utilities/service";
@@ -36,8 +36,9 @@ const DisabledFormWrapper = ({ children, disabled }) => {
   );
 };
 
-function CreateEmployeeForm({ user }) {
+function CreateEmployeeForm() {
   document.title = `Create Employee | ${CONFIG.title.name}`;
+  const { user } = useUser();
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const [loading, setLoading] = useState(false);

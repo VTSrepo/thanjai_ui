@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import { CONFIG } from "../../src/config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-
+import { useUser } from "../utilities/UserContext";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 import { createNewCategory } from "../utilities/service";
 
@@ -35,7 +35,8 @@ const DisabledFormWrapper = ({ children, disabled }) => {
   );
 };
 
-function CreateCategoryForm({ user }) {
+function CreateCategoryForm() {
+  const { user } = useUser();
   document.title = `Create Category | ${CONFIG.title.name}`;
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state

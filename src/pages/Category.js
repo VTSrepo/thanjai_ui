@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from "react";
-import {  Box, Button } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
-import { CONFIG } from "../../src/config-global"
+import { CONFIG } from "../../src/config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-
+import { useUser } from "../utilities/UserContext";
 import Loader from "../components/Loader";
 import { getCategoriesList } from "../utilities/service";
 import CategoryTable from "../components/CategoryTable";
 
-const Category = ({ user,dashboard }) => {
-  document.title =`Category Details | ${CONFIG.title.name}`
+const Category = ({ dashboard }) => {
+  document.title = `Category Details | ${CONFIG.title.name}`;
   const navigate = useNavigate();
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
 
   const [catList, setCatList] = useState([]);
 
-
-  console.log("categoryList",catList)
-
+  console.log("categoryList", catList);
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -27,38 +26,37 @@ const Category = ({ user,dashboard }) => {
     navigate("/create-category");
   };
 
-  useEffect(() => {    
-   
-
+  useEffect(() => {
     const getCategoryLists = async () => {
-          try {
-            setLoading(true);
-            const result = await getCategoriesList();
-            const updateID = result.categories.map((item, index) => ({
-              ...item,
-              id: item.id || index + 1, // Appending a unique ID if it doesn't exist
-              active: item.active === "A" ? "Active" :  item.active === "I" ? "Inactive" : ""
-            }));
-            setCatList(updateID);
-          } catch (err) {
-            console.log(err);
-          }
-          finally{
-            setLoading(false);
-          }
-        };
-    
-        getCategoryLists();
+      try {
+        setLoading(true);
+        const result = await getCategoriesList();
+        const updateID = result.categories.map((item, index) => ({
+          ...item,
+          id: item.id || index + 1, // Appending a unique ID if it doesn't exist
+          active:
+            item.active === "A"
+              ? "Active"
+              : item.active === "I"
+              ? "Inactive"
+              : "",
+        }));
+        setCatList(updateID);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  
+    getCategoryLists();
   }, []);
-
 
   if (loading) return <Loader />; // Show loader while data is being fetched
 
   return (
     <>
-      {(!dashboard)&&(<ResponsiveAppBar onLogout={handleLogout} user={user} />)}
+      {!dashboard && <ResponsiveAppBar onLogout={handleLogout} user={user} />}
       {/* Show AdminAppBar */}
       <Box sx={{ mt: 4, padding: 2 }}>
         <Button variant="contained" color="secondary" onClick={createCategory}>
@@ -68,7 +66,7 @@ const Category = ({ user,dashboard }) => {
           {" "}
           <CategoryTable list={catList} />
         </Box>
-      </Box>      
+      </Box>
     </>
   );
 };

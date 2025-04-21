@@ -23,7 +23,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { CONFIG } from "../../src/config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-
+import { useUser } from "../utilities/UserContext";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 
 import { createNewUser, getBranchLists } from "../utilities/service";
@@ -40,7 +40,8 @@ const DisabledFormWrapper = ({ children, disabled }) => {
   );
 };
 
-function CreateUserForm({ user }) {
+function CreateUserForm() {
+  const { user } = useUser();
   document.title = `Create User | ${CONFIG.title.name}`;
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
@@ -110,11 +111,11 @@ function CreateUserForm({ user }) {
           pwd: formData.pwd,
         },
       };
-      console.log("create_use_payload",payload)
+      console.log("create_use_payload", payload);
       const res = await createNewUser(payload);
 
       if (res) {
-        console.log("create_user_res",res)
+        console.log("create_user_res", res);
         navigate("/user");
       } else {
         alert("Something went wrong while creating the user.");
@@ -205,9 +206,9 @@ function CreateUserForm({ user }) {
                 helperText={emailError ? "Enter a valid email address" : ""}
                 inputProps={{
                   inputProps: { min: 0 },
-                  autoComplete: 'off',
+                  autoComplete: "off",
                   form: {
-                    autoComplete: 'off',
+                    autoComplete: "off",
                   },
                 }}
               />
@@ -253,7 +254,9 @@ function CreateUserForm({ user }) {
                   options={branchList || []}
                   getOptionLabel={(option) => option.branch_name || ""}
                   value={
-                    branchList?.find((branch) => branch.branch_id === formData.branch_id) || null
+                    branchList?.find(
+                      (branch) => branch.branch_id === formData.branch_id
+                    ) || null
                   }
                   onChange={(event, newValue) => {
                     setFormData({
@@ -262,7 +265,12 @@ function CreateUserForm({ user }) {
                     });
                   }}
                   renderInput={(params) => (
-                    <TextField {...params} label="Branch Name" required fullWidth />
+                    <TextField
+                      {...params}
+                      label="Branch Name"
+                      required
+                      fullWidth
+                    />
                   )}
                 />
               </Grid2>
@@ -294,9 +302,19 @@ function CreateUserForm({ user }) {
               <Grid2 item xs={12} style={{ width: "100%" }}>
                 <FormControl fullWidth>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  {/* preventing it from autofilling the actual user input fields in the form. */}
-                  <input type="text" name="fake_user" autoComplete="username" style={{ display: 'none' }} />
-                  <input type="password" name="fake_pass" autoComplete="new-password" style={{ display: 'none' }} />
+                    {/* preventing it from autofilling the actual user input fields in the form. */}
+                    <input
+                      type="text"
+                      name="fake_user"
+                      autoComplete="username"
+                      style={{ display: "none" }}
+                    />
+                    <input
+                      type="password"
+                      name="fake_pass"
+                      autoComplete="new-password"
+                      style={{ display: "none" }}
+                    />
                     <DatePicker
                       label="Date of Join"
                       value={formData.doj ? parseISO(formData.doj) : null}
@@ -316,13 +334,12 @@ function CreateUserForm({ user }) {
                           // fullWidth
                           inputProps={{
                             ...params.inputProps,
-                            autoComplete: 'off',
-                            name: 'random_doj_field', // override again inside inputProps
-                            type: 'text', // force text, not date
+                            autoComplete: "off",
+                            name: "random_doj_field", // override again inside inputProps
+                            type: "text", // force text, not date
                           }}
                         />
                       )}
-                      
                     />
                   </LocalizationProvider>
                 </FormControl>
@@ -341,9 +358,9 @@ function CreateUserForm({ user }) {
                 }
                 inputProps={{
                   inputProps: { min: 0 },
-                  autoComplete: 'off',
+                  autoComplete: "off",
                   form: {
-                    autoComplete: 'off',
+                    autoComplete: "off",
                   },
                 }}
               />
@@ -360,9 +377,9 @@ function CreateUserForm({ user }) {
                   contactError ? "Enter a valid Canadian phone number" : ""
                 }
                 inputProps={{
-                  autoComplete: 'off',
+                  autoComplete: "off",
                   form: {
-                    autoComplete: 'off',
+                    autoComplete: "off",
                   },
                 }}
               />
@@ -450,7 +467,10 @@ function CreateUserForm({ user }) {
                 variant="contained"
                 color="success"
                 disabled={
-                  !formData.user_name || !formData.email_id || contactError || mobileError
+                  !formData.user_name ||
+                  !formData.email_id ||
+                  contactError ||
+                  mobileError
                 }
                 onClick={saveUserHandler}
               >
