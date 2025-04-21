@@ -70,7 +70,7 @@ function CreateEmployeeForm({ user }) {
     const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
     console.log("empStatus", empStatus);
-    const employee_status = empStatus === "active" ? "Y" : "N";
+    const employee_status = empStatus === "active" ? "A" : "I";
     const payload = {
       employee: {
         org_id: org_id,

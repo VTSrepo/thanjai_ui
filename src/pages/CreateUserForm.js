@@ -83,7 +83,7 @@ function CreateUserForm({ user }) {
     try {
       const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
       const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
-      const user_status = userStatus === "active" ? "A" : "I";
+      const user_status = userStatus === "Active" ? "A" : "I";
       const user_type =
         userType === "admin"
           ? "A"
@@ -110,10 +110,11 @@ function CreateUserForm({ user }) {
           pwd: formData.pwd,
         },
       };
-
+      console.log("create_use_payload",payload)
       const res = await createNewUser(payload);
 
       if (res) {
+        console.log("create_user_res",res)
         navigate("/user");
       } else {
         alert("Something went wrong while creating the user.");
@@ -171,7 +172,7 @@ function CreateUserForm({ user }) {
             Create User
           </Typography>
 
-          <form className="example-form" noValidate>
+          <form className="example-form" autoComplete="off" noValidate>
             {/* <DisabledFormWrapper disabled={isFormDisabled}> */}
             <Grid2 container spacing={2}>
               <Grid2 item size={12}>
@@ -180,9 +181,16 @@ function CreateUserForm({ user }) {
                   name="user_name"
                   value={formData.user_name || ""}
                   onChange={handleChange}
+                  // onChange={(e) => setFormData({ ...formData, user_name: e.target.value })}
                   fullWidth
                   type="text"
-                  InputProps={{ inputProps: { min: 0 } }}
+                  // inputProps={{
+                  //   inputProps: { min: 0 },
+                  //   autoComplete: 'off',
+                  //   form: {
+                  //     autoComplete: 'off',
+                  //   },
+                  // }}
                 />
               </Grid2>
 
@@ -195,7 +203,13 @@ function CreateUserForm({ user }) {
                 type="text"
                 error={emailError}
                 helperText={emailError ? "Enter a valid email address" : ""}
-                InputProps={{ inputProps: { min: 0 } }}
+                inputProps={{
+                  inputProps: { min: 0 },
+                  autoComplete: 'off',
+                  form: {
+                    autoComplete: 'off',
+                  },
+                }}
               />
 
               {/* <Grid2 item size={12}>
@@ -280,6 +294,9 @@ function CreateUserForm({ user }) {
               <Grid2 item xs={12} style={{ width: "100%" }}>
                 <FormControl fullWidth>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  {/* preventing it from autofilling the actual user input fields in the form. */}
+                  <input type="text" name="fake_user" autoComplete="username" style={{ display: 'none' }} />
+                  <input type="password" name="fake_pass" autoComplete="new-password" style={{ display: 'none' }} />
                     <DatePicker
                       label="Date of Join"
                       value={formData.doj ? parseISO(formData.doj) : null}
@@ -290,12 +307,22 @@ function CreateUserForm({ user }) {
                         setFormData({ ...formData, doj: formattedDate });
                       }}
                       format="yyyy-MM-dd"
-                      renderInput={(params) => <TextField {...params} />}
-                      // slotProps={{
-                      //     textField: {
-                      //       fullWidth: true,
-                      //     },
-                      //   }}
+                      // renderInput={(params) => <TextField {...params} />}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          name="random_doj_field" // Important: name must NOT look like a date
+                          autoComplete="off"
+                          // fullWidth
+                          inputProps={{
+                            ...params.inputProps,
+                            autoComplete: 'off',
+                            name: 'random_doj_field', // override again inside inputProps
+                            type: 'text', // force text, not date
+                          }}
+                        />
+                      )}
+                      
                     />
                   </LocalizationProvider>
                 </FormControl>
@@ -312,6 +339,13 @@ function CreateUserForm({ user }) {
                 helperText={
                   mobileError ? "Enter a valid Canadian phone number" : ""
                 }
+                inputProps={{
+                  inputProps: { min: 0 },
+                  autoComplete: 'off',
+                  form: {
+                    autoComplete: 'off',
+                  },
+                }}
               />
 
               <TextField
@@ -325,6 +359,12 @@ function CreateUserForm({ user }) {
                 helperText={
                   contactError ? "Enter a valid Canadian phone number" : ""
                 }
+                inputProps={{
+                  autoComplete: 'off',
+                  form: {
+                    autoComplete: 'off',
+                  },
+                }}
               />
 
               <TextField
@@ -391,12 +431,12 @@ function CreateUserForm({ user }) {
                   onChange={(e) => setUserStatus(e.target.value)}
                 >
                   <FormControlLabel
-                    value="active"
+                    value="Active"
                     control={<Radio />}
                     label="Active"
                   />
                   <FormControlLabel
-                    value="inactive"
+                    value="Inactive"
                     control={<Radio />}
                     label="Inactive"
                   />

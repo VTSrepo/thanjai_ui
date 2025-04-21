@@ -15,14 +15,10 @@ export default function CategoryTable({ list }) {
   const navigate = useNavigate();
 
   const columns = [
-    { field: "category_code", headerName: "Category Code", width: 400 },
-    { field: "category_name", headerName: "Category Name", width: 400 },
-    
-    { field: "active", headerName: "Active", width: 200 },
     {
       field: "action",
       headerName: "View",
-      width: 400,
+      width: 300,
       align: "center",
       headerAlign: "center",
       renderCell: (params) => (
@@ -34,6 +30,11 @@ export default function CategoryTable({ list }) {
         </Tooltip>
       ),
     },
+    { field: "category_code", headerName: "Category Code", width: 400 },
+    { field: "category_name", headerName: "Category Name", width: 400 },
+    
+    { field: "active", headerName: "Active", width: 200 },
+    
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>

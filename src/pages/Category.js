@@ -37,6 +37,7 @@ const Category = ({ user,dashboard }) => {
             const updateID = result.categories.map((item, index) => ({
               ...item,
               id: item.id || index + 1, // Appending a unique ID if it doesn't exist
+              active: item.active === "A" ? "Active" :  item.active === "I" ? "Inactive" : ""
             }));
             setCatList(updateID);
           } catch (err) {

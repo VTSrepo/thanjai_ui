@@ -51,10 +51,8 @@ function ViewEmployee({ user }) {
   }, []);
 
   useEffect(() => {
-    console.log("selectedRow", selectedRow);
-    console.log("selectedRow.active", selectedRow.active);
-    const selectedEmpStatus =
-      selectedRow.active === "Y" ? "active" : "inactive";
+    console.log("selectedRow_emp", selectedRow);
+    const selectedEmpStatus = selectedRow.active;
     setEmpStatus(selectedEmpStatus);
     if (selectedRow) {
       //   setHeading("View Employee");
@@ -64,6 +62,7 @@ function ViewEmployee({ user }) {
         active: empStatus,
         contact: selectedRow.contact,
         branch_id: selectedRow.branch_id,
+        branch_name: selectedRow.branch_name
       });
     }
   }, [selectedRow]);
@@ -74,19 +73,22 @@ function ViewEmployee({ user }) {
     const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
     console.log("empStatus", empStatus);
-    const employee_status = empStatus === "active" ? "Y" : "N";
+    const employee_status = empStatus === "Active" ? "A" : "I";
     const payload = {
       employee: {
         org_id: org_id,
-        branch_id: branch_id,
+        branch_id: formData.branch_id,
         emp_name: formData.emp_name,
         active: employee_status,
         contact: formData.contact,
         user_id: user_id,
         emp_id: formData.emp_id,
+        branch_name: formData.branch_name
       },
     };
+    console.log("update_emp",payload)
     const res = await createNewEmployee(payload);
+    console.log("up_us_res",res)
 
     if (res.employee) {
       setLoading(false);
@@ -185,12 +187,12 @@ function ViewEmployee({ user }) {
                   onChange={(e) => setEmpStatus(e.target.value)}
                 >
                   <FormControlLabel
-                    value="active"
+                    value="Active"
                     control={<Radio />}
                     label="Active"
                   />
                   <FormControlLabel
-                    value="inactive"
+                    value="Inactive"
                     control={<Radio />}
                     label="Inactive"
                   />

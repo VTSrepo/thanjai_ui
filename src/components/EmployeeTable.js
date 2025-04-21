@@ -15,12 +15,6 @@ export default function EmployeeTable({ list }) {
   const navigate = useNavigate();
 
   const columns = [
-    { field: "emp_id", headerName: "Employee ID", width: 200 },
-    { field: "emp_name", headerName: "Employee Name", width: 200 },
-    { field: "branch_id", headerName: "Branch ID", width: 200 },
-    { field: "org_id", headerName: "Ord ID", width: 200 },
-    { field: "contact", headerName: "Contact", width: 200 },
-    { field: "active", headerName: "Active", width: 200 },
     {
       field: "action",
       headerName: "View",
@@ -36,6 +30,13 @@ export default function EmployeeTable({ list }) {
         </Tooltip>
       ),
     },
+    { field: "emp_id", headerName: "Employee ID", width: 250 },
+    { field: "emp_name", headerName: "Employee Name", width: 250 },
+    { field: "branch_name", headerName: "Branch Name", width: 250 },
+    // { field: "org_name", headerName: "Org Name", width: 200 },
+    { field: "contact", headerName: "Contact", width: 250 },
+    { field: "active", headerName: "Active", width: 250 },
+   
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>

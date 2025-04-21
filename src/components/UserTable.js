@@ -15,18 +15,6 @@ export default function UserTable({ list }) {
   const navigate = useNavigate();
 
   const columns = [
-    { field: "user_name", headerName: "User Name", width: 200 },
-    { field: "user_id", headerName: "User Id", width: 200 },
-    { field: "dob", headerName: "Date of Birth", width: 200 },
-    { field: "doj", headerName: "Date of Join", width: 200 },
-    { field: "mobile_no", headerName: "Mobile No", width: 200 },
-    { field: "home_contact_no", headerName: "Home Contact No", width: 200 },
-    { field: "branch_id", headerName: "Branch ID", width: 200 },
-    { field: "org_id", headerName: "Ord ID", width: 200 },
-    { field: "residence_address", headerName: "Residence Address", width: 200 },
-    { field: "email_id", headerName: "Email Id", width: 200 },
-    { field: "user_type", headerName: "User Type", width: 200 },
-    { field: "user_status", headerName: "User Status", width: 200 },
     {
       field: "action",
       headerName: "View",
@@ -42,6 +30,19 @@ export default function UserTable({ list }) {
         </Tooltip>
       ),
     },
+    { field: "user_name", headerName: "User Name", width: 200 },
+    { field: "user_id", headerName: "User Id", width: 200 },
+    { field: "dob", headerName: "Date of Birth", width: 200 },
+    { field: "doj", headerName: "Date of Join", width: 200 },
+    { field: "mobile_no", headerName: "Mobile No", width: 200 },
+    { field: "home_contact_no", headerName: "Home Contact No", width: 200 },
+    { field: "branch_name", headerName: "Branch Name", width: 220 },
+    // { field: "org_name", headerName: "Org Name", width: 200 },
+    { field: "residence_address", headerName: "Residence Address", width: 200 },
+    { field: "email_id", headerName: "Email Id", width: 200 },
+    { field: "user_type", headerName: "User Type", width: 200 },
+    { field: "user_status", headerName: "User Status", width: 200 },
+   
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
