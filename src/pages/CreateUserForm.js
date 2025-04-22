@@ -26,7 +26,7 @@ import ResponsiveAppBar from "../components/ResponsiveAppBar";
 
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 
-import { createNewUser, getBranchLists } from "../utilities/service";
+import { createNewUser, getBranchLists, updateUser } from "../utilities/service";
 const DisabledFormWrapper = ({ children, disabled }) => {
   return (
     <div
@@ -44,6 +44,7 @@ function CreateUserForm({ user }) {
   document.title = `Create User | ${CONFIG.title.name}`;
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
+  const [heading, setHeading] = useState("Create User");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [isFormDisabled, setIsFormDisabled] = useState(false);
@@ -64,8 +65,6 @@ function CreateUserForm({ user }) {
     pwd: null,
   });
 
-  console.log("userStatus==", userStatus, "userType==", userType);
-
   useEffect(() => {
     const getBranchList = async () => {
       try {
@@ -78,60 +77,108 @@ function CreateUserForm({ user }) {
     getBranchList();
   }, []);
 
+  useEffect(() => {
+      if (selectedRow) {
+      setHeading("View User");
+      const selectedUserStatus = selectedRow.user_status
+      const selectedUserType = selectedRow.user_type 
+      setUserStatus(selectedUserStatus);
+      setUserType(selectedUserType);
+        setFormData({
+          branch_id: selectedRow.branch_id,
+          user_name: selectedRow.user_name,
+          dob: selectedRow.dob,
+          doj: selectedRow.doj,
+          mobile_no: selectedRow.mobile_no,
+          home_contact_no: selectedRow.home_contact_no,
+          residence_address: selectedRow.residence_address,
+          email_id: selectedRow.email_id,
+          user_type: userType,
+          user_status: userStatus,
+          pwd: selectedRow.pwd,
+        });
+      }
+    }, [selectedRow]);
+
   const saveUserHandler = async () => {
     setLoading(true);
-    try {
-      const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-      const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
-      const user_status = userStatus === "Active" ? "A" : "I";
-      const user_type =
-        userType === "admin"
-          ? "A"
-          : userType === "kitchen"
-          ? "K"
-          : userType === "branch"
-          ? "B"
-          : "";
-
-      const payload = {
-        user: {
-          user_id: formData.email_id,
-          org_id: org_id,
-          branch_id: formData.branch_id,
-          user_name: formData.user_name,
-          dob: formData.dob,
-          doj: formData.doj,
-          mobile_no: formData.mobile_no,
-          home_contact_no: formData.home_contact_no,
-          residence_address: formData.residence_address,
-          email_id: formData.email_id,
-          user_type: user_type,
-          user_status: user_status,
-          pwd: formData.pwd,
-        },
-      };
-      console.log("create_use_payload",payload)
-      const res = await createNewUser(payload);
-
-      if (res) {
-        console.log("create_user_res",res)
-        navigate("/user");
-      } else {
-        alert("Something went wrong while creating the user.");
-      }
-    } catch (error) {
-      const errorMsg = error?.response?.data?.message;
-      if (
-        error.response?.status === 401 &&
-        errorMsg?.includes("User ID Already Exist")
-      ) {
-        alert("User ID already exists. Try another name.");
-      } else {
-        alert(errorMsg || "Error creating user. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
+                    const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
+                    const user_status = userStatus === "Active" ? "A" : "I";
+                    const user_type = userType === "Admin" ? "A" : userType === "Kitchen" ? "K" : userType === "Branch" ? "B" : "";
+    
+          if(selectedRow){
+            try {
+                    const user_id = selectedRow.user_id
+                    const payload = {
+                      user: {
+                        user_id: user_id,
+                        org_id: org_id,
+                        branch_id: formData.branch_id,
+                        user_name: formData.user_name,
+                        dob: formData.dob,
+                        doj: formData.doj,
+                        mobile_no: formData.mobile_no,
+                        home_contact_no: formData.home_contact_no,
+                        residence_address: formData.residence_address,
+                        email_id: formData.email_id,
+                        user_type: user_type,
+                        user_status: user_status,
+                        pwd: formData.pwd
+                      },
+                    };
+                    const res = await updateUser(payload);
+                    if (res) {
+                      navigate("/user");
+                    } else {
+                      alert("Something went wrong while update the user.");
+                    }
+                  } catch (error) {
+                    alert(error?.response?.data?.message)
+                  } finally {
+                    setLoading(false);
+                  }
+          }
+          else{
+            try {
+                  const payload = {
+                    user: {
+                      user_id: formData.email_id,
+                      org_id: org_id,
+                      branch_id: formData.branch_id,
+                      user_name: formData.user_name,
+                      dob: formData.dob,
+                      doj: formData.doj,
+                      mobile_no: formData.mobile_no,
+                      home_contact_no: formData.home_contact_no,
+                      residence_address: formData.residence_address,
+                      email_id: formData.email_id,
+                      user_type: user_type,
+                      user_status: user_status,
+                      pwd: formData.pwd,
+                    },
+                  };
+                  const res = await createNewUser(payload);
+            
+                  if (res) {
+                    navigate("/user");
+                  } else {
+                    alert("Something went wrong while creating the user.");
+                  }
+                } catch (error) {
+                  const errorMsg = error?.response?.data?.message;
+                  if (
+                    error.response?.status === 401 &&
+                    errorMsg?.includes("User ID Already Exist")
+                  ) {
+                    alert("User ID already exists. Try another name.");
+                  } else {
+                    alert(errorMsg || "Error creating user. Please try again.");
+                  }
+                } finally {
+                  setLoading(false);
+                }
+          }
+      
   };
   const handleLogout = () => {
     navigate("/login");
@@ -169,7 +216,7 @@ function CreateUserForm({ user }) {
       <Container maxWidth="sm">
         <Box mt={4}>
           <Typography variant="h5" gutterBottom>
-            Create User
+            {heading}
           </Typography>
 
           <form className="example-form" autoComplete="off" noValidate>
@@ -401,17 +448,17 @@ function CreateUserForm({ user }) {
                     onChange={(e) => setUserType(e.target.value)}
                   >
                     <FormControlLabel
-                      value="admin"
+                      value="Admin"
                       control={<Radio />}
                       label="Admin"
                     />
                     <FormControlLabel
-                      value="kitchen"
+                      value="Kitchen"
                       control={<Radio />}
                       label="Kitchen"
                     />
                     <FormControlLabel
-                      value="branch"
+                      value="Branch"
                       control={<Radio />}
                       label="Branch"
                     />

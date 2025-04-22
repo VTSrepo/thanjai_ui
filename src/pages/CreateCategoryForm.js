@@ -39,6 +39,7 @@ function CreateCategoryForm({ user }) {
   document.title = `Create Category | ${CONFIG.title.name}`;
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
+  const [heading, setHeading] = useState("Create Category");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [isFormDisabled, setIsFormDisabled] = useState(false);
@@ -48,15 +49,29 @@ function CreateCategoryForm({ user }) {
     category_code: null,
   });
 
+   useEffect(() => {
+      if (selectedRow) {
+        const selectedCatStatus = selectedRow.active 
+        setCategoryStatus(selectedCatStatus);
+        setHeading("View Category");
+        setFormData({
+          category_name: selectedRow.category_name,
+          category_code: selectedRow.category_code,
+          active: categoryStatus,
+        });
+      }
+    }, [selectedRow]);
+
   const saveCategoryHandler = async () => {
     setLoading(true);
     const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
-    const category_status = categoryStatus === "active" ? "A" : "I";
+    const category_status = categoryStatus === "Active" ? "A" : "I";
     const payload = {
       category: {
         category_name: formData.category_name,
         active: category_status,
         user_id: user_id,
+        category_code: formData.category_code
       },
     };
 
@@ -91,7 +106,7 @@ function CreateCategoryForm({ user }) {
       <Container maxWidth="sm">
         <Box mt={4}>
           <Typography variant="h5" gutterBottom>
-            Create Category
+            {heading}
           </Typography>
 
           <form className="example-form" noValidate>
@@ -121,12 +136,12 @@ function CreateCategoryForm({ user }) {
                   onChange={(e) => setCategoryStatus(e.target.value)}
                 >
                   <FormControlLabel
-                    value="active"
+                    value="Active"
                     control={<Radio />}
                     label="Active"
                   />
                   <FormControlLabel
-                    value="inactive"
+                    value="Inactive"
                     control={<Radio />}
                     label="Inactive"
                   />

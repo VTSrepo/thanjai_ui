@@ -10,7 +10,7 @@ export default function CategoryTable({ list }) {
   const paginationModel = { page: 0, pageSize: 10 };
 
   const handleEdit = async (row) => {
-    navigate("/view-category", { state: { selectedRow: row } });
+    navigate("/create-category", { state: { selectedRow: row } });
   };
   const navigate = useNavigate();
 

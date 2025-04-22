@@ -10,7 +10,7 @@ export default function UserTable({ list }) {
   const paginationModel = { page: 0, pageSize: 10 };
 
   const handleEdit = async (row) => {
-    navigate("/view-user", { state: { selectedRow: row } });
+    navigate("/create-user", { state: { selectedRow: row } });
   };
   const navigate = useNavigate();
 

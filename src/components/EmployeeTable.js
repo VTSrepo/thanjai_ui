@@ -10,7 +10,7 @@ export default function EmployeeTable({ list }) {
   const paginationModel = { page: 0, pageSize: 10 };
 
   const handleEdit = async (row) => {
-    navigate("/view-employee", { state: { selectedRow: row } });
+    navigate("/employee-create", { state: { selectedRow: row } });
   };
   const navigate = useNavigate();
 
