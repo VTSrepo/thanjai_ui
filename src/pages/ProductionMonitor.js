@@ -6,6 +6,7 @@ import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import Loader from "../components/Loader";
 import { getJobListing } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
+import { dateFromString } from "../utilities/helpers";
 
 const ProductionMonitor = ({  dashboard }) => {
   const { user, login, logout } = useUser();
@@ -29,6 +30,7 @@ const ProductionMonitor = ({  dashboard }) => {
         const updatedData = result.productions.map((item, index) => ({
           ...item,
           id: item.id || index + 1, // Appending a unique ID if it doesn't exist
+          production_date: dateFromString(item.production_date) 
         }));
         setJobList(updatedData);
       } catch (err) {

@@ -23,6 +23,7 @@ import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import InfoDialog from "../components/InfoDialog";
 import { getProducts, getEmployees, saveJob } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
+import { dateFromString } from "../utilities/helpers";
 
 function FormattedDate(date) {
   const year = date.getFullYear();
@@ -128,7 +129,7 @@ function ProductionMonitorForm() {
       setFormData({
         product_id: selectedRow.product_id,
         product_name: selectedRow.product_name,
-        production_date: selectedRow.production_date,
+        production_date: selectedRow.production_date.toISOString().slice(0, 10),
         start_time: selectedRow.start_time,
         display_end_time: convertTimeStringToDate(selectedRow.end_time),
         display_start_time: convertTimeStringToDate(selectedRow.start_time),

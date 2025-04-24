@@ -6,3 +6,8 @@ export const FormattedDate = (date) => {
 
   return formattedDate;
 };
+
+export const dateFromString = (str) => {
+  const [year, month, day] = str.split('-').map(Number)
+  return new Date(Date.UTC(year, month - 1, day))
+}

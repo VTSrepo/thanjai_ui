@@ -19,6 +19,7 @@ import {
   FormControl,
 } from "@mui/material";
 import ProductionMonitorTable from "../components/ProductionMonitorTable";
+import { dateFromString } from "../utilities/helpers";
 
 const Reports = () => {
   const { user, login, logout } = useUser();
@@ -62,6 +63,7 @@ const Reports = () => {
       const updatedData = result.dashboard.map((item, index) => ({
         ...item,
         id: item.id || index + 1, // Appending a unique ID if it doesn't exist
+        production_date: dateFromString(item.production_date)
       }));
       setReportData(updatedData);
     } catch (err) {

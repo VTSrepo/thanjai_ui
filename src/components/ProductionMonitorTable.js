@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useLocation } from 'react-router-dom';
+import { useLocation } from "react-router-dom";
 import {
   DataGrid,
   GridToolbarContainer,
   GridToolbarExport,
 } from "@mui/x-data-grid";
 import { Tooltip, Button } from "@mui/material";
-import { FormattedDate } from "../utilities/helpers";
+import { dateFromString } from "../utilities/helpers";
 import Paper from "@mui/material/Paper";
 import { useNavigate } from "react-router-dom";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -28,9 +28,7 @@ function CustomToolbar({ columns, rows }) {
       headerName: "Date",
       width: 130,
       render: (value) => {
-        const date = new Date(value);
-        if (isNaN(date)) return "";
-        return `${FormattedDate(date)}`;
+        return value.toISOString().slice(0, 10);
       },
     },
     { field: "start_time", headerName: "Start Time", width: 130 },
@@ -63,7 +61,7 @@ function CustomToolbar({ columns, rows }) {
 }
 
 export default function ProductionMonitorTable({ list }) {
-  const location = useLocation();  
+  const location = useLocation();
   const paginationModel = { page: 0, pageSize: 10 };
 
   const handleEdit = async (row) => {
@@ -100,7 +98,7 @@ export default function ProductionMonitorTable({ list }) {
       field: "production_date",
       headerName: "Date",
       width: 130,
-      valueGetter: (value) => FormattedDate(new Date(value)),
+      valueFormatter: (value) => value.toISOString().slice(0, 10),
     },
     { field: "start_time", headerName: "Start Time", width: 130 },
     { field: "end_time", headerName: "End Time", width: 130 },
@@ -110,7 +108,6 @@ export default function ProductionMonitorTable({ list }) {
       type: "number",
       width: 120,
     },
-    
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
@@ -118,10 +115,13 @@ export default function ProductionMonitorTable({ list }) {
         rows={list}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}
-        pageSizeOptions={[5, 10]}        
+        pageSizeOptions={[5, 10]}
         sx={{ border: 0 }}
         slots={{
-          toolbar: location.pathname === '/reports'? () =>  <CustomToolbar columns={columns} rows={list} />:null,
+          toolbar:
+            location.pathname === "/reports"
+              ? () => <CustomToolbar columns={columns} rows={list} />
+              : null,
         }}
       />
     </Paper>
