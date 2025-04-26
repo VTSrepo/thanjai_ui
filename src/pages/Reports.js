@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Grid2 } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import Loader from "../components/Loader";
 import { FormattedDate } from "../utilities/helpers";
@@ -22,7 +22,9 @@ import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import { dateFromString } from "../utilities/helpers";
 
 const Reports = () => {
+  const location = useLocation(); // Access the location object
   const { user, login, logout } = useUser();
+  const { selectedRow } = location.state || {};  
   const navigate = useNavigate();
   const today = FormattedDate(new Date());
   const [loading, setLoading] = useState(false);
@@ -48,22 +50,22 @@ const Reports = () => {
   };
 
   const retrieveReport = () => {
-    getProductSummaryReport();
+    getProductSummaryReport(formData);
   };
 
-  const getProductSummaryReport = async () => {
+  const getProductSummaryReport = async (payload) => {
     try {
-      setLoading(true);
+      setLoading(true);      
       const result = await getProductReport({
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        product_id: formData.product_id,
-        emp_id: formData.emp_id,
+        start_date: payload.start_date,
+        end_date: payload.end_date,
+        product_id: payload.product_id,
+        emp_id: payload.emp_id,
       });
       const updatedData = result.dashboard.map((item, index) => ({
         ...item,
         id: item.id || index + 1, // Appending a unique ID if it doesn't exist
-        production_date: dateFromString(item.production_date)
+        production_date: dateFromString(item.production_date),
       }));
       setReportData(updatedData);
     } catch (err) {
@@ -100,7 +102,20 @@ const Reports = () => {
 
     getEmployeesList();
     getProductList();
+    if (selectedRow) {
+      setFormData({
+        ...formData,
+        start_date: selectedRow.start_date,
+        end_date: today,
+        product_id: null,
+        product_name: null,
+        emp_id: null,
+        emp_name: null,
+      });
+      getProductSummaryReport(selectedRow)
+    }
   }, []);
+  
 
   const handleLogout = () => {
     navigate("/login"); // Use navigate to go to the login page
@@ -212,7 +227,7 @@ const Reports = () => {
           <h3>Production Report</h3>
           <Box sx={{ mt: 2, padding: 2 }}>
             {" "}
-            <ProductionMonitorTable list={reportData} />
+            <ProductionMonitorTable list={reportData} formData={formData} />
           </Box>
         </Box>
       </Box>

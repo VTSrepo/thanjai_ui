@@ -50,7 +50,7 @@ const DisabledFormWrapper = ({ children, disabled }) => {
 function ProductionMonitorForm() {
   const location = useLocation(); // Access the location object
   const { user, login, logout } = useUser();
-  const { selectedRow } = location.state || {}; // Extract the selected row from location state
+  const { selectedRow, backPath, parentFormData } = location.state || {}; // Extract the selected row from location state
   const currentDate = FormattedDate(new Date());
   const [openDialog, setOpenDialog] = useState(false);
   const [message, setMessage] = useState(null);
@@ -78,6 +78,7 @@ function ProductionMonitorForm() {
     emp_name: null,
     emp_id: null,
     remarks: null,
+    prod_key: null,
   });
 
   useEffect(() => {
@@ -124,8 +125,10 @@ function ProductionMonitorForm() {
 
   useEffect(() => {
     if (selectedRow) {
-      setIsFormDisabled(true);
       setHeading("View Job");
+      if (backPath === "/reports") {
+        setIsFormDisabled(true);
+      }
       setFormData({
         product_id: selectedRow.product_id,
         product_name: selectedRow.product_name,
@@ -179,6 +182,7 @@ function ProductionMonitorForm() {
         production_qty: formData.production_qty,
         damaged_qty: formData.damaged_qty,
         remarks: formData.remarks,
+        prod_key: selectedRow.prod_key,
         user_id: user_id,
       },
     };
@@ -188,7 +192,9 @@ function ProductionMonitorForm() {
     if (res.production) {
       setLoading(false);
       openSuccess("Job saved successfully.");
-      resetForm();
+      if (!selectedRow) {
+        resetForm();
+      }
     } else {
       openSuccess(res.response.data.message);
     }
@@ -258,7 +264,13 @@ function ProductionMonitorForm() {
   };
 
   const handleCancel = () => {
-    navigate("/production-monitor");
+    if (backPath === "/reports") {
+      console.log(parentFormData)
+      navigate("/reports", { state: { selectedRow: parentFormData } });
+    }else {
+      navigate(backPath);
+    }
+    
   };
 
   return (
@@ -290,12 +302,12 @@ function ProductionMonitorForm() {
                       renderInput={(params) => <TextField {...params} />}
                     />
                   </LocalizationProvider>
-                </Grid2>                
+                </Grid2>
                 <Grid2 item size={12}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <TimePicker
                       label="End Time"
-                      value={formData.display_end_time}                      
+                      value={formData.display_end_time}
                       onChange={handleChangeEndTime}
                       renderInput={(params) => <TextField {...params} />}
                     />
@@ -377,7 +389,7 @@ function ProductionMonitorForm() {
               </Grid2>
             </DisabledFormWrapper>
             <div style={{ marginTop: 20 }}>
-              {!selectedRow && (
+              {backPath !== "/reports" && (
                 <Button
                   variant="contained"
                   color="success"
@@ -392,7 +404,8 @@ function ProductionMonitorForm() {
                   }
                   onClick={saveJobHandler}
                 >
-                  Save & Add
+                  {selectedRow && `Save`}
+                  {!selectedRow && `Save & Add`}
                 </Button>
               )}
 

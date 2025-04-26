@@ -60,12 +60,12 @@ function CustomToolbar({ columns, rows }) {
   );
 }
 
-export default function ProductionMonitorTable({ list }) {
+export default function ProductionMonitorTable({ list, formData }) {
   const location = useLocation();
   const paginationModel = { page: 0, pageSize: 10 };
 
   const handleEdit = async (row) => {
-    navigate("/job-create", { state: { selectedRow: row } });
+    navigate("/job-create", { state: { selectedRow: row, backPath: location.pathname, parentFormData:formData} });
   };
   const navigate = useNavigate();
 

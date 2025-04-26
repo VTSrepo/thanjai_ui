@@ -11,6 +11,7 @@ import {
   FormControl,
   InputLabel,
   Grid2,
+  Autocomplete
 } from "@mui/material";
 
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
@@ -19,16 +20,17 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 import IndentItemTable from "../components/IndentItemTable";
 import ItemAdd from "./ItemAdd";
-import { createNewIndent } from "../utilities/service";
+import { createNewIndent, getBranchLists } from "../utilities/service";
 import { FilePresent } from "@mui/icons-material";
 
 const CreateIndent = ({ user, sendToParent }) => {
   const navigate = useNavigate();
   const currentDate = new Date();
+  const [branchList, setBranchList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [errors, setErrors] = useState({
-    customer_phone: '',
+    customer_phone: "",
   });
   const [rows, setRows] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -42,6 +44,18 @@ const CreateIndent = ({ user, sendToParent }) => {
     setShowAdd(true);
   };
 
+  useEffect(() => {
+    const getBranchList = async () => {
+      try {
+        const result = await getBranchLists();
+        setBranchList(result.branches);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    getBranchList();
+  }, []);
+
   const createIndent = async () => {
     setLoading(true);
     const payload = formData;
@@ -52,7 +66,7 @@ const CreateIndent = ({ user, sendToParent }) => {
       delete element.uom;
     });
     payload.org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    payload.kitchen_id = "TR001";
+    payload.kitchen_id = payload.kitchen_id;
     payload.branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     payload.status = "C";
     payload.user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
@@ -61,7 +75,6 @@ const CreateIndent = ({ user, sendToParent }) => {
     const res = await createNewIndent(payload);
     if (res) {
       setLoading(false);
-      alert("Indent created");
       setRows([]);
       setFormData({
         self_customer: "S",
@@ -70,8 +83,7 @@ const CreateIndent = ({ user, sendToParent }) => {
       });
       sendToParent(3);
     } else {
-      setLoading(false);
-      console.log("error");
+      setLoading(false);      
     }
   };
 
@@ -86,27 +98,27 @@ const CreateIndent = ({ user, sendToParent }) => {
         customer_phone: null,
         customer_pin: null,
       });
-    } else { 
+    } else {
       const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
 
-      if (name === 'customer_phone') {
+      if (name === "customer_phone") {
         // Validate phone number
         if (phoneRegex.test(value)) {
-          setErrors({ ...errors, customer_phone: '' });
+          setErrors({ ...errors, customer_phone: "" });
         } else {
           setErrors({
             ...errors,
-            customer_phone: 'Please enter a valid Canadian phone number (XXX-XXX-XXXX or (XXX) XXX-XXXX)',
+            customer_phone:
+              "Please enter a valid Canadian phone number (XXX-XXX-XXXX or (XXX) XXX-XXXX)",
           });
         }
-      }     
+      }
       setFormData({
         ...formData,
         [name]: value,
       });
-      
     }
-  };  
+  };
 
   const handleChangeDeliveryTime = (e) => {
     setFormData({
@@ -125,12 +137,12 @@ const CreateIndent = ({ user, sendToParent }) => {
 
   const addRow = (item) => {
     // Define the object structure to be added
-    const newRow = {      
+    const newRow = {
       item_name: item.item.product_name,
       item_code: item.item.product_id,
       ...item,
     };
-    newRow.id = rows.length+1
+    newRow.id = rows.length + 1;
     // Step 3: Update the rows state to add the new row
     setRows([...rows, newRow]);
   };
@@ -154,8 +166,6 @@ const CreateIndent = ({ user, sendToParent }) => {
       setRows(updatedRows);
     }
   };
-
-
 
   /**
    * 
@@ -185,7 +195,7 @@ const CreateIndent = ({ user, sendToParent }) => {
                 <Grid2
                   item
                   sx={{
-                    width: { xs: "100%", sm: "30%", lg:"30%" },
+                    width: { xs: "100%", sm: "30%", lg: "30%" },
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -199,10 +209,13 @@ const CreateIndent = ({ user, sendToParent }) => {
                   </LocalizationProvider>
                 </Grid2>
 
-                <Grid2 item sx={{
-                    width: { xs: "100%", sm: "30%", lg:"30%" },
-                  }}>
-                  <FormControl >
+                <Grid2
+                  item
+                  sx={{
+                    width: { xs: "100%", sm: "30%", lg: "30%" },
+                  }}
+                >
+                  <FormControl>
                     <InputLabel>Requested For</InputLabel>
                     <Select
                       name="self_customer"
@@ -217,13 +230,15 @@ const CreateIndent = ({ user, sendToParent }) => {
                   </FormControl>
                 </Grid2>
 
-                <Grid2 item sx={{
-                      width: { xs: "100%", sm: "30%" , lg:"30%"},
-                    }} >
-                  <FormControl style={{ minWidth: 120 }}>
+                <Grid2
+                  item
+                  sx={{
+                    width: { xs: "100%", sm: "30%", lg: "30%" },
+                  }}
+                >
+                  {/* <FormControl style={{ minWidth: 120 }}>
                     <InputLabel>Kitchen Id</InputLabel>
                     <Select
-                    
                       name="kitchen_id"
                       value={formData.kitchen_id}
                       onChange={handleChange}
@@ -232,14 +247,32 @@ const CreateIndent = ({ user, sendToParent }) => {
                     >
                       <MenuItem value="TR002">TR002</MenuItem>
                     </Select>
-                  </FormControl>
+                  </FormControl> */}
+                  <Autocomplete
+                    options={branchList || []}
+                    getOptionLabel={(option) => option.branch_name || ""}
+                    value={
+                      branchList?.find(
+                        (branch) => branch.branch_id === formData.kitchen_id
+                      ) || null
+                    }
+                    onChange={handleChange}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Branch Name"
+                        required
+                        fullWidth
+                      />
+                    )}
+                  />
                 </Grid2>
 
                 {formData.self_customer === "C" && (
                   <Grid2
                     item
                     sx={{
-                      width: { xs: "100%", sm: "40%" , lg:"20%"},
+                      width: { xs: "100%", sm: "40%", lg: "20%" },
                     }}
                   >
                     <TextField
@@ -255,7 +288,7 @@ const CreateIndent = ({ user, sendToParent }) => {
                   <Grid2
                     item
                     sx={{
-                      width: { xs: "100%", sm: "40%", lg:"20%" },
+                      width: { xs: "100%", sm: "40%", lg: "20%" },
                     }}
                   >
                     <TextField
@@ -272,7 +305,7 @@ const CreateIndent = ({ user, sendToParent }) => {
                   <Grid2
                     item
                     sx={{
-                      width: { xs: "100%", sm: "40%",lg:"20%" },
+                      width: { xs: "100%", sm: "40%", lg: "20%" },
                     }}
                   >
                     <TextField
@@ -282,14 +315,16 @@ const CreateIndent = ({ user, sendToParent }) => {
                       onChange={handleChange}
                       type="text"
                     />
-                    {errors.customer_phone && <FormHelperText>{errors.customer_phone}</FormHelperText>}
+                    {errors.customer_phone && (
+                      <FormHelperText>{errors.customer_phone}</FormHelperText>
+                    )}
                   </Grid2>
                 )}
                 {formData.self_customer === "C" && (
                   <Grid2
                     item
                     sx={{
-                      width: { xs: "100%", sm: "40%",lg:"20%"},
+                      width: { xs: "100%", sm: "40%", lg: "20%" },
                     }}
                   >
                     <TextField
@@ -316,7 +351,7 @@ const CreateIndent = ({ user, sendToParent }) => {
             </form>
           </Box>
           <Box sx={{ mt: 2, textAlign: "center" }}>
-            <IndentItemTable data={rows} sendToParent={alterRows}/>
+            <IndentItemTable data={rows} sendToParent={alterRows} />
 
             {formData.self_customer === "S" && (
               <Button
@@ -337,7 +372,11 @@ const CreateIndent = ({ user, sendToParent }) => {
                 color="primary"
                 type="submit"
                 onClick={createIndent}
-                disabled={rows?.length === 0 || formData.customer_name === null || formData.customer_phone === null}
+                disabled={
+                  rows?.length === 0 ||
+                  formData.customer_name === null ||
+                  formData.customer_phone === null
+                }
               >
                 Submit For Customer
               </Button>
