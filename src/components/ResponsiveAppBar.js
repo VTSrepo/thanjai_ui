@@ -26,6 +26,7 @@ import { Link } from "react-router-dom"; // Using Link for routing
 const ResponsiveAppBar = ({ user, onLogout }) => {
   const [anchorEl, setAnchorEl] = useState(null); // State for the menu anchor element
   const [employeeAnchorEl, setEmployeeAnchorEl] = useState(null);
+  const [reportsAnchorEl, setReportsAnchorEl] = useState(null);
   const [mobileEmployeeAnchorEl, setMobileEmployeeAnchorEl] = useState(null);
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm")); // Check if the screen is mobile-sized
 
@@ -51,6 +52,14 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
 
   const handleMasterMenuClose = () => {
     setEmployeeAnchorEl(null);
+  };
+
+  const handleReportMenuOpen = (event) => {
+    setReportsAnchorEl(event.currentTarget);
+  };
+
+  const handleReportMenuClose = () => {
+    setReportsAnchorEl(null);
   };
 
   return (
@@ -160,13 +169,40 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
               )}
 
               {user && user?.user_type === "A" && (
-                <MenuItem
-                  component={Link}
-                  to="/reports"
-                  onClick={handleMenuClose}
+                <Accordion
+                  sx={{ boxShadow: "none", background: "transparent" }}
                 >
-                  Reports
-                </MenuItem>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    sx={{ pl: 2 }}
+                  >
+                    <Typography>Reports</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ p: 0 }}>
+                    <List>
+                      <Divider />
+                      <ListItem
+                        button
+                        component={Link}
+                        to="/reports"
+                        onClick={handleMenuClose}
+                      >
+                        <ListItemText primary="Production" />
+                      </ListItem>
+                      <Divider />
+                      <ListItem
+                        button
+                        component={Link}
+                        to="/indent"
+                        onClick={handleMenuClose}
+                      >
+                        <ListItemText primary="Indent" />
+                      </ListItem>
+                      <Divider />
+                      {/* Add more sub-links here if needed */}
+                    </List>
+                  </AccordionDetails>
+                </Accordion>
               )}
               {/* {user && user.role === "admin" && (
                 <MenuItem
@@ -202,10 +238,39 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                 Admin Home
               </Button>
             )}
+            
             {user && user?.user_type === "A" && (
-              <Button color="inherit" component={Link} to="/reports">
-                Reports
-              </Button>
+              <>
+                <Button
+                  color="inherit"
+                  onClick={handleReportMenuOpen}
+                  endIcon={<ArrowDownIcon />}
+                >
+                  Reports
+                </Button>
+                <Menu
+                  anchorEl={reportsAnchorEl}
+                  open={Boolean(reportsAnchorEl)}
+                  onClose={handleReportMenuClose}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
+                >
+                  <MenuItem
+                    component={Link}
+                    to="/reports"
+                    onClick={handleReportMenuClose}
+                  >
+                    Production
+                  </MenuItem>
+                  <MenuItem
+                    component={Link}
+                    to="/indent"
+                    onClick={handleReportMenuClose}
+                  >
+                    Indent
+                  </MenuItem>
+                </Menu>{" "}
+              </>
             )}
             {user && user?.user_type !== "A" && (
               <Button color="inherit" component={Link} to="/indents">
@@ -225,6 +290,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
             {/* <Button component={Link} to="/employee" color="inherit">
               Employee
             </Button> */}
+            
 
             {user && user?.user_type === "A" && (
               <>

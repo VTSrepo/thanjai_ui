@@ -5,9 +5,7 @@ import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import Loader from "../components/Loader";
 import { FormattedDate } from "../utilities/helpers";
 import {
-  getProductReport,
-  getProducts,
-  getEmployees,
+    getIndentReport,
 } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
 import {
@@ -20,25 +18,23 @@ import {
 } from "@mui/material";
 import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import { dateFromString } from "../utilities/helpers";
+import IndentReportsTable from "../components/IndentReportsTable";
 
-const Reports = () => {
+const IndentReports = () => {
   const location = useLocation(); // Access the location object
   const { user, login, logout } = useUser();
   const { selectedRow } = location.state || {};  
   const navigate = useNavigate();
   const today = FormattedDate(new Date());
   const [loading, setLoading] = useState(false);
-  const [reportData, setReportData] = useState({});
+  const [indentReportData, setIndentReportData] = useState({});
   const [empList, setEmpList] = useState([]);
   const [products, setProducts] = useState([]);
 
   const [formData, setFormData] = useState({
-    start_date: today,
-    end_date: today,
-    product_id: null,
-    product_name: null,
-    emp_id: null,
-    emp_name: null,
+    from_date: today,
+    to_date: today,
+    status: null,
   });
 
   const handleChange = (e) => {
@@ -49,28 +45,37 @@ const Reports = () => {
     });
   };
 
+  const statusOptions = [
+    { value: "C", label: "Created" },
+    { value: "A", label: "Accepted" },
+    { value: "D", label: "Dispatched" },
+    { value: "R", label: "Received" },
+  ];
+  
   const retrieveReport = () => {
-    getProductSummaryReport(formData);
+    getIndentSummaryReport(formData);
   };
 
-  const getProductSummaryReport = async (payload) => {
+  const getIndentSummaryReport = async (payload) => {
+    console.log("payload_payload", payload);
     try {
       setLoading(true);      
-      const result = await getProductReport({
-        start_date: payload.start_date,
-        end_date: payload.end_date,
-        product_id: payload.product_id,
-        emp_id: payload.emp_id,
+      const result = await getIndentReport({
+        from_date: payload.from_date,
+        to_date: payload.to_date,
+        status: payload.status,
       });
-      const updatedData = result.dashboard.map((item, index) => ({
+      console.log("result_indent", result);
+      const updatedData = result.indents.map((item, index) => ({
         ...item,
         id: item.id || index + 1, // Appending a unique ID if it doesn't exist
-        production_date: dateFromString(item.production_date),
+        indent_date: dateFromString(item.indent_date),
       }));
-      setReportData(updatedData);
+      setIndentReportData(updatedData);
     } catch (err) {
+        console.log("err_indent", err);
       if (err.response.data && err.response.data.code === 4001) {
-        setReportData([]);
+        setIndentReportData([]);
       }
       console.log("NO data");
     } finally {
@@ -79,40 +84,14 @@ const Reports = () => {
   };
 
   useEffect(() => {
-    const getProductList = async () => {
-      try {
-        const result = await getProducts();
-        const snackItems = result.products.filter(
-          (item) => item.bu_id === "TR002"
-        );
-        setProducts(snackItems);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    const getEmployeesList = async () => {
-      try {
-        const result = await getEmployees();
-        setEmpList(result.employees);
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    getEmployeesList();
-    getProductList();
     if (selectedRow) {
       setFormData({
         ...formData,
-        start_date: selectedRow.start_date,
-        end_date: today,
-        product_id: null,
-        product_name: null,
-        emp_id: null,
-        emp_name: null,
+        from_date: selectedRow.from_date,
+        to_date: today,
+        status: null
       });
-      getProductSummaryReport(selectedRow)
+      getIndentSummaryReport(selectedRow)
     }
   }, []);
   
@@ -124,12 +103,9 @@ const Reports = () => {
   const resetFields = () => {
     setFormData({
       ...formData,
-      start_date: today,
-      end_date: today,
-      product_id: null,
-      product_name: null,
-      emp_id: null,
-      emp_name: null,
+      from_date: today,
+      to_date: today,
+      status: null,
     });
   };
 
@@ -138,7 +114,7 @@ const Reports = () => {
     <>
       <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
       <Box sx={{ mt: 2, padding: 2 }}>
-        <Typography variant="h4">Production</Typography>
+        <Typography variant="h4">Indent</Typography>
 
         <Box sx={{ mt: 2, padding: 2 }}>
           <Grid2 container spacing={2}>
@@ -147,8 +123,8 @@ const Reports = () => {
                 type="date"
                 fullWidth
                 label="Start Date"
-                name="start_date"
-                value={formData.start_date}
+                name="from_date"
+                value={formData.from_date}
                 InputLabelProps={{ shrink: true }}
                 onChange={handleChange}
               ></TextField>
@@ -158,56 +134,39 @@ const Reports = () => {
                 label="End Date"
                 fullWidth
                 type="date"
-                name="end_date"
-                value={formData.end_date}
+                name="to_date"
+                value={formData.to_date}
                 InputLabelProps={{ shrink: true }}
                 onChange={handleChange}
               ></TextField>
             </Grid2>
-            {products && (
-              <Grid2 item size={{ xs: 12, md: 3 }}>
-                <FormControl fullWidth required>
-                  <InputLabel>Product Name</InputLabel>
-                  <Select
-                    label="Product Name"
-                    name="product_id"
-                    value={formData.product_id || ""}
-                    onChange={handleChange}
-                  >
-                    {products?.map((prod) => (
-                      <MenuItem key={prod.product_id} value={prod.product_id}>
-                        {prod.product_name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid2>
-            )}
-            {empList && (
-              <Grid2 item size={{ xs: 12, md: 3 }}>
-                <FormControl fullWidth required>
-                  <InputLabel>Emp Name</InputLabel>
-                  <Select
-                    label="Emp Name"
-                    name="emp_id"
-                    value={formData.emp_id || ""}
-                    onChange={handleChange}
-                  >
-                    {empList?.map((mode) => (
-                      <MenuItem key={mode.emp_id} value={mode.emp_id}>
-                        {mode.emp_name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid2>
-            )}
+
+            <Grid2 item size={{ xs: 12, md: 3 }}>
+            <FormControl fullWidth >
+                <InputLabel>Status</InputLabel>
+                <Select
+                label="Status"
+                name="status"
+                value={formData.status || ""}
+                onChange={handleChange}
+                >
+                {statusOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                    </MenuItem>
+                ))}
+                </Select>
+            </FormControl>
+            </Grid2>
+            <Grid2 item size={{ xs: 12, md: 3 }}>
+            </Grid2>
+
             <Grid2 item size={{ xs: 6, md: 3 }}>
               <Button
                 variant="contained"
                 fullWidth
                 color="success"
-                disabled={!formData.start_date || !formData.end_date}
+                disabled={!formData.from_date || !formData.to_date}
                 onClick={retrieveReport}
               >
                 Search
@@ -224,10 +183,10 @@ const Reports = () => {
               </Button>
             </Grid2>
           </Grid2>
-          <h3>Production Report</h3>
+          <h3>Indent Report</h3>
           <Box sx={{ mt: 2, padding: 2 }}>
             {" "}
-            <ProductionMonitorTable list={reportData} formData={formData} />
+            <IndentReportsTable list={indentReportData} formData={formData} />
           </Box>
         </Box>
       </Box>
@@ -235,4 +194,4 @@ const Reports = () => {
   );
 };
 
-export default Reports;
+export default IndentReports;

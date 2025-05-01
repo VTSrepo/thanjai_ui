@@ -29,6 +29,7 @@ import CreateUserForm from "./pages/CreateUserForm";
 import User from "./pages/User";
 import  Category  from "./pages/Category";
 import CreateCategoryForm from "./pages/CreateCategoryForm";
+import IndentReports from "./pages/IndentReports";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -134,6 +135,15 @@ function App() {
               element={
                 <ProtectedRoute
                   element={<Reports user={user} setUser={setUser} />}
+                  role="admin"
+                />
+              }/>
+
+              <Route
+              path="/indent"
+              element={
+                <ProtectedRoute
+                  element={<IndentReports user={user} setUser={setUser} />}
                   role="admin"
                 />
               }/>
