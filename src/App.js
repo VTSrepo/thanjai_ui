@@ -48,7 +48,7 @@ function App() {
     return user && user.role === role ? element : <Navigate to="/login" />;
   };
 
-  if(!user){
+  if(!user&& JSON.parse(localStorage.getItem("user"))){
     setUser(JSON.parse(localStorage.getItem("user")));
   }
 
