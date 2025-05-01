@@ -41,6 +41,7 @@ function CreateEmployeeForm() {
   const { user } = useUser();
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
+  const [heading, setHeading] = useState("Create Employee");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [isFormDisabled, setIsFormDisabled] = useState(false);
@@ -52,7 +53,6 @@ function CreateEmployeeForm() {
     emp_id: null,
     contact: null,
   });
-
   useEffect(() => {
     const getBranchList = async () => {
       try {
@@ -65,15 +65,31 @@ function CreateEmployeeForm() {
     getBranchList();
   }, []);
 
+  useEffect(() => {
+    if (selectedRow) {
+      setHeading("View Employee");
+      const selectedEmpStatus = selectedRow.active;
+      setEmpStatus(selectedEmpStatus);
+        setFormData({
+          emp_name: selectedRow.emp_name,
+          emp_id: selectedRow.emp_id,
+          active: empStatus,
+          contact: selectedRow.contact,
+          branch_id: selectedRow.branch_id,
+          branch_name: selectedRow.branch_name
+        });
+    }
+    }, [selectedRow]);
+
   const saveEmployeeHandler = async () => {
     setLoading(true);
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
     const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
-    console.log("empStatus", empStatus);
-    const employee_status = empStatus === "active" ? "A" : "I";
+    const employee_status = empStatus === "Active" ? "A" : "I";
     const payload = {
       employee: {
+        emp_id:formData.emp_id,
         org_id: org_id,
         branch_id: formData.branch_id,
         emp_name: formData.emp_name,
@@ -82,9 +98,7 @@ function CreateEmployeeForm() {
         user_id: user_id,
       },
     };
-
     const res = await createNewEmployee(payload);
-    console.log("cre_res", res);
 
     if (res.employee) {
       setLoading(false);
@@ -124,7 +138,7 @@ function CreateEmployeeForm() {
       <Container maxWidth="sm">
         <Box mt={4}>
           <Typography variant="h5" gutterBottom>
-            Create Employee
+            {heading}
           </Typography>
 
           <form className="example-form" noValidate>
@@ -185,12 +199,12 @@ function CreateEmployeeForm() {
                   onChange={(e) => setEmpStatus(e.target.value)}
                 >
                   <FormControlLabel
-                    value="active"
+                    value="Active"
                     control={<Radio />}
                     label="Active"
                   />
                   <FormControlLabel
-                    value="inactive"
+                    value="Inactive"
                     control={<Radio />}
                     label="Inactive"
                   />

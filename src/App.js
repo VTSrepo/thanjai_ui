@@ -25,12 +25,9 @@ import TimesheetForm from "./pages/TimesheetForm";
 import { UserProvider } from "./utilities/UserContext";
 // import EmployeeForm from "./pages/EmployeeForm";
 import CreateEmployeeForm from "./pages/CreateEmployeeForm";
-import ViewEmployee from "./pages/ViewEmployee";
 import CreateUserForm from "./pages/CreateUserForm";
-import ViewUser from "./pages/ViewUser";
 import User from "./pages/User";
 import  Category  from "./pages/Category";
-import ViewCategory from "./pages/ViewCategory";
 import CreateCategoryForm from "./pages/CreateCategoryForm";
 
 function App() {
@@ -112,11 +109,7 @@ function App() {
             <Route
               path="/employee-create"
               element={<CreateEmployeeForm user={user} setUser={setUser} />}
-            /> 
-            <Route
-              path="/view-employee"
-              element={<ViewEmployee user={user} setUser={setUser} />}
-            />            
+            />          
 
             {/* <Route
               path="/product-create"
@@ -156,10 +149,6 @@ function App() {
               path="/create-user"
               element={<CreateUserForm user={user} setUser={setUser} />}
             />
-             <Route
-              path="/view-user"
-              element={<ViewUser user={user} setUser={setUser} />}
-            />
             <Route
               path="/category"
               element={<Category user={user} setUser={setUser} />}
@@ -168,11 +157,6 @@ function App() {
             <Route
               path="/create-category"
               element={<CreateCategoryForm user={user} setUser={setUser} />}
-            />
-
-              <Route
-              path="/view-category"
-              element={<ViewCategory user={user} setUser={setUser} />}
             />
             {/* <Route
               path="/product-master"
