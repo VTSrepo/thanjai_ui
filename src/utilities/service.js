@@ -269,7 +269,7 @@ export const getProductReport = async (param) => {
 export const getIndentReport = async (param) => {
   try {
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    let url = `${API_URL}/indent-report/${org_id}?from_date='${param.from_date}'&&to_date='${param.to_date}'&&stutus=${param.status}`;
+    let url = `${API_URL}/indent-report/${org_id}?from_date='${param.from_date}'&&to_date='${param.to_date}'&&status=${param.status}`;
     const response = await axios.get(url);
     return response.data; // Return only the data from the response
   } catch (error) {
