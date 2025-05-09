@@ -112,15 +112,13 @@ function App() {
               element={<CreateEmployeeForm user={user} setUser={setUser} />}
             />          
 
-            {/* <Route
+            <Route
               path="/product-create"
               element={
-                <ProtectedRoute
-                  element={<ProductForm user={user} setUser={setUser} />}
+               <ProductForm user={user} setUser={setUser} />}
                   role="admin"
-                />
-              }
-            /> */}
+                
+            />
             <Route
               path="/admin"
               element={
@@ -168,15 +166,13 @@ function App() {
               path="/create-category"
               element={<CreateCategoryForm user={user} setUser={setUser} />}
             />
-            {/* <Route
+            <Route
               path="/product-master"
               element={
-                <ProtectedRoute
-                  element={<ProductMaster user={user} setUser={setUser} />}
+                <ProductMaster user={user} setUser={setUser} />}
                   role="admin"
-                />
-              }
-            /> */}
+               
+            />
             <Route
               path="/production-monitor"
               element={

@@ -310,6 +310,13 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                 >
                   <MenuItem
                     component={Link}
+                    to="/product-master"
+                    onClick={handleMasterMenuClose}
+                  >
+                    Product
+                  </MenuItem>
+                  <MenuItem
+                    component={Link}
                     to="/employee"
                     onClick={handleMasterMenuClose}
                   >

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Box, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate,useLocation } from "react-router-dom"; // Import useNavigate
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import ProductTable from "../components/ProductTable";
 import Loader from "../components/Loader";
 import { API_URL } from "../utilities/service";
+import { useUser } from "../utilities/UserContext";
 import axios from "axios";
 
-const ProductMaster = ({ user }) => {
-  const navigate = useNavigate();
+const ProductMaster = () => {
+  const navigate = useNavigate();  
+  const { user, login, logout } = useUser();
   const [loading, setLoading] = useState(true);
   const [productList, setProductList] = useState([]);
 

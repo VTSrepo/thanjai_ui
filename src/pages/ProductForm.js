@@ -15,11 +15,12 @@ import {
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 import {API_URL} from '../utilities/service'
-
+import { useUser } from "../utilities/UserContext";
 import { getBu, referenceRecord, getCategoryList } from "../utilities/service";
 
-function ProductForm({ user }) {
+function ProductForm() {
   const location = useLocation(); // Access the location object
+   const { user, login, logout } = useUser();
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
