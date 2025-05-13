@@ -259,6 +259,7 @@ function ProductForm() {
                   onChange={handleChange}
                   fullWidth
                   type="number"
+                  InputProps={{ inputProps: { min: 0 } }}
                 />
               </Grid2>
               <Grid2 item size={12}>

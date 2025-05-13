@@ -14,7 +14,6 @@ import { exportPDF } from "../utilities/fileHelper";
 
 function CustomToolbar({ columns, rows }) {
   const pdfColumns = [
-    { field: "branch_id", headerName: "Branch Id", width: 200 },
     { field: "branch_name", headerName: "Branch Name", width: 200 },
     {
       field: "indent_number",
@@ -30,13 +29,24 @@ function CustomToolbar({ columns, rows }) {
         return value.toISOString().slice(0, 10);
       },
     },
-    { field: "kitchen_id", headerName: "Kitchen Id", width: 130 },
+    { field: "indent_number", headerName: "Indent Number", width: 130 },
     { field: "kitchen_name", headerName: "Kitchen Name", width: 130 },
-    { field: "item_code", headerName: "Item Code", width: 130 },
     { field: "product_name", headerName: "Product Name", width: 130 },
     {
       field: "qty_ordered",
       headerName: "Qty Ordered",
+      type: "number",
+      width: 120,
+    },
+    {
+      field: "qty_agreed_kitchen",
+      headerName: "Qty Agreed Kitchen",
+      type: "number",
+      width: 120,
+    },
+    {
+      field: "qty_received",
+      headerName: "Qty Received",
       type: "number",
       width: 120,
     },
@@ -87,27 +97,32 @@ export default function IndentReportsTable({ list, formData }) {
     //     </Tooltip>
     //   ),
     // },
-    { field: "branch_id", headerName: "Branch Id", width: 200 },
+   
     { field: "branch_name", headerName: "Branch Name", width: 200 },
-    {
-      field: "indent_number",
-      headerName: "Indent Number",
-      width: 130,
-      type: "number",
-    },
     {
       field: "indent_date",
       headerName: "Indent Date",
       width: 130,
       valueFormatter: (value) => value.toISOString().slice(0, 10),
     },
-    { field: "kitchen_id", headerName: "Kitchen Id", width: 130 },
+    { field: "indent_number", headerName: "Indent Number", width: 130 },
     { field: "kitchen_name", headerName: "Kitchen Name", width: 130 },
-    { field: "item_code", headerName: "Item Code", width: 130 },
     { field: "product_name", headerName: "Product Name", width: 130 },
     {
       field: "qty_ordered",
       headerName: "Qty Ordered",
+      type: "number",
+      width: 120,
+    },
+    {
+      field: "qty_agreed_kitchen",
+      headerName: "Qty Agreed Kitchen",
+      type: "number",
+      width: 120,
+    },
+    {
+      field: "qty_received",
+      headerName: "Qty Received",
       type: "number",
       width: 120,
     },

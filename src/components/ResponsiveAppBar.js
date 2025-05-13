@@ -123,6 +123,15 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                   </AccordionSummary>
                   <AccordionDetails sx={{ p: 0 }}>
                     <List>
+                    <Divider />
+                      <ListItem
+                        button
+                        component={Link}
+                        to="/product-master"
+                        onClick={handleMenuClose}
+                      >
+                        <ListItemText primary="Product" />
+                      </ListItem>
                       <Divider />
                       <ListItem
                         button
@@ -141,7 +150,6 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                       >
                         <ListItemText primary="User" />
                       </ListItem>
-                      <Divider />
                       <Divider />
                       <ListItem
                         button

@@ -164,6 +164,7 @@ export default function ProductTable({ list }) {
             value={sp.product_price}
             variant="standard"
             onChange={handleChange}
+            InputProps={{ inputProps: { min: 0 } }}
           />
         </DialogContent>
         <DialogActions>
