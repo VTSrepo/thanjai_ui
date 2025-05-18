@@ -47,6 +47,9 @@ function ProductForm() {
     org_id: org_id,
     branch_id: branch_id,
   });
+  const [errors, setErrors] = useState({ min_stock: "", max_stock: "",product_price: "",gst_value: "",stock_in_hand: "",reorder_level: "" });
+
+  
 
   useEffect(() => {
     const getBuData = async () => {
@@ -111,6 +114,14 @@ function ProductForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    const numberValue = Number(value);
+
+    if (numberValue < 0) {
+      setErrors((prev) => ({ ...prev, [name]: "Value must be at least 1" }));
+    } else {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
     setFormData({
       ...formData,
       [name]: value,
@@ -215,6 +226,8 @@ function ProductForm() {
                   fullWidth
                   type="number"
                   InputProps={{ inputProps: { min: 0 } }}
+                  error={!!errors.stock_in_hand}
+                  helperText={errors.stock_in_hand}
                 />
               </Grid2>
               <Grid2 item size={12}>
@@ -226,6 +239,8 @@ function ProductForm() {
                   fullWidth
                   type="number"
                   InputProps={{ inputProps: { min: 0 } }}
+                  error={!!errors.min_stock}
+                  helperText={errors.min_stock}
                 />
               </Grid2>
               <Grid2 item size={12}>
@@ -237,6 +252,8 @@ function ProductForm() {
                   fullWidth
                   type="number"
                   InputProps={{ inputProps: { min: 0 } }}
+                  error={!!errors.max_stock}
+                  helperText={errors.max_stock}
                 />
               </Grid2>
               <Grid2 item size={12}>
@@ -248,6 +265,8 @@ function ProductForm() {
                   fullWidth
                   type="number"
                   InputProps={{ inputProps: { min: 0 } }}
+                  error={!!errors.reorder_level}
+                  helperText={errors.reorder_level}
                 />
               </Grid2>              
 
@@ -260,6 +279,8 @@ function ProductForm() {
                   fullWidth
                   type="number"
                   InputProps={{ inputProps: { min: 0 } }}
+                  error={!!errors.product_price}
+                  helperText={errors.product_price}
                 />
               </Grid2>
               <Grid2 item size={12}>
@@ -271,6 +292,8 @@ function ProductForm() {
                   fullWidth
                   type="number"
                   InputProps={{ inputProps: { min: 0 } }}
+                  error={!!errors.gst_value}
+                  helperText={errors.gst_value}
                 />
               </Grid2>
               <Grid2 item size={12}>
@@ -296,7 +319,8 @@ function ProductForm() {
               <Button
                 variant="contained"
                 color="success"
-                //disabled={!formData.product_name || !formData.bu_id}
+                disabled={!formData.product_name || !formData.category_code || !formData.uom|| !formData.bu_id || Number(formData.min_stock) < 0 ||
+                  Number(formData.max_stock) < 0 || Number(formData.gst_value) < 0 || Number(formData.product_price) < 0 || Number(formData.stock_in_hand) < 0 || Number(formData.reorder_level) < 0 }
                 onClick={handleSave}
               >
                 Save

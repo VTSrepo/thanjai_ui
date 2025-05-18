@@ -26,6 +26,7 @@ export default function ProductTable({ list }) {
   const navigate = useNavigate();
 
   const [open, setOpen] = React.useState(false);
+  const [error, setError] = useState({product_price:""});
   const [sp, SetSp] = useState({});
 
   const handleClickOpen = async (row) => {
@@ -48,6 +49,14 @@ export default function ProductTable({ list }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    const numberValue = Number(value);
+
+    if (numberValue < 0) {
+      setError((prev) => ({ ...prev, [name]: "Value must be at least 1" }));
+    } else {
+      setError((prev) => ({ ...prev, [name]: "" }));
+    }
     SetSp({
       ...sp,
       [name]: value,
@@ -165,11 +174,13 @@ export default function ProductTable({ list }) {
             variant="standard"
             onChange={handleChange}
             InputProps={{ inputProps: { min: 0 } }}
+            error={!!error.product_price}
+            helperText={error.product_price}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button type="submit" onClick={handleSave}>Save</Button>
+          <Button type="submit" color="success" variant="contained" onClick={handleSave} disabled= {Number(sp.product_price) < 0}>Save</Button>
         </DialogActions>
       </Dialog>
     </Paper>
