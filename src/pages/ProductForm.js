@@ -129,9 +129,29 @@ function ProductForm() {
   };  
 
   const handleSave = async () => {
+    const fieldsToCheck = [
+      "gst_value",
+      "max_stock",
+      "min_stock",
+      "product_price",
+      "reorder_level",
+      "stock_in_hand",
+    ];
+    
+    const updatedFormData = { ...formData };
+    
+    fieldsToCheck.forEach((key) => {
+      if (
+        updatedFormData[key] === null ||
+        updatedFormData[key] === "" ||
+        updatedFormData[key] === undefined
+      ) {
+        updatedFormData[key] = 0;
+      }
+    });
     setLoading(true);
     const response = await axios.post(`${API_URL}/product`, {
-      product: formData,
+      product: updatedFormData,
     });
     if (response.data && response.data) {
       setLoading(false);
