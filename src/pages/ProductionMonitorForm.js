@@ -182,7 +182,7 @@ function ProductionMonitorForm() {
         production_qty: formData.production_qty,
         damaged_qty: formData.damaged_qty,
         remarks: formData.remarks,
-        prod_key: selectedRow.prod_key,
+        prod_key: selectedRow?.prod_key,
         user_id: user_id,
       },
     };

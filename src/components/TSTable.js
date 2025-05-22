@@ -77,7 +77,7 @@ export default function TSTable({ list }) {
       field: "cur_date",
       headerName: "Date",
       width: 130,
-      valueGetter: (value) => FormattedDate(new Date(value)),
+      valueFormatter: (value) => value.toISOString().slice(0, 10),
     },
     { field: "start_time", headerName: "Start Time", width: 130 },
     { field: "end_time", headerName: "End Time", width: 130 },

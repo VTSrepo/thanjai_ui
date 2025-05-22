@@ -106,7 +106,7 @@ function TimesheetForm() {
       setIsFormDisabled(true);
       setHeading("View Timesheet");
       setFormData({
-        cur_date: selectedRow.production_date,
+        cur_date: selectedRow.cur_date.toISOString().slice(0, 10),
         start_time: selectedRow.start_time,
         display_end_time: convertTimeStringToDate(selectedRow.end_time),
         display_start_time: convertTimeStringToDate(selectedRow.start_time),

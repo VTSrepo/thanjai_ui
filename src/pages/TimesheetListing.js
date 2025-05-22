@@ -6,6 +6,7 @@ import TSTable from "../components/TSTable";
 import Loader from "../components/Loader";
 import { getTSListing } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
+import { dateFromString } from "../utilities/helpers";
 
 const TimesheetListing = ({  dashboard }) => {
   const { user, login, logout } = useUser();
@@ -29,6 +30,7 @@ const TimesheetListing = ({  dashboard }) => {
         const updatedData = result.timesheets.map((item, index) => ({
           ...item,
           id: item.id || index + 1, // Appending a unique ID if it doesn't exist
+          cur_date: dateFromString(item.cur_date)
         }));
         setJobList(updatedData);
       } catch (err) {
