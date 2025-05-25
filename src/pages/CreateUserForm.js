@@ -517,7 +517,11 @@ function CreateUserForm() {
                   !formData.user_name ||
                   !formData.email_id ||
                   contactError ||
-                  mobileError
+                  mobileError||
+                  !formData.branch_id||
+                  !formData.pwd ||
+                  !userType||
+                  !userStatus
                 }
                 onClick={saveUserHandler}
               >

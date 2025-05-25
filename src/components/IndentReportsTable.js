@@ -97,8 +97,6 @@ export default function IndentReportsTable({ list, formData }) {
     //     </Tooltip>
     //   ),
     // },
-   
-    { field: "branch_name", headerName: "Branch Name", width: 200 },
     {
       field: "indent_date",
       headerName: "Indent Date",
@@ -106,13 +104,10 @@ export default function IndentReportsTable({ list, formData }) {
       valueFormatter: (value) => value.toISOString().slice(0, 10),
     },
     { field: "indent_number", headerName: "Indent Number", width: 130 },
-    { field: "indent_value", headerName: "Indent Value", width: 130 },
+    { field: "branch_name", headerName: "Branch Name", width: 200 },
     { field: "kitchen_name", headerName: "Kitchen Name", width: 130 },
-    { field: "kitchen_remarks", headerName: "Kitchen Remarks", width: 130 },
-    { field: "discrepancy_notes", headerName: "Discrepancy Notes", width: 130 },
+    { field: "indent_value", headerName: "Indent Value", width: 130 },
     { field: "product_name", headerName: "Product Name", width: 130 },
-    { field: "item_cost", headerName: "Item Cost", width: 130 },
-    { field: "damage_notes", headerName: "Damage Notes", width: 130 },
     {
       field: "qty_ordered",
       headerName: "Qty Ordered",
@@ -131,6 +126,11 @@ export default function IndentReportsTable({ list, formData }) {
       type: "number",
       width: 120,
     },
+    { field: "item_cost", headerName: "Item Cost", width: 130 },
+    { field: "kitchen_remarks", headerName: "Kitchen Remarks", width: 130 },
+    { field: "discrepancy_notes", headerName: "Discrepancy Notes", width: 130 },
+    { field: "damage_notes", headerName: "Damage Notes", width: 130 },
+    
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
