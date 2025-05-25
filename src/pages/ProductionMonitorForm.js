@@ -263,18 +263,17 @@ function ProductionMonitorForm() {
     });
   };
 
-  // const handleCancel = () => {
-  //   if (backPath === "/reports") {
-  //     console.log(parentFormData)
-  //     navigate("/reports", { state: { selectedRow: parentFormData } });
-  //   }else {
-  //     navigate(backPath);
-  //   }
-  // };
   const handleCancel = () => {
-    navigate("/production-monitor");
+    if (!backPath) {
+      navigate(-1);
+    }
+    if (backPath === "/reports") {
+      console.log(parentFormData);
+      navigate("/reports", { state: { selectedRow: parentFormData } });
+    } else {
+      navigate(backPath);
+    }
   };
-
 
   return (
     <>
