@@ -94,36 +94,41 @@ export default function NavTab() {
         >
           <Tab
             label={
-              <Badge badgeContent='C' color="primary">
-                <ShoppingCartIcon style={{ fontSize: 50 }}/>
+              <><Badge badgeContent='C' color="primary">
+                <ShoppingCartIcon style={{ fontSize: 30 }}/>
               </Badge>
+              <span style={{ fontSize: 5 }}>Create</span>
+              </>
             }
             disabled={user?.user_type === 'K'}           
             {...a11yProps(0)}
           />
           <Tab
             label={
-              <Badge badgeContent='A' color="primary">
-                <ChecklistRtlIcon style={{ fontSize: 50 }}/>
+              <><Badge badgeContent='A' color="primary">
+                <ChecklistRtlIcon style={{ fontSize: 30 }}/>
               </Badge>
+              <span style={{ fontSize: 5 }}>Accept</span></>
             } 
             disabled={user?.user_type === 'B'}           
             {...a11yProps(1)}
           />
         <Tab
             label={
-              <Badge badgeContent='D' color="primary">
-                <LocalShippingIcon style={{ fontSize: 50 }}/>
+              <><Badge badgeContent='D' color="primary">
+                <LocalShippingIcon style={{ fontSize: 30 }}/>
               </Badge>
+              <span style={{ fontSize: 5 }}>Dispatch</span></>
             }
             disabled={user?.user_type === 'B'}           
             {...a11yProps(2)}
           />
           <Tab
             label={
-              <Badge badgeContent='R' color="primary">
-                <CallReceivedIcon style={{ fontSize: 50 }}/>
+              <><Badge badgeContent='R' color="primary">
+                <CallReceivedIcon style={{ fontSize: 30 }}/>
               </Badge>
+              <span style={{ fontSize: 5 }}>Receive</span></>
             }
             disabled={user?.user_type === 'K'}           
             {...a11yProps(3)}

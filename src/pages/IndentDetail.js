@@ -93,7 +93,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   const updateIndent = async (payload) => {
     const res = await createNewIndent(payload);
     if (res) {
-      setMessage("Indent Updated");
+      setMessage("Indent "+displayFullStatus(payload.status) );
       setOpenDialog(true);
     } else {
       setMessage("Indent Acknowledgement Failure");
@@ -104,10 +104,11 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   const actionIndent = async (action) => {
     let payload = indentDetail;
     if (action === "accept") {
-      payload.indent_details = rows;
+      //payload.indent_details = rows;
       payload.status = "A";
     }
     if (action === "dispatch") {
+      payload.indent_details = rows;
       payload.status = "D";
     }
     if (action === "receive") {
@@ -131,7 +132,19 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
       item.qty_agreed_kitchen === "" ||
       item.qty_agreed_kitchen === undefined
   );
- 
+
+  const displayFullStatus = (status) => {
+    if (status === "C") {
+      return "Created";
+    }else  if(status === 'A'){
+      return 'Accepted'
+    } else if(status === 'D'){
+      return 'Dispatched'
+    } else  if(status === 'R'){
+      return 'Received'
+    }
+  };
+
   if (loading) return <Loader />; // Show loader while data is being fetched
 
   return (
@@ -167,7 +180,14 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                 <ListItem>
                   <ListItemText
                     primary="Status"
-                    secondary={indentDetail?.status}
+                    secondary={displayFullStatus(indentDetail?.status)}
+                  />
+                </ListItem>
+
+                <ListItem>
+                  <ListItemText
+                    primary="Priority Flag"
+                    secondary={indentDetail?.priority_flag === 'Y'?'Yes':'No'}
                   />
                 </ListItem>
               </List>
@@ -209,8 +229,8 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                 variant="contained"
                 color="primary"
                 sx={{ marginLeft: 2 }}
-                disabled={hasInvalidKitchenQty}
-                onClick={() => actionIndent("accept")}                
+                // disabled={hasInvalidKitchenQty}
+                onClick={() => actionIndent("accept")}
               >
                 Accept
               </Button>
@@ -221,6 +241,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
                 variant="contained"
                 color="primary"
                 sx={{ marginLeft: 2 }}
+                disabled={hasInvalidKitchenQty}
                 onClick={() => actionIndent("dispatch")}
               >
                 Dispatch

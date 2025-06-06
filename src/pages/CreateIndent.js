@@ -38,6 +38,7 @@ const CreateIndent = ({ user, sendToParent }) => {
     self_customer: "S",
     delivery_by_datetime: currentDate,
     kitchen_id: "TR002",
+    priority_flag:'N'
   });
 
   const addItem = () => {
@@ -66,7 +67,7 @@ const CreateIndent = ({ user, sendToParent }) => {
       delete element.uom;
     });
     payload.org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    payload.kitchen_id = payload.kitchen_id;
+    payload.kitchen_id = payload.kitchen_id;    
     payload.branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     payload.status = "C";
     payload.user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
@@ -80,6 +81,7 @@ const CreateIndent = ({ user, sendToParent }) => {
         self_customer: "S",
         delivery_by_datetime: null,
         kitchen_id: null,
+        priority_flag:'N'
       });
       sendToParent(3);
     } else {
@@ -195,7 +197,7 @@ const CreateIndent = ({ user, sendToParent }) => {
                 <Grid2
                   item
                   sx={{
-                    width: { xs: "100%", sm: "30%", lg: "30%" },
+                    width: { xs: "100%", sm: "30%", lg: "20%" },
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -212,13 +214,13 @@ const CreateIndent = ({ user, sendToParent }) => {
                 <Grid2
                   item
                   sx={{
-                    width: { xs: "100%", sm: "30%", lg: "30%" },
+                    width: { xs: "100%", sm: "30%", lg: "20%" },
                   }}
                 >
-                  <FormControl>
+                  <FormControl sx={{width:'100%'}}>
                     <InputLabel>Requested For</InputLabel>
                     <Select
-                      name="self_customer"
+                      name="self_customer"                      
                       value={formData.self_customer}
                       onChange={handleChange}
                       label="Requested For"
@@ -233,7 +235,28 @@ const CreateIndent = ({ user, sendToParent }) => {
                 <Grid2
                   item
                   sx={{
-                    width: { xs: "100%", sm: "30%", lg: "30%" },
+                    width: { xs: "100%", sm: "30%", lg: "20%" },
+                  }}
+                >
+                  <FormControl sx={{width:'100%'}}>
+                    <InputLabel>Priority Order</InputLabel>
+                    <Select
+                      name="priority_flag"
+                      value={formData.priority_flag}
+                      onChange={handleChange}
+                      label="Priority Order"
+                      required
+                    >
+                      <MenuItem value="Y">Yes</MenuItem>
+                      <MenuItem value="N">No</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid2>
+
+                <Grid2
+                  item
+                  sx={{
+                    width: { xs: "100%", sm: "30%", lg: "20%" },
                   }}
                 >
                   {/* <FormControl style={{ minWidth: 120 }}>

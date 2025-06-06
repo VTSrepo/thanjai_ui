@@ -87,10 +87,10 @@ const IndentItemTable = ({ user, data, sendToParent, status }) => {
 
   const columnVisibilityModel = {
     approval: user?.role == "admin",
-    action: !!status,
+    action: !!status && status !== 'C',
     delete: !status,
     id:false,
-    qty_agreed_kitchen:!!status,
+    qty_agreed_kitchen:!!status && status === 'A',
     qty_received:!!status && status === 'D',
     discrepancy_notes:!!status && status === 'D'
   };

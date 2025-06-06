@@ -75,6 +75,20 @@ export default function IndentListingtable({ list, sendToParent }) {
       ),
     },
     { field: "indent_date", headerName: "Indent Date", width: 200 },
+    { field: "priority_flag", headerName: "Priority Flag", width: 200,
+      renderCell: (params) => (
+        <span
+          style={{
+            fontWeight: "bold",
+            color: "#ffa133",
+            
+          }}
+          
+        >
+          {params.row.priority_flag === 'Y'?'Yes':'No'}
+        </span>
+      ),
+     }
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>

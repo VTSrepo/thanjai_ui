@@ -248,7 +248,7 @@ const ItemAdd = (props) => {
                     fullWidth
                     name="qty_agreed_kitchen"
                     value={formData.qty_agreed_kitchen}
-                    disabled={indent_status === "A" || indent_status === "D"}
+                    disabled={indent_status === "D"}
                     onChange={handleChange}
                     type="number"
                     required
@@ -264,7 +264,7 @@ const ItemAdd = (props) => {
                     fullWidth
                     name="kitchen_remarks"
                     value={formData.kitchen_remarks}
-                    disabled={indent_status === "A" || indent_status === "D"}
+                    disabled={indent_status === "D"}
                     onChange={handleChange}
                     required
                   />
@@ -345,7 +345,7 @@ const ItemAdd = (props) => {
                 </Grid2>
               )}
 
-              {user && user?.user_type === "K" && indent_status === "C" && (
+              {user && user?.user_type === "K" && indent_status === "A" && (
                 <Grid2 item size={6}>
                   <Button
                     variant="contained"
