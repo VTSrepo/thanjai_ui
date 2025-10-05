@@ -52,6 +52,7 @@
     ]
   },
   "devDependencies": {
+    "axios-mock-adapter": "^2.1.0",
     "cross-env": "^7.0.3"
   }
 }

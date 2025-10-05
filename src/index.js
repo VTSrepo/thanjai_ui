@@ -4,6 +4,11 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom'; // Import BrowserRouter for React Router
+const useMock = process.env.REACT_APP_USE_MOCK === "true";
+
+if (useMock) {
+  require("./apiMock");
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
