@@ -11,6 +11,8 @@ import {
   Typography,
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import InvoiceDialog from "../components/InvoiceDialog";
 import { getIndentDetail, createNewIndent } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
 import Loader from "../components/Loader";
@@ -23,7 +25,7 @@ const ACTIONS = {
   // current status -> who may act, the next status, and wording
   C: { role: "K", next: "A", label: "Accept indent", confirm: "Accept this indent? The branch will see it as accepted." },
   A: { role: "K", next: "D", label: "Dispatch", confirm: "Dispatch with the agreed quantities?" },
-  D: { role: "B", next: "R", label: "Confirm receipt", confirm: "Confirm the received quantities? This closes the indent." },
+  D: { role: "B", next: "R", label: "Confirm receipt", confirm: "Confirm the received quantities? This closes the indent and generates the kitchen's invoice." },
 };
 
 const toNum = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
@@ -36,6 +38,8 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   const [error, setError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [justReceived, setJustReceived] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -93,6 +97,12 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
     const res = await createNewIndent(payload);
     setSaving(false);
     if (res?.status === 200) {
+      if (action.next === "R") {
+        // Receipt closes the indent: generate the invoice and offer the PDF right away
+        setJustReceived(true);
+        setInvoiceOpen(true);
+        return;
+      }
       sendToParent?.({ message: `Indent ${indent.indent_number} ${statusLabel(action.next).toLowerCase()}` });
     } else {
       setError(res?.response?.data?.message || "Update failed. Please try again.");
@@ -116,6 +126,11 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
         <Typography variant="subtitle1" fontWeight={700} sx={{ flexGrow: 1 }}>
           Items
         </Typography>
+        {indent?.status === "R" && (
+          <Button size="small" variant="outlined" startIcon={<ReceiptLongIcon />} onClick={() => setInvoiceOpen(true)}>
+            Invoice
+          </Button>
+        )}
         {(mode === "kitchen" || mode === "receive") && (
           <Button size="small" startIcon={<ContentCopyIcon />} onClick={copyAll}>
             {mode === "kitchen" ? "Agree all as required" : "Receive all as agreed"}
@@ -144,6 +159,17 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
           </Button>
         </Box>
       )}
+
+      <InvoiceDialog
+        open={invoiceOpen}
+        indentNumber={indent?.indent_number}
+        title={justReceived ? "Receipt confirmed" : "Invoice"}
+        intro={justReceived ? `Indent ${indent?.indent_number} is closed. The kitchen's invoice is below.` : null}
+        onClose={() => {
+          setInvoiceOpen(false);
+          if (justReceived) sendToParent?.({ message: `Indent ${indent.indent_number} received` });
+        }}
+      />
 
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>{action?.label}</DialogTitle>

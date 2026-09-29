@@ -53,6 +53,46 @@ export const saveBranch = async (branch) => {
   }
 };
 
+// ---- Invoicing ----
+const apiError = (err, fallback) => new Error(err.response?.data?.message || fallback);
+
+// Indents in a date range (+ optional ordering branch) with invoice or estimated amounts
+export const getInvoiceReport = async ({ from_date, to_date, branch_id }) => {
+  const org_id = currentUser().org_id || "TR";
+  const qs = new URLSearchParams({ from_date, to_date, ...(branch_id ? { branch_id } : {}) }).toString();
+  try {
+    const res = await axios.get(`${API_URL}/invoices/${encodeURIComponent(org_id)}?${qs}`);
+    return res.data?.indents || [];
+  } catch (err) {
+    throw apiError(err, "Could not load indents");
+  }
+};
+
+// Creates (or returns the existing) invoice for a received indent
+export const generateInvoice = async (indent_number) => {
+  const u = currentUser();
+  try {
+    const res = await axios.post(`${API_URL}/invoice/generate`, {
+      org_id: u.org_id || "TR",
+      indent_number,
+      user_id: u.user_id,
+    });
+    return res.data.invoice;
+  } catch (err) {
+    throw apiError(err, "Could not generate the invoice");
+  }
+};
+
+export const getInvoice = async (invoice_number) => {
+  const org_id = currentUser().org_id || "TR";
+  try {
+    const res = await axios.get(`${API_URL}/invoice/${encodeURIComponent(org_id)}/${encodeURIComponent(invoice_number)}`);
+    return res.data.invoice;
+  } catch (err) {
+    throw apiError(err, "Could not load the invoice");
+  }
+};
+
 export const getCategoriesList = async () => {
   try {
     const response = await axios.get(`${API_URL}/categories`);

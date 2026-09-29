@@ -234,6 +234,15 @@ const ResponsiveAppBar = ({ user: userProp, onLogout: onLogoutProp }) => {
                         <ListItemText primary="Indent" />
                       </ListItem>
                       <Divider />
+                      <ListItem
+                        button
+                        component={Link}
+                        to="/invoices"
+                        onClick={handleMenuClose}
+                      >
+                        <ListItemText primary="Invoices" />
+                      </ListItem>
+                      <Divider />
                       {/* Add more sub-links here if needed */}
                     </List>
                   </AccordionDetails>
@@ -303,6 +312,13 @@ const ResponsiveAppBar = ({ user: userProp, onLogout: onLogoutProp }) => {
                     onClick={handleReportMenuClose}
                   >
                     Indent
+                  </MenuItem>
+                  <MenuItem
+                    component={Link}
+                    to="/invoices"
+                    onClick={handleReportMenuClose}
+                  >
+                    Invoices
                   </MenuItem>
                 </Menu>{" "}
               </>
