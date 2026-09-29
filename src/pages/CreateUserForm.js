@@ -216,6 +216,7 @@ function CreateUserForm() {
                 <TextField
                   label="User Name*"
                   name="user_name"
+                  inputProps={{ maxLength: 150 }}
                   value={formData.user_name || ""}
                   onChange={handleChange}
                   // onChange={(e) => setFormData({ ...formData, user_name: e.target.value })}
@@ -241,6 +242,7 @@ function CreateUserForm() {
                 error={emailError}
                 helperText={emailError ? "Enter a valid email address" : ""}
                 inputProps={{
+                  maxLength: 50,
                   inputProps: { min: 0 },
                   autoComplete: "off",
                   form: {
@@ -393,6 +395,7 @@ function CreateUserForm() {
                   mobileError ? "Enter a valid Canadian phone number" : ""
                 }
                 inputProps={{
+                  maxLength: 15,
                   inputProps: { min: 0 },
                   autoComplete: "off",
                   form: {
@@ -413,6 +416,7 @@ function CreateUserForm() {
                   contactError ? "Enter a valid Canadian phone number" : ""
                 }
                 inputProps={{
+                  maxLength: 15,
                   autoComplete: "off",
                   form: {
                     autoComplete: "off",
@@ -443,6 +447,7 @@ function CreateUserForm() {
                 multiline
                 minRows={3} // you can adjust the height
                 name="residence_address"
+                  inputProps={{ maxLength: 500 }}
                 value={formData.residence_address || ""}
                 onChange={handleChange}
               />
