@@ -1,153 +1,129 @@
-import  React, {useEffect} from "react";
-import PropTypes from "prop-types";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
-import { Badge } from "@mui/material";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import ChecklistRtlIcon from '@mui/icons-material/ChecklistRtl';
-import CallReceivedIcon from '@mui/icons-material/CallReceived';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Badge, Box, Tab, Tabs } from "@mui/material";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import HourglassTopIcon from "@mui/icons-material/HourglassTop";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import ChecklistRtlIcon from "@mui/icons-material/ChecklistRtl";
+import CallReceivedIcon from "@mui/icons-material/CallReceived";
 import CreateIndent from "../pages/CreateIndent";
 import IndentListing from "../pages/IndentListing";
-import { useUser } from '../utilities/UserContext';
+import { useUser } from "../utilities/UserContext";
+import { fetchIndents, getAllBranches } from "../utilities/service";
 
-function CustomTabPanel(props) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-CustomTabPanel.propTypes = {
-  children: PropTypes.node,
-  index: PropTypes.number.isRequired,
-  value: PropTypes.number.isRequired,
+/*
+ * Tabs by role (BRD "Indent Management"):
+ *   Branch  (B): New indent · In progress (C + A, view only) · To receive (D)
+ *   Kitchen (K): To accept (C) · To dispatch (A)
+ *   Admin   (A): all queues, view only
+ */
+const TABS = {
+  create: { label: "New indent", icon: <AddShoppingCartIcon /> },
+  progress: { label: "In progress", icon: <HourglassTopIcon />, statuses: ["C", "A"], empty: "No open requests." },
+  accept: { label: "To accept", icon: <ChecklistRtlIcon />, statuses: ["C"], empty: "No new requests to accept." },
+  dispatch: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["A"], empty: "Nothing waiting for dispatch." },
+  receive: { label: "To receive", icon: <CallReceivedIcon />, statuses: ["D"], empty: "Nothing on the way." },
 };
 
-function a11yProps(index) {
-  return {
-    id: `simple-tab-${index}`,
-    "aria-controls": `simple-tabpanel-${index}`,
-  };
-}
+const ROLE_TABS = {
+  B: ["receive", "create", "progress"],
+  K: ["accept", "dispatch"],
+  A: ["accept", "dispatch", "receive"],
+};
 
 export default function NavTab() {
-  const { user, login, logout } = useUser();
-    const theme = createTheme({
-        withDivider: {
-            justifyContent: `space-between`,
-        },
-        palette: {
-          primary: {
-            main: '#ffa133',
-          },
-          secondary: {
-            main: '#f44336',
-          },
-        },    
-      });
-      
-  const [value, setValue] = React.useState(null);
+  const { user } = useUser();
+  const role = user?.user_type || "B";
+  const keys = ROLE_TABS[role] || ROLE_TABS.B;
+  const [tab, setTab] = useState(keys[0]);
+  const [counts, setCounts] = useState({});
+  const [scope, setScope] = useState(null);
 
-  const handleChange = (event, newValue) => {
-    setValue(newValue);
-  };
+  // Branch users see their own branch; kitchen users see indents sent to their kitchen.
+  useEffect(() => {
+    (async () => {
+      if (role === "B") return setScope({ branch_id: user.branch_id });
+      if (role === "K") {
+        try {
+          const branches = await getAllBranches();
+          const own = branches.find((b) => b.branch_id === user.branch_id);
+          return setScope(own?.branch_type === "K" ? { kitchen_id: user.branch_id } : {});
+        } catch (e) {
+          return setScope({});
+        }
+      }
+      return setScope({});
+    })();
+  }, [role, user?.branch_id]);
 
-  const tabValue = (value)=>{
-    setValue(3);
-  }
+  const refreshCounts = useCallback(async () => {
+    if (!scope) return;
+    const next = {};
+    await Promise.all(
+      keys
+        .filter((k) => TABS[k].statuses)
+        .map(async (k) => {
+          try {
+            next[k] = (await fetchIndents(TABS[k].statuses, scope)).length;
+          } catch (e) {
+            next[k] = 0;
+          }
+        })
+    );
+    setCounts(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope, role]);
 
-  useEffect(()=>{
-    if(user?.user_type === 'B'){
-      setValue(3);
-    }else {
-      setValue(1);
-    }
-  }, [])
+  useEffect(() => {
+    refreshCounts();
+  }, [refreshCounts]);
+
+  const current = useMemo(() => TABS[tab], [tab]);
 
   return (
-    <ThemeProvider theme={theme}>
-      
     <Box sx={{ width: "100%" }}>
-      <Box sx={{alignContent:'center', mt:2}}>
+      <Box sx={{ position: "sticky", top: { xs: 56, sm: 64 }, zIndex: 5, bgcolor: "background.default", mx: -2, px: 1 }}>
         <Tabs
-          value={value}
-          onChange={handleChange}
-          aria-label="basic tabs example"
-          sx={{
-            '& .MuiTabs-flexContainer': {
-              justifyContent: 'space-between', // Apply space between the tabs
-            },
-          }}
-          
+          value={tab}
+          onChange={(e, v) => setTab(v)}
+          variant="fullWidth"
+          textColor="primary"
+          indicatorColor="primary"
+          sx={{ "& .MuiTab-root": { minHeight: 64, fontSize: { xs: 12, sm: 14 }, px: 0.5 } }}
         >
-          <Tab
-            label={
-              <><Badge badgeContent='C' color="primary">
-                <ShoppingCartIcon style={{ fontSize: 30 }}/>
-              </Badge>
-              <span style={{ fontSize: 5 }}>Create</span>
-              </>
-            }
-            disabled={user?.user_type === 'K'}           
-            {...a11yProps(0)}
-          />
-          <Tab
-            label={
-              <><Badge badgeContent='A' color="primary">
-                <ChecklistRtlIcon style={{ fontSize: 30 }}/>
-              </Badge>
-              <span style={{ fontSize: 5 }}>Accept</span></>
-            } 
-            disabled={user?.user_type === 'B'}           
-            {...a11yProps(1)}
-          />
-        <Tab
-            label={
-              <><Badge badgeContent='D' color="primary">
-                <LocalShippingIcon style={{ fontSize: 30 }}/>
-              </Badge>
-              <span style={{ fontSize: 5 }}>Dispatch</span></>
-            }
-            disabled={user?.user_type === 'B'}           
-            {...a11yProps(2)}
-          />
-          <Tab
-            label={
-              <><Badge badgeContent='R' color="primary">
-                <CallReceivedIcon style={{ fontSize: 30 }}/>
-              </Badge>
-              <span style={{ fontSize: 5 }}>Receive</span></>
-            }
-            disabled={user?.user_type === 'K'}           
-            {...a11yProps(3)}
-          />
+          {keys.map((k) => (
+            <Tab
+              key={k}
+              value={k}
+              label={TABS[k].label}
+              icon={
+                <Badge color="error" badgeContent={counts[k] || 0} max={99}>
+                  {TABS[k].icon}
+                </Badge>
+              }
+            />
+          ))}
         </Tabs>
       </Box>
-      <CustomTabPanel value={value} index={0}>
-        <CreateIndent sendToParent={tabValue}/>
-      </CustomTabPanel>
-      <CustomTabPanel value={value} index={1}>
-      <IndentListing tabValue={1}/>
-      </CustomTabPanel>
-      <CustomTabPanel value={value} index={2}>
-        <IndentListing tabValue={2}/>
-      </CustomTabPanel>
-      <CustomTabPanel value={value} index={3}>
-       <IndentListing tabValue={3}/>
-      </CustomTabPanel>
+
+      <Box sx={{ pt: 2 }}>
+        {!scope ? null : tab === "create" ? (
+          <CreateIndent
+            onCreated={() => {
+              refreshCounts();
+              setTab("progress");
+            }}
+          />
+        ) : (
+          <IndentListing
+            key={tab}
+            title={current.label}
+            statuses={current.statuses}
+            scope={scope}
+            emptyText={current.empty}
+            onChanged={refreshCounts}
+          />
+        )}
+      </Box>
     </Box>
-    </ThemeProvider>
   );
 }

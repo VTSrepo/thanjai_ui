@@ -22,8 +22,20 @@ import {
   KeyboardArrowDown as ArrowDownIcon,
 } from "@mui/icons-material";
 import { Link } from "react-router-dom"; // Using Link for routing
+import { useUser } from "../utilities/UserContext";
 
-const ResponsiveAppBar = ({ user, onLogout }) => {
+const ResponsiveAppBar = ({ user: userProp, onLogout: onLogoutProp }) => {
+  const { user: ctxUser, logoutReset } = useUser();
+  // Prefer the logged-in user record (has user_type, branch_id) over page props.
+  const user = ctxUser || userProp;
+  const onLogout = () => {
+    try {
+      localStorage.removeItem("user");
+      localStorage.removeItem("authToken");
+    } catch (e) {}
+    logoutReset?.();
+    onLogoutProp?.();
+  };
   const [anchorEl, setAnchorEl] = useState(null); // State for the menu anchor element
   const [employeeAnchorEl, setEmployeeAnchorEl] = useState(null);
   const [reportsAnchorEl, setReportsAnchorEl] = useState(null);
@@ -68,8 +80,14 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
         {/* <Typography variant="h6" sx={{ flexGrow: 1 }}>
           {user && user.role === "admin" ? "Admin Dashboard" : "User Dashboard"}
         </Typography> */}
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" sx={{ flexGrow: 1, lineHeight: 1.1 }} noWrap>
           Thanjai Caterers
+          {user?.user_name && (
+            <Typography component="span" variant="caption" sx={{ display: "block", opacity: 0.9 }} noWrap>
+              {user.user_name}
+              {user.branch_id ? ` · ${user.branch_id}` : ""}
+            </Typography>
+          )}
         </Typography>
 
         {/* For mobile view, show the hamburger icon */}
@@ -97,7 +115,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                   Production Monitor
                 </MenuItem>
               )}
-              {user && user?.user_type !== "A" && (
+              {user && (
                 <MenuItem
                   component={Link}
                   to="/indents"
@@ -160,13 +178,22 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                         <ListItemText primary="Category" />
                       </ListItem>
                       <Divider />
+                      <ListItem
+                        button
+                        component={Link}
+                        to="/branch"
+                        onClick={handleMenuClose}
+                      >
+                        <ListItemText primary="Branch" />
+                      </ListItem>
+                      <Divider />
                       {/* Add more sub-links here if needed */}
                     </List>
                   </AccordionDetails>
                 </Accordion>
               )}
 
-              {user && user.role === "admin" && (
+              {user && user?.user_type === "A" && (
                 <MenuItem
                   component={Link}
                   to="/admin"
@@ -235,7 +262,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
         ) : (
           // For larger screens, show the regular navigation bar
           <>
-            {user && user.role === "branch" && (
+            {user && user?.user_type === "B" && (
               <Button color="inherit" component={Link} to="/home">
                 Home
               </Button>
@@ -280,7 +307,7 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                 </Menu>{" "}
               </>
             )}
-            {user && user?.user_type !== "A" && (
+            {user && (
               <Button color="inherit" component={Link} to="/indents">
                 Indents
               </Button>
@@ -343,6 +370,13 @@ const ResponsiveAppBar = ({ user, onLogout }) => {
                     onClick={handleMasterMenuClose}
                   >
                     Category
+                  </MenuItem>
+                  <MenuItem
+                    component={Link}
+                    to="/branch"
+                    onClick={handleMasterMenuClose}
+                  >
+                    Branch
                   </MenuItem>
                 </Menu>{" "}
               </>

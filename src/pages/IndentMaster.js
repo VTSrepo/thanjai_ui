@@ -14,7 +14,7 @@ const IndentMaster = ({ user }) => {
   return (
     <>
       <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
-      <Box sx={{ mt: 4, padding: 2 }}>
+      <Box sx={{ px: 2, pb: 2, maxWidth: 1100, mx: "auto" }}>
         <NavTab />
       </Box>
     </>

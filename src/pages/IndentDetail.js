@@ -1,285 +1,161 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Typography,
+  Alert,
   Box,
   Button,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  Typography,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useNavigate } from "react-router-dom";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { getIndentDetail, createNewIndent } from "../utilities/service";
-import IndentItemTable from "../components/IndentItemTable";
+import { useUser } from "../utilities/UserContext";
 import Loader from "../components/Loader";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import ItemAdd from "./ItemAdd";
-import { format } from "date-fns";
-import InfoDialog from "../components/InfoDialog";
+import PageHeader from "../components/PageHeader";
+import IndentHeaderCard from "../components/IndentHeaderCard";
+import IndentItems, { itemError } from "../components/IndentItems";
+import { statusLabel } from "../components/StatusChip";
+
+const ACTIONS = {
+  // current status -> who may act, the next status, and wording
+  C: { role: "K", next: "A", label: "Accept indent", confirm: "Accept this indent? The branch will see it as accepted." },
+  A: { role: "K", next: "D", label: "Dispatch", confirm: "Dispatch with the agreed quantities?" },
+  D: { role: "B", next: "R", label: "Confirm receipt", confirm: "Confirm the received quantities? This closes the indent." },
+};
+
+const toNum = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
 
 const IndentDetail = ({ indentNumber, sendToParent }) => {
-  const [indentDetail, setIndentDetail] = useState(null);
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
-  const [selectedItem, setSelectedItem] = useState({});
+  const { user } = useUser();
+  const [indent, setIndent] = useState(null);
   const [rows, setRows] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [enableAccept, setEnableAccept] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const getDetail = async () => {
+    (async () => {
       try {
         const result = await getIndentDetail(indentNumber);
-        setIndentDetail(result.data.indent);
-        const updatedData = result.data.indent.indent_details.map(
-          (item, index) => ({
+        const data = result.data.indent;
+        setIndent(data);
+        setRows(
+          (data.indent_details || []).map((item, index) => ({
             ...item,
-            id: item.id || index + 1, // Appending a unique ID if it doesn't exist
-          })
+            id: item.id || index + 1,
+            // Full-qty items: kitchen agreed qty is fixed to the requested qty (BRD)
+            qty_agreed_kitchen:
+              data.status === "A" && item.mandatory_status === "Y" && (item.qty_agreed_kitchen ?? null) === null
+                ? item.qty_ordered
+                : item.qty_agreed_kitchen,
+          }))
         );
-        setRows(updatedData);
       } catch (err) {
-        // setMessage(err.response?.data?.message);
-        // openCustomDialog();
+        setError(err.response?.data?.message || "Could not load this indent");
       } finally {
         setLoading(false);
       }
-    };
+    })();
+  }, [indentNumber]);
 
-    getDetail(); // Call the function to fetch data
-  }, []);
+  const action = indent ? ACTIONS[indent.status] : null;
+  const canAct = !!action && user?.user_type === action.role;
+  const mode = canAct && indent.status === "A" ? "kitchen" : canAct && indent.status === "D" ? "receive" : "view";
+  const invalidCount = useMemo(() => rows.filter((r) => itemError(r, mode)).length, [rows, mode]);
 
-  const navigateBack = (item) => {
-    setShowAdd(false);
-    //On Save Action
-    if (item.id) {
-      rows.forEach((i) => {
-        if (i.id === item.id) {
-          i.qty_agreed_kitchen = item.qty_agreed_kitchen;
-          i.kitchen_remarks = item.kitchen_remarks;
-          i.qty_received = item.qty_received;
-          i.discrepancy_notes = item.discrepancy_notes;
-          i.damage_notes = item.damage_notes;
-        }
-      });
-      setRows(rows);
+  const patchRow = (id, patch) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  const copyAll = () =>
+    setRows((rs) =>
+      rs.map((r) =>
+        mode === "kitchen"
+          ? { ...r, qty_agreed_kitchen: r.qty_ordered }
+          : { ...r, qty_received: r.qty_agreed_kitchen ?? r.qty_ordered }
+      )
+    );
+
+  const submit = async () => {
+    setConfirmOpen(false);
+    setSaving(true);
+    setError("");
+    const payload = { ...indent, status: action.next };
+    if (indent.status !== "C") {
+      payload.indent_details = rows.map((r) => ({
+        ...r,
+        qty_agreed_kitchen: toNum(r.qty_agreed_kitchen),
+        qty_received: toNum(r.qty_received),
+      }));
     }
-  };
-
-  const navigateBackToListing = () => {
-    sendToParent();
-  };
-
-  const formatDeliveryByTime = (date) => {
-    return format(new Date(date), "PPpp");
-  };
-
-  const updateShowAdd = (item) => {
-    if (!item.delete) {
-      setSelectedItem(item);
-      setShowAdd(true);
-    }
-  };
-
-  const handleDialogClose = () => {
-    setOpenDialog(false);
-    sendToParent();
-  };
-
-  const updateIndent = async (payload) => {
     const res = await createNewIndent(payload);
-    if (res) {
-      setMessage("Indent "+displayFullStatus(payload.status) );
-      setOpenDialog(true);
+    setSaving(false);
+    if (res?.status === 200) {
+      sendToParent?.({ message: `Indent ${indent.indent_number} ${statusLabel(action.next).toLowerCase()}` });
     } else {
-      setMessage("Indent Acknowledgement Failure");
-      setOpenDialog(true);
+      setError(res?.response?.data?.message || "Update failed. Please try again.");
     }
   };
 
-  const actionIndent = async (action) => {
-    let payload = indentDetail;
-    if (action === "accept") {
-      //payload.indent_details = rows;
-      payload.status = "A";
-    }
-    if (action === "dispatch") {
-      payload.indent_details = rows;
-      payload.status = "D";
-    }
-    if (action === "receive") {
-      payload.indent_details = rows;
-      payload.status = "R";
-    }
-
-    await updateIndent(payload);
-  };
-
-  const hasInvalidQtyReceived = rows?.some(
-    (item) =>
-      item.qty_received === null ||
-      item.qty_received === "" ||
-      item.qty_received === undefined
-  );
-
-  const hasInvalidKitchenQty = rows?.some(
-    (item) =>
-      item.qty_agreed_kitchen === null ||
-      item.qty_agreed_kitchen === "" ||
-      item.qty_agreed_kitchen === undefined
-  );
-
-  const displayFullStatus = (status) => {
-    if (status === "C") {
-      return "Created";
-    }else  if(status === 'A'){
-      return 'Accepted'
-    } else if(status === 'D'){
-      return 'Dispatched'
-    } else  if(status === 'R'){
-      return 'Received'
-    }
-  };
-
-  if (loading) return <Loader />; // Show loader while data is being fetched
+  if (loading) return <Loader />;
 
   return (
-    <>
-      {!showAdd && (
-        <>
-          <Box>
-            <Typography variant="h4" component="h2">
-              Indent Detail
-            </Typography>
-            {indentDetail && (
-              <List
-                sx={{
-                  width: "100%",
-                  maxWidth: 360,
-                  bgcolor: "background.paper",
-                }}
-              >
-                <ListItem>
-                  <ListItemText
-                    primary="Indent Number"
-                    secondary={indentDetail?.indent_number}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText
-                    primary="Requested For"
-                    secondary={formatDeliveryByTime(
-                      indentDetail?.delivery_by_datetime
-                    )}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText
-                    primary="Status"
-                    secondary={displayFullStatus(indentDetail?.status)}
-                  />
-                </ListItem>
+    <Box sx={{ pb: canAct ? 10 : 2 }}>
+      <PageHeader
+        title="Indent detail"
+        subtitle={indent ? `${statusLabel(indent.status)} · ${rows.length} items` : ""}
+        onBack={() => sendToParent?.()}
+      />
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-                <ListItem>
-                  <ListItemText
-                    primary="Priority Flag"
-                    secondary={indentDetail?.priority_flag === 'Y'?'Yes':'No'}
-                  />
-                </ListItem>
-              </List>
-            )}
-          </Box>
-          {indentDetail?.customer_name && (
-            <Box>
-              <Accordion>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  sx={{ pl: 2 }}
-                >
-                  <Typography>Customer</Typography>
-                </AccordionSummary>
-                <AccordionDetails sx={{ p: 0 }}>
-                  <Box x={{ ml: 2 }}>{indentDetail?.customer_name}</Box>
-                </AccordionDetails>
-              </Accordion>
-            </Box>
-          )}
-          <Box sx={{ mt: 2 }}>
-            <IndentItemTable
-              data={rows}
-              sendToParent={updateShowAdd}
-              status={indentDetail?.status}
-            />
-          </Box>
-          <Box sx={{ mt: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={navigateBackToListing}
-            >
-              Back
-            </Button>
+      <IndentHeaderCard indent={indent} itemCount={rows.length} />
 
-            {indentDetail?.status === "C" && (
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ marginLeft: 2 }}
-                // disabled={hasInvalidKitchenQty}
-                onClick={() => actionIndent("accept")}
-              >
-                Accept
-              </Button>
-            )}
+      <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
+        <Typography variant="subtitle1" fontWeight={700} sx={{ flexGrow: 1 }}>
+          Items
+        </Typography>
+        {(mode === "kitchen" || mode === "receive") && (
+          <Button size="small" startIcon={<ContentCopyIcon />} onClick={copyAll}>
+            {mode === "kitchen" ? "Agree all as required" : "Receive all as agreed"}
+          </Button>
+        )}
+      </Stack>
+      <IndentItems items={rows} mode={mode} onChange={patchRow} />
 
-            {indentDetail?.status === "A" && (
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ marginLeft: 2 }}
-                disabled={hasInvalidKitchenQty}
-                onClick={() => actionIndent("dispatch")}
-              >
-                Dispatch
-              </Button>
-            )}
-
-            {indentDetail?.status === "D" && (
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ marginLeft: 2 }}
-                disabled={hasInvalidQtyReceived}
-                onClick={() => actionIndent("receive")}
-              >
-                Update
-              </Button>
-            )}
-          </Box>
-        </>
-      )}
-
-      {showAdd && (
-        <Box sx={{ mt: 2 }}>
-          <ItemAdd
-            data={selectedItem}
-            sendToParent={navigateBack}
-            indent_status={indentDetail.status}
-          />
+      {canAct && (
+        <Box
+          sx={{
+            position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 10,
+            p: 1.5, pb: "calc(12px + env(safe-area-inset-bottom))",
+            bgcolor: "background.paper", borderTop: 1, borderColor: "divider",
+            display: "flex", alignItems: "center", gap: 1,
+          }}
+        >
+          <Typography variant="body2" color={invalidCount ? "warning.dark" : "text.secondary"} sx={{ flexGrow: 1 }}>
+            {invalidCount ? `${invalidCount} item(s) need attention` : "Ready"}
+          </Typography>
+          <Button variant="outlined" color="secondary" onClick={() => sendToParent?.()}>
+            Back
+          </Button>
+          <Button variant="contained" disabled={!!invalidCount || saving} onClick={() => setConfirmOpen(true)}>
+            {saving ? "Saving..." : action.label}
+          </Button>
         </Box>
       )}
 
-      <InfoDialog
-        open={openDialog}
-        onClose={handleDialogClose}
-        title="Information"
-        message={message}
-      />
-    </>
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>{action?.label}</DialogTitle>
+        <DialogContent>
+          <Typography>{action?.confirm}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button color="secondary" onClick={() => setConfirmOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={submit}>Confirm</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

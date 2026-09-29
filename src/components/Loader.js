@@ -1,31 +1,24 @@
-// Loader.js
-import React from 'react';
+// Loader.js - full-screen by default; `inline` for use inside a section.
+import React from "react";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
-const Loader = () => {
-  return (
-    <div style={loaderStyles.container}>
-      <div style={loaderStyles.spinner}></div>
-      <p>Loading...</p>
-    </div>
-  );
-};
-
-const loaderStyles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-  },
-  spinner: {
-    border: '8px solid #f3f3f3', 
-    borderTop: '8px solid #3498db',
-    borderRadius: '50%',
-    width: '50px',
-    height: '50px',
-    animation: 'spin 2s linear infinite',
-  },
-};
+const Loader = ({ inline = false, label = "Loading..." }) => (
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 1.5,
+      height: inline ? "auto" : "70vh",
+      py: inline ? 5 : 0,
+    }}
+  >
+    <CircularProgress />
+    <Typography variant="body2" color="text.secondary">
+      {label}
+    </Typography>
+  </Box>
+);
 
 export default Loader;

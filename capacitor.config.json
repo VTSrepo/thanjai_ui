@@ -1,0 +1,8 @@
+{
+  "appId": "com.thanjaicaterers.app",
+  "appName": "Thanjai",
+  "webDir": "build",
+  "server": {
+    "androidScheme": "https"
+  }
+}

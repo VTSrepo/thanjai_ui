@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { Container, createTheme, ThemeProvider } from "@mui/material"; // Import necessary components
+import { Container, CssBaseline, ThemeProvider } from "@mui/material"; // Import necessary components
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
@@ -14,7 +14,6 @@ import Reports from "./pages/Reports";
 
 import Employee from "./pages/Employee"
 
-import IndentRequestForm from "./pages/IndentRequestForm";
 import ProductForm from "./pages/ProductForm";
 import ProductMaster from "./pages/ProductMaster";
 import IndentMaster from "./pages/IndentMaster";
@@ -30,6 +29,16 @@ import User from "./pages/User";
 import  Category  from "./pages/Category";
 import CreateCategoryForm from "./pages/CreateCategoryForm";
 import IndentReports from "./pages/IndentReports";
+import Branch from "./pages/Branch";
+import BranchForm from "./pages/BranchForm";
+import appTheme from "./utilities/theme";
+import { useUser } from "./utilities/UserContext";
+
+// Admin-only screens: reads the logged-in user saved at login (survives refresh).
+const RequireAdmin = ({ children }) => {
+  const { user } = useUser();
+  return user?.user_type === "A" ? children : <Navigate to="/login" />;
+};
 
 function App() {
   const [user, setUser] = useState(null);
@@ -54,28 +63,11 @@ function App() {
   }
 
   // Create a theme for the app
-  const theme = createTheme({
-    // You can customize the theme here if needed
-    typography: {
-      fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            backgroundColor: "#ffa133", // Default background color for all buttons
-            color: "#fff", // Default text color for buttons
-            "&:hover": {
-              backgroundColor: "#1565c0", // Hover state background color
-            },
-          },
-        },
-      },
-    },
-  });
+  const theme = appTheme;
 
   return (
     <ThemeProvider theme={theme}>
+      <CssBaseline />
       {/* Change the maxWidth to "xl" for a desktop layout */}
       <UserProvider>
         <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
@@ -156,6 +148,14 @@ function App() {
             <Route
               path="/create-user"
               element={<CreateUserForm user={user} setUser={setUser} />}
+            />
+            <Route
+              path="/branch"
+              element={<RequireAdmin><Branch /></RequireAdmin>}
+            />
+            <Route
+              path="/branch-form"
+              element={<RequireAdmin><BranchForm /></RequireAdmin>}
             />
             <Route
               path="/category"

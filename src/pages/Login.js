@@ -81,9 +81,16 @@ const Login = ({ setUser }) => {
   return (
     <ThemeProvider theme={theme}>
       <Container maxWidth="sm">
-        <Box sx={{ mt: 8, padding: 2 }}>
+        <Box
+          component="form"
+          sx={{ mt: 8, padding: 2 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
+        >
           <div style={{ textAlign: "center" }}>
-            <img src="/v1/logo.png" alt="Logo" />
+            <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="Logo" style={{ maxWidth: "70%" }} />
           </div>
 
           <TextField
@@ -92,6 +99,8 @@ const Login = ({ setUser }) => {
             fullWidth
             sx={{ mt: 2 }}
             value={username}
+            autoComplete="username"
+            autoCapitalize="none"
             onChange={handleChange}
           />
           <TextField
@@ -112,7 +121,7 @@ const Login = ({ setUser }) => {
             variant="contained"
             fullWidth
             sx={{ mt: 2 }}
-            onClick={handleLogin}
+            type="submit"
           >
             Login
           </Button>

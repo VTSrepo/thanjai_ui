@@ -8,7 +8,8 @@ import { BrowserRouter } from 'react-router-dom'; // Import BrowserRouter for Re
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename='/v1'> {/* Wrap the App component with BrowserRouter */}
+    {/* Web is served under /v1; the mobile build (npm run build:mobile) uses "/" */}
+    <BrowserRouter basename={process.env.REACT_APP_ROUTER_BASENAME || "/v1"}>
       <App />
     </BrowserRouter>
   </React.StrictMode>
