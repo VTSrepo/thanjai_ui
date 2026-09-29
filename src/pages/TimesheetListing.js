@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button, Grid2 } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import TSTable from "../components/TSTable";
@@ -9,7 +9,7 @@ import { useUser } from "../utilities/UserContext";
 import { dateFromString } from "../utilities/helpers";
 
 const TimesheetListing = ({  dashboard }) => {
-  const { user, login, logout } = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [jobList, setJobList] = useState([]);

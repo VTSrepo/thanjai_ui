@@ -23,9 +23,9 @@ import { statusLabel } from "../components/StatusChip";
 
 const ACTIONS = {
   // current status -> who may act, the next status, and wording
-  C: { role: "K", next: "A", label: "Accept indent", confirm: "Accept this indent? The branch will see it as accepted." },
-  A: { role: "K", next: "D", label: "Dispatch", confirm: "Dispatch with the agreed quantities?" },
-  D: { role: "B", next: "R", label: "Confirm receipt", confirm: "Confirm the received quantities? This closes the indent and generates the kitchen's invoice." },
+  C: { roles: ["K"], next: "A", label: "Accept indent", confirm: "Accept this indent? The branch will see it as accepted." },
+  A: { roles: ["K"], next: "D", label: "Dispatch", confirm: "Dispatch with the agreed quantities?" },
+  D: { roles: ["B", "X"], next: "R", label: "Confirm receipt", confirm: "Confirm the received quantities? This closes the indent and generates the kitchen's invoice." },
 };
 
 const toNum = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
@@ -67,7 +67,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   }, [indentNumber]);
 
   const action = indent ? ACTIONS[indent.status] : null;
-  const canAct = !!action && user?.user_type === action.role;
+  const canAct = !!action && action.roles.includes(user?.user_type);
   const mode = canAct && indent.status === "A" ? "kitchen" : canAct && indent.status === "D" ? "receive" : "view";
   const invalidCount = useMemo(() => rows.filter((r) => itemError(r, mode)).length, [rows, mode]);
 
@@ -126,7 +126,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
         <Typography variant="subtitle1" fontWeight={700} sx={{ flexGrow: 1 }}>
           Items
         </Typography>
-        {indent?.status === "R" && (
+        {indent?.status === "R" && user?.user_type !== "K" && (
           <Button size="small" variant="outlined" startIcon={<ReceiptLongIcon />} onClick={() => setInvoiceOpen(true)}>
             Invoice
           </Button>

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Box, Button } from "@mui/material";
+import {  Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { CONFIG } from "../../src/config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import Loader from "../components/Loader";
-import { getJobListing, getEmployeesList } from "../utilities/service";
+import {  getEmployeesList } from "../utilities/service";
 import EmployeeTable from "../components/EmployeeTable";
 import { useUser } from "../utilities/UserContext";
 

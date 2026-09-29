@@ -8,6 +8,7 @@ import CallReceivedIcon from "@mui/icons-material/CallReceived";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import CreateIndent from "../pages/CreateIndent";
 import IndentListing from "../pages/IndentListing";
+import { useLocation } from "react-router-dom";
 import { useUser } from "../utilities/UserContext";
 import { fetchIndents, getAllBranches } from "../utilities/service";
 
@@ -16,6 +17,7 @@ import { fetchIndents, getAllBranches } from "../utilities/service";
  *   Branch  (B): New indent · In progress (C + A, view only) · To receive (D)
  *   Kitchen (K): To accept (C) · To dispatch (A)
  *   Admin   (A): all queues, view only
+ *   External customer (X): same as branch, limited to their own orders
  */
 const TABS = {
   create: { label: "New indent", icon: <AddShoppingCartIcon /> },
@@ -30,20 +32,22 @@ const ROLE_TABS = {
   B: ["receive", "create", "progress", "done"],
   K: ["accept", "dispatch", "done"],
   A: ["accept", "dispatch", "receive", "done"],
+  X: ["receive", "create", "progress", "done"],
 };
 
 export default function NavTab() {
   const { user } = useUser();
   const role = user?.user_type || "B";
   const keys = ROLE_TABS[role] || ROLE_TABS.B;
-  const [tab, setTab] = useState(keys[0]);
+  const requested = useLocation().state?.tab;
+  const [tab, setTab] = useState(keys.includes(requested) ? requested : keys[0]);
   const [counts, setCounts] = useState({});
   const [scope, setScope] = useState(null);
 
   // Branch users see their own branch; kitchen users see indents sent to their kitchen.
   useEffect(() => {
     (async () => {
-      if (role === "B") return setScope({ branch_id: user.branch_id });
+      if (role === "B" || role === "X") return setScope({ branch_id: user.branch_id });
       if (role === "K") {
         try {
           const branches = await getAllBranches();
@@ -96,7 +100,7 @@ export default function NavTab() {
             <Tab
               key={k}
               value={k}
-              label={TABS[k].label}
+              label={k === "create" && role === "X" ? "New order" : TABS[k].label}
               icon={
                 <Badge color="error" badgeContent={counts[k] || 0} max={99}>
                   {TABS[k].icon}

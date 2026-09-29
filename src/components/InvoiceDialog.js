@@ -89,6 +89,11 @@ const InvoiceDialog = ({ open, indentNumber, invoiceNumber, title = "Invoice", i
             <Row label={`${invoice.gst_label || "GST"} (${Number(invoice.gst_rate)}%)`} value={money(invoice.gst_amount)} />
             {Number(invoice.qst_rate) > 0 && <Row label={`QST (${Number(invoice.qst_rate)}%)`} value={money(invoice.qst_amount)} />}
             <Row label="Total" value={money(invoice.total_amount)} bold />
+            {(invoice.payments || []).map((p) => (
+              <Row key={p.payment_id} label={`Paid ${p.payment_date} (${p.receipt_no})`} value={`- ${money(p.amount)}`} />
+            ))}
+            <Row label={`Balance due${invoice.due_date ? ` by ${invoice.due_date}` : ""}`} value={money(invoice.balance_due)} bold />
+            <Typography variant="caption" color="text.secondary">Terms: {invoice.terms}</Typography>
           </Box>
         )}
       </DialogContent>

@@ -23,7 +23,7 @@ import { dateFromString } from "../utilities/helpers";
 
 const Reports = () => {
   const location = useLocation(); // Access the location object
-  const { user, login, logout } = useUser();
+  const { user } = useUser();
   const { selectedRow } = location.state || {};  
   const navigate = useNavigate();
   const today = FormattedDate(new Date());
@@ -114,6 +114,7 @@ const Reports = () => {
       });
       getProductSummaryReport(selectedRow)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
   }, []);
   
 

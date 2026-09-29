@@ -1,12 +1,8 @@
-import React, { useState } from "react";
+import React, { } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  DataGrid,
-  GridToolbarContainer,
-  GridToolbarExport,
-} from "@mui/x-data-grid";
+import ResponsiveGrid from "./ResponsiveGrid";
+import { GridToolbarContainer } from "@mui/x-data-grid";
 import { Tooltip, Button } from "@mui/material";
-import { dateFromString } from "../utilities/helpers";
 import Paper from "@mui/material/Paper";
 import { useNavigate } from "react-router-dom";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -111,7 +107,7 @@ export default function ProductionMonitorTable({ list, formData }) {
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
-      <DataGrid
+      <ResponsiveGrid
         rows={list}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}

@@ -23,18 +23,6 @@ import { useNavigate, useLocation } from "react-router-dom"; // Import useNaviga
 
 import { createNewEmployee, getBranchLists } from "../utilities/service";
 
-const DisabledFormWrapper = ({ children, disabled }) => {
-  return (
-    <div
-      style={{
-        opacity: disabled ? 0.5 : 1,
-        pointerEvents: disabled ? "none" : "auto",
-      }}
-    >
-      {children}
-    </div>
-  );
-};
 
 function CreateEmployeeForm() {
   document.title = `Create Employee | ${CONFIG.title.name}`;
@@ -42,9 +30,8 @@ function CreateEmployeeForm() {
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const [heading, setHeading] = useState("Create Employee");
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [branchList, setBranchList] = useState([]);
   const [empStatus, setEmpStatus] = useState(null);
   const [contactError, setContactError] = useState(false);
@@ -79,12 +66,12 @@ function CreateEmployeeForm() {
           branch_name: selectedRow.branch_name
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
     }, [selectedRow]);
 
   const saveEmployeeHandler = async () => {
     setLoading(true);
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     const user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
     const employee_status = empStatus === "Active" ? "A" : "I";
     const payload = {

@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 import {
-  TextField,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
+  TextField,  FormControl,
   Button,
   Grid2,
   Typography,
@@ -14,26 +10,13 @@ import {
   FormLabel,
   FormControlLabel,
   RadioGroup,
-  Radio,
-} from "@mui/material";
+  Radio } from "@mui/material";
 import { CONFIG } from "../../src/config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useUser } from "../utilities/UserContext";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 import { createNewCategory } from "../utilities/service";
 
-const DisabledFormWrapper = ({ children, disabled }) => {
-  return (
-    <div
-      style={{
-        opacity: disabled ? 0.5 : 1,
-        pointerEvents: disabled ? "none" : "auto",
-      }}
-    >
-      {children}
-    </div>
-  );
-};
 
 function CreateCategoryForm() {
   const { user } = useUser();
@@ -41,9 +24,8 @@ function CreateCategoryForm() {
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const [heading, setHeading] = useState("Create Category");
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [categoryStatus, setCategoryStatus] = useState(null);
   const [formData, setFormData] = useState({
     category_name: null,
@@ -61,6 +43,7 @@ function CreateCategoryForm() {
           active: categoryStatus,
         });
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
     }, [selectedRow]);
 
   const saveCategoryHandler = async () => {

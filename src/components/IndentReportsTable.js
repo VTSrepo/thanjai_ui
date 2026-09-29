@@ -1,15 +1,9 @@
-import React, { useState } from "react";
+import React, { } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  DataGrid,
-  GridToolbarContainer,
-  GridToolbarExport,
-} from "@mui/x-data-grid";
-import { Tooltip, Button } from "@mui/material";
-import { dateFromString } from "../utilities/helpers";
+import ResponsiveGrid from "./ResponsiveGrid";
+import { GridToolbarContainer } from "@mui/x-data-grid";
+import {  Button } from "@mui/material";
 import Paper from "@mui/material/Paper";
-import { useNavigate } from "react-router-dom";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import { exportPDF } from "../utilities/fileHelper";
 
 function CustomToolbar({ columns, rows }) {
@@ -76,11 +70,6 @@ export default function IndentReportsTable({ list, formData }) {
   const location = useLocation();
   const paginationModel = { page: 0, pageSize: 10 };
 
-  const handleEdit = async (row) => {
-    navigate("/job-create", { state: { selectedRow: row, backPath: location.pathname, parentFormData:formData} });
-  };
-  const navigate = useNavigate();
-
   const columns = [
     // {
     //   field: "action",
@@ -134,7 +123,7 @@ export default function IndentReportsTable({ list, formData }) {
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
-      <DataGrid
+      <ResponsiveGrid
         rows={list}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}

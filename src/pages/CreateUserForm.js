@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 
 import {
   TextField,
-  MenuItem,
-  Select,
-  InputLabel,
+  
   FormControl,
   Button,
   Grid2,
@@ -15,8 +13,7 @@ import {
   FormControlLabel,
   RadioGroup,
   Radio,
-  Autocomplete,
-} from "@mui/material";
+  Autocomplete } from "@mui/material";
 import { parseISO, format } from "date-fns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -27,18 +24,8 @@ import { useUser } from "../utilities/UserContext";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 
 import { createNewUser, getBranchLists, updateUser } from "../utilities/service";
-const DisabledFormWrapper = ({ children, disabled }) => {
-  return (
-    <div
-      style={{
-        opacity: disabled ? 0.5 : 1,
-        pointerEvents: disabled ? "none" : "auto",
-      }}
-    >
-      {children}
-    </div>
-  );
-};
+import { useToast } from "../components/ToastProvider";
+import ResetPasswordDialog from "../components/ResetPasswordDialog";
 
 function CreateUserForm() {
   const { user } = useUser();
@@ -46,9 +33,10 @@ function CreateUserForm() {
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const [heading, setHeading] = useState("Create User");
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
+  const toast = useToast();
+  const [resetOpen, setResetOpen] = useState(false);
   const navigate = useNavigate();
-  const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [branchList, setBranchList] = useState([]);
   const [userStatus, setUserStatus] = useState(null);
   const [userType, setUserType] = useState(null);
@@ -96,16 +84,17 @@ function CreateUserForm() {
           email_id: selectedRow.email_id,
           user_type: userType,
           user_status: userStatus,
-          pwd: selectedRow.pwd,
+          pwd: "",
         });
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
     }, [selectedRow]);
 
   const saveUserHandler = async () => {
     setLoading(true);
                     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
                     const user_status = userStatus === "Active" ? "A" : "I";
-                    const user_type = userType === "Admin" ? "A" : userType === "Kitchen" ? "K" : userType === "Branch" ? "B" : "";
+                    const user_type = userType === "Admin" ? "A" : userType === "Kitchen" ? "K" : userType === "Branch" ? "B" : userType === "External" ? "X" : "";
     
           if(selectedRow){
             try {
@@ -124,17 +113,17 @@ function CreateUserForm() {
                         email_id: formData.email_id,
                         user_type: user_type,
                         user_status: user_status,
-                        pwd: formData.pwd
+                        // password is not changed here; use Reset password
                       },
                     };
                     const res = await updateUser(payload);
                     if (res) {
                       navigate("/user");
                     } else {
-                      alert("Something went wrong while update the user.");
+                      toast.error("Something went wrong while updating the user.");
                     }
                   } catch (error) {
-                    alert(error?.response?.data?.message)
+                    toast.error(error?.response?.data?.message || "Could not update the user")
                   } finally {
                     setLoading(false);
                   }
@@ -163,7 +152,7 @@ function CreateUserForm() {
                   if (res) {
                     navigate("/user");
                   } else {
-                    alert("Something went wrong while creating the user.");
+                    toast.error("Something went wrong while creating the user.");
                   }
                 } catch (error) {
                   const errorMsg = error?.response?.data?.message;
@@ -171,9 +160,9 @@ function CreateUserForm() {
                     error.response?.status === 401 &&
                     errorMsg?.includes("User ID Already Exist")
                   ) {
-                    alert("User ID already exists. Try another name.");
+                    toast.error("User ID already exists. Try another name.");
                   } else {
-                    alert(errorMsg || "Error creating user. Please try again.");
+                    toast.error(errorMsg || "Error creating user. Please try again.");
                   }
                 } finally {
                   setLoading(false);
@@ -431,15 +420,21 @@ function CreateUserForm() {
                 }}
               />
 
-              <TextField
-                label="Password"
-                name="pwd"
-                value={formData.pwd || ""}
-                onChange={handleChange}
-                fullWidth
-                type="password"
-                InputProps={{ inputProps: { min: 0 } }}
-              />
+              {!selectedRow ? (
+                <TextField
+                  label="Initial password"
+                  name="pwd"
+                  value={formData.pwd || ""}
+                  onChange={handleChange}
+                  fullWidth
+                  type="password"
+                  helperText="At least 6 characters. The user can change it from the account menu."
+                />
+              ) : (
+                <Button variant="outlined" onClick={() => setResetOpen(true)} sx={{ alignSelf: "flex-start" }}>
+                  Reset password
+                </Button>
+              )}
 
               <TextField
                 label="Address"
@@ -478,6 +473,11 @@ function CreateUserForm() {
                       value="Branch"
                       control={<Radio />}
                       label="Branch"
+                    />
+                    <FormControlLabel
+                      value="External"
+                      control={<Radio />}
+                      label="External customer"
                     />
                   </RadioGroup>
                 </FormControl>
@@ -519,7 +519,7 @@ function CreateUserForm() {
                   contactError ||
                   mobileError||
                   !formData.branch_id||
-                  !formData.pwd ||
+                  (!selectedRow && (!formData.pwd || formData.pwd.length < 6)) ||
                   !userType||
                   !userStatus
                 }
@@ -541,6 +541,7 @@ function CreateUserForm() {
           </form>
         </Box>
       </Container>
+      <ResetPasswordDialog open={resetOpen} userId={selectedRow?.user_id} userName={selectedRow?.user_name} onClose={() => setResetOpen(false)} />
     </>
   );
 }

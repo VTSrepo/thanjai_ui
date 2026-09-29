@@ -1,216 +1,91 @@
-import React, { useState, useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import { Container, CssBaseline, ThemeProvider } from "@mui/material"; // Import necessary components
-import Home from "./pages/Home";
-import Admin from "./pages/Admin";
+import React, { Suspense, lazy } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Container, CssBaseline, ThemeProvider } from "@mui/material";
+import appTheme from "./utilities/theme";
+import { UserProvider, useUser, ROLE } from "./utilities/UserContext";
+import { Guard, landingFor } from "./utilities/routes";
+import ToastProvider from "./components/ToastProvider";
+import Loader from "./components/Loader";
 import Login from "./pages/Login";
 
-import Reports from "./pages/Reports";
+// Each screen loads only when first opened (keeps the first download small on phones)
+const Home = lazy(() => import("./pages/Home"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Employee = lazy(() => import("./pages/Employee"));
+const ProductForm = lazy(() => import("./pages/ProductForm"));
+const ProductMaster = lazy(() => import("./pages/ProductMaster"));
+const IndentMaster = lazy(() => import("./pages/IndentMaster"));
+const ProductionMonitor = lazy(() => import("./pages/ProductionMonitor"));
+const ProductionMonitorForm = lazy(() => import("./pages/ProductionMonitorForm"));
+const TimesheetListing = lazy(() => import("./pages/TimesheetListing"));
+const TimesheetForm = lazy(() => import("./pages/TimesheetForm"));
+const CreateEmployeeForm = lazy(() => import("./pages/CreateEmployeeForm"));
+const CreateUserForm = lazy(() => import("./pages/CreateUserForm"));
+const User = lazy(() => import("./pages/User"));
+const Category = lazy(() => import("./pages/Category"));
+const CreateCategoryForm = lazy(() => import("./pages/CreateCategoryForm"));
+const IndentReports = lazy(() => import("./pages/IndentReports"));
+const Branch = lazy(() => import("./pages/Branch"));
+const BranchForm = lazy(() => import("./pages/BranchForm"));
+const InvoiceReport = lazy(() => import("./pages/InvoiceReport"));
+const Payments = lazy(() => import("./pages/Payments"));
+const MyInvoices = lazy(() => import("./pages/MyInvoices"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 
-import Employee from "./pages/Employee"
+const { ADMIN: A, BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
 
-import ProductForm from "./pages/ProductForm";
-import ProductMaster from "./pages/ProductMaster";
-import IndentMaster from "./pages/IndentMaster";
-import ProductionMonitor from "./pages/ProductionMonitor";
-import ProductionMonitorForm from './pages/ProductionMonitorForm';
-import TimesheetListing from "./pages/TimesheetListing";
-import TimesheetForm from "./pages/TimesheetForm";
-import { UserProvider } from "./utilities/UserContext";
-// import EmployeeForm from "./pages/EmployeeForm";
-import CreateEmployeeForm from "./pages/CreateEmployeeForm";
-import CreateUserForm from "./pages/CreateUserForm";
-import User from "./pages/User";
-import  Category  from "./pages/Category";
-import CreateCategoryForm from "./pages/CreateCategoryForm";
-import IndentReports from "./pages/IndentReports";
-import Branch from "./pages/Branch";
-import BranchForm from "./pages/BranchForm";
-import InvoiceReport from "./pages/InvoiceReport";
-import appTheme from "./utilities/theme";
-import { useUser } from "./utilities/UserContext";
+// path, component, allowed roles (null = any logged-in user)
+const ROUTES = [
+  ["/home", Home, [B, X]],
+  ["/admin", Admin, [A]],
+  ["/indents", IndentMaster, null],
+  ["/change-password", ChangePassword, null],
+  ["/production-monitor", ProductionMonitor, [A, K]],
+  ["/job-create", ProductionMonitorForm, [A, K]],
+  ["/ts", TimesheetListing, [A, K]],
+  ["/ts-create", TimesheetForm, [A, K]],
+  ["/employee", Employee, [A]],
+  ["/employee-create", CreateEmployeeForm, [A]],
+  ["/product-master", ProductMaster, [A]],
+  ["/product-create", ProductForm, [A]],
+  ["/user", User, [A]],
+  ["/create-user", CreateUserForm, [A]],
+  ["/category", Category, [A]],
+  ["/create-category", CreateCategoryForm, [A]],
+  ["/branch", Branch, [A]],
+  ["/branch-form", BranchForm, [A]],
+  ["/reports", Reports, [A]],
+  ["/indent", IndentReports, [A]],
+  ["/invoices", InvoiceReport, [A]],
+  ["/payments", Payments, [A]],
+  ["/my-invoices", MyInvoices, [B, X]],
+];
 
-// Admin-only screens: reads the logged-in user saved at login (survives refresh).
-const RequireAdmin = ({ children }) => {
+const Start = () => {
   const { user } = useUser();
-  return user?.user_type === "A" ? children : <Navigate to="/login" />;
+  return <Navigate to={user ? landingFor(user) : "/login"} replace />;
 };
 
 function App() {
-  const [user, setUser] = useState(null);
-  console.log("user",user)
-
-  useEffect(() => {
-    // Check if the token exists in localStorage
-    const token = localStorage.getItem("authToken");
-    console.log("token",token)
-    if (token) {
-      // Assuming token-based authentication, extract user info from the token if needed
-      setUser({ username: "user", role: "user" }); // Replace with actual token decoding logic for user role
-    }
-  }, []);
-
-  const ProtectedRoute = ({ element, role }) => {
-    return user && user.role === role ? element : <Navigate to="/login" />;
-  };
-
-  if(!user&& JSON.parse(localStorage.getItem("user"))){
-    setUser(JSON.parse(localStorage.getItem("user")));
-  }
-
-  // Create a theme for the app
-  const theme = appTheme;
-
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={appTheme}>
       <CssBaseline />
-      {/* Change the maxWidth to "xl" for a desktop layout */}
-      <UserProvider>
-        <Container maxWidth={false} sx={{ paddingRight: 0, paddingLeft: 0 }}>
-          <Routes>
-            <Route path="/login" element={<Login setUser={setUser} />} />
-            <Route
-              path="/indents"
-              element={<IndentMaster user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/home"
-              element={<Home user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/production-monitor"
-              element={<ProductionMonitor user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/ts"
-              element={<TimesheetListing/>}
-            />
-            <Route
-              path="/job-create"
-              element={<ProductionMonitorForm user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/ts-create"
-              element={<TimesheetForm user={user} setUser={setUser} />}
-            />             
-              
-
-            <Route
-              path="/employee-create"
-              element={<CreateEmployeeForm user={user} setUser={setUser} />}
-            />          
-
-            <Route
-              path="/product-create"
-              element={
-               <ProductForm user={user} setUser={setUser} />}
-                  role="admin"
-                
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute
-                  element={<Admin user={user} setUser={setUser} />}
-                  role="admin"
-                />
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute
-                  element={<Reports user={user} setUser={setUser} />}
-                  role="admin"
-                />
-              }/>
-
-              <Route
-              path="/indent"
-              element={
-                <ProtectedRoute
-                  element={<IndentReports user={user} setUser={setUser} />}
-                  role="admin"
-                />
-              }/>
-              
-              <Route path="/employee"
-              element={<Employee user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/user"
-              element={<User user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/create-user"
-              element={<CreateUserForm user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/branch"
-              element={<RequireAdmin><Branch /></RequireAdmin>}
-            />
-            <Route
-              path="/invoices"
-              element={<RequireAdmin><InvoiceReport /></RequireAdmin>}
-            />
-            <Route
-              path="/branch-form"
-              element={<RequireAdmin><BranchForm /></RequireAdmin>}
-            />
-            <Route
-              path="/category"
-              element={<Category user={user} setUser={setUser} />}
-            />
-
-            <Route
-              path="/create-category"
-              element={<CreateCategoryForm user={user} setUser={setUser} />}
-            />
-            <Route
-              path="/product-master"
-              element={
-                <ProductMaster user={user} setUser={setUser} />}
-                  role="admin"
-               
-            />
-            <Route
-              path="/production-monitor"
-              element={
-                <ProtectedRoute
-                  element={
-                    <ProductionMonitor
-                      user={user}
-                      setUser={setUser}
-                      role="admin"
-                    />
-                  }
-                />
-              }
-            />
-
-            {/* <Route
-              path="/indent-create"
-              element={
-                <ProtectedRoute
-                  element={
-                    <IndentRequestForm
-                      user={user}
-                      setUser={setUser}
-                      role="admin"
-                    />
-                  }
-                />
-              }
-            /> */}
-            <Route path="/" element={<Navigate to="/login" />} />
-          </Routes>
-        </Container>
-      </UserProvider>
+      <ToastProvider>
+        <UserProvider>
+          <Container maxWidth={false} disableGutters>
+            <Suspense fallback={<Loader />}>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                {ROUTES.map(([path, Page, roles]) => (
+                  <Route key={path} path={path} element={<Guard roles={roles}><Page /></Guard>} />
+                ))}
+                <Route path="*" element={<Start />} />
+              </Routes>
+            </Suspense>
+          </Container>
+        </UserProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

@@ -130,6 +130,14 @@ export const buildInvoicePdf = async (inv) => {
   doc.setFont("helvetica", "bold");
   doc.text("Total", tLabel, ty, { align: "right" });
   doc.text(`$${money(inv.total_amount)}`, R - 6, ty, { align: "right" });
+  // Payments received so far
+  doc.setFont("helvetica", "normal");
+  (inv.payments || []).forEach((p) => {
+    ty += 20;
+    doc.text(`Payment ${ymd(p.payment_date)} (${p.receipt_no})`, tLabel, ty, { align: "right" });
+    doc.text(`(-) ${money(p.amount)}`, R - 6, ty, { align: "right" });
+  });
+  doc.setFont("helvetica", "bold");
   ty += 14;
   doc.setFillColor(245, 245, 245).rect(R - 220, ty, 220, 26, "F");
   doc.text("Balance Due", tLabel, ty + 17, { align: "right" });
@@ -145,7 +153,21 @@ export const buildInvoicePdf = async (inv) => {
   return doc;
 };
 
+// In the future Android/iOS app (Capacitor) save to the device and open the share sheet; in a browser, download.
 export const downloadInvoicePdf = async (inv) => {
   const doc = await buildInvoicePdf(inv);
-  doc.save(`${inv.invoice_number}.pdf`);
+  const fileName = `${inv.invoice_number}.pdf`;
+  const cap = window.Capacitor;
+  const plugins = cap?.Plugins || {};
+  if (cap?.isNativePlatform?.() && plugins.Filesystem && plugins.Share) {
+    try {
+      const data = doc.output("datauristring").split(",")[1];
+      const saved = await plugins.Filesystem.writeFile({ path: fileName, data, directory: "CACHE" });
+      await plugins.Share.share({ title: fileName, url: saved.uri });
+      return;
+    } catch (e) {
+      // fall through to a normal download
+    }
+  }
+  doc.save(fileName);
 };

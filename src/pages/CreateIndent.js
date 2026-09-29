@@ -21,7 +21,8 @@ import IndentItems from "../components/IndentItems";
 import ItemPickerDialog from "../components/ItemPickerDialog";
 import Loader from "../components/Loader";
 import { createNewIndent, getAllBranches, getProducts } from "../utilities/service";
-import { useUser } from "../utilities/UserContext";
+import { useUser, ROLE } from "../utilities/UserContext";
+import { money } from "../utilities/helpers";
 
 // Canadian phone: 514-555-1234, (514) 555-1234, 5145551234
 const PHONE_RE = /^(\(\d{3}\)\s?|\d{3}[-\s]?)\d{3}[-\s]?\d{4}$/;
@@ -74,6 +75,16 @@ const CreateIndent = ({ onCreated }) => {
   }, []);
 
   const set = (name, value) => setForm((f) => ({ ...f, [name]: value }));
+  const isExternal = user?.user_type === ROLE.EXTERNAL;
+  // External customers see an estimate from current prices and the kitchen's tax rates (final amounts are on the invoice)
+  const estimate = (() => {
+    if (!isExternal || !rows.length) return null;
+    const k = kitchens.find((x) => x.branch_id === form.kitchen_id) || {};
+    const sub = rows.reduce((s, r) => s + Number(r.qty_ordered || 0) * Number(r.item_cost || 0), 0);
+    const gst = (sub * Number(k.gst_hst_rate ?? (k.province_code === "QC" ? 5 : 0))) / 100;
+    const qst = (sub * Number(k.qst_rate ?? (k.province_code === "QC" ? 9.975 : 0))) / 100;
+    return { sub, gst, qst, total: sub + gst + qst };
+  })();
   const forCustomer = form.self_customer === "C";
   const phoneInvalid = forCustomer && form.customer_phone && !PHONE_RE.test(form.customer_phone.trim());
   const canSubmit =
@@ -144,14 +155,14 @@ const CreateIndent = ({ onCreated }) => {
                 slotProps={{ textField: { required: true } }}
               />
             </LocalizationProvider>
-            <Box>
+            {!isExternal && <Box>
               <Typography variant="caption" color="text.secondary">Requested for</Typography>
               <ToggleButtonGroup exclusive fullWidth size="small" color="primary" value={form.self_customer}
                 onChange={(e, v) => v && set("self_customer", v)}>
                 <ToggleButton value="S">Self</ToggleButton>
                 <ToggleButton value="C">Customer</ToggleButton>
               </ToggleButtonGroup>
-            </Box>
+            </Box>}
             <Box>
               <Typography variant="caption" color="text.secondary">Priority</Typography>
               <ToggleButtonGroup exclusive fullWidth size="small" color="primary" value={form.priority_flag}
@@ -195,13 +206,15 @@ const CreateIndent = ({ onCreated }) => {
         pb: "calc(12px + env(safe-area-inset-bottom))", bgcolor: "background.paper",
         borderTop: 1, borderColor: "divider", display: "flex", gap: 1, alignItems: "center" }}>
         <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
-          {rows.length ? `${rows.length} item(s)` : "Add at least one item"}
+          {!rows.length ? "Add at least one item" : estimate ? (
+            <>{rows.length} item(s) · est. <b>{money(estimate.total, true)}</b> incl. tax</>
+          ) : `${rows.length} item(s)`}
         </Typography>
         <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setPicker({ open: true, item: null })}>
           Item
         </Button>
         <Button variant="contained" disabled={!canSubmit} onClick={submit}>
-          {saving ? "Sending..." : forCustomer ? "Submit for customer" : "Submit indent"}
+          {saving ? "Sending..." : isExternal ? "Place order" : forCustomer ? "Submit for customer" : "Submit indent"}
         </Button>
       </Box>
 

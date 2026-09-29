@@ -1,137 +1,104 @@
-import React, { useState, useEffect } from "react";
-import { Typography, Box, Grid2 } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import React, { useCallback, useEffect, useState } from "react";
+import { Box, Button, Card, CardContent, CircularProgress, Grid2, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { CONFIG } from "../config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-import Loader from "../components/Loader";
+import InvoiceAlerts from "../components/InvoiceAlerts";
+import ProductionDataChart from "../components/ProductionDataChart";
 import { FormattedDate } from "../utilities/helpers";
 import { getProductSummary } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
-import { TextField, Button } from "@mui/material";
 
-import ProductionDataChart from "../components/ProductionDataChart";
+const rangeFor = (key) => {
+  const today = new Date();
+  const d = new Date(today);
+  if (key === "7d") d.setDate(d.getDate() - 6);
+  if (key === "month") d.setDate(1);
+  return { start_date: FormattedDate(d), end_date: FormattedDate(today) };
+};
+
+const ChartCard = ({ title, loading, children }) => (
+  <Card sx={{ height: "100%" }}>
+    <CardContent>
+      <Typography fontWeight={700} sx={{ mb: 1 }}>{title}</Typography>
+      {loading ? <Stack alignItems="center" sx={{ py: 8 }}><CircularProgress /></Stack> : children}
+    </CardContent>
+  </Card>
+);
 
 const Admin = () => {
-  const { user, login, logout } = useUser();
-  const navigate = useNavigate();
-  const today = FormattedDate(new Date());
+  document.title = `Admin | ${CONFIG.title.name}`;
+  const { user } = useUser();
+  const [quick, setQuick] = useState("today");
+  const [range, setRange] = useState(rangeFor("today"));
   const [loading, setLoading] = useState(false);
-  const [productSummary, setProductSummary] = useState({});
-  const [empSummary, setEmpSummary] = useState({});
-  const [formData, setFormData] = useState({
-    start_date: today,
-    end_date: today,
-  });
+  const [byProduct, setByProduct] = useState({});
+  const [byEmployee, setByEmployee] = useState({});
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  const retrievePMDashboard = () =>{
-    getProductSummaryByProduct();
-    getProductSummaryByEmployee();
-  }
-
-  const getProductSummaryByProduct = async () => {
+  const load = useCallback(async (r) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const today = new Date().toISOString().split("T")[0];      
-      const result = await getProductSummary({
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        type:'productwise'
-      });
-
-      setProductSummary(result.dashboard);
-    } catch (err) {
-      console.log('NO data')
+      const [p, e] = await Promise.all([
+        getProductSummary({ ...r, type: "productwise" }).catch(() => null),
+        getProductSummary({ ...r, type: "employeewise" }).catch(() => null),
+      ]);
+      setByProduct(p?.dashboard || {});
+      setByEmployee(e?.dashboard || {});
     } finally {
       setLoading(false);
     }
-  };
-
-  const getProductSummaryByEmployee = async () => {
-    try {
-      setLoading(true);
-      const today = new Date().toISOString().split("T")[0];
-      console.log(today);
-      const result = await getProductSummary({
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        type:'employeewise'
-      });
-
-      setEmpSummary(result.dashboard);
-    } catch (err) {
-      console.log('NO data')
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    navigate("/login"); // Use navigate to go to the login page
-  };
+  }, []);
 
   useEffect(() => {
-    getProductSummaryByProduct();
-    getProductSummaryByEmployee();
-  }, []);
-  if (loading) return <Loader />; // Show loader while data is being fetched
+    load(rangeFor("today"));
+  }, [load]);
+
+  const pickQuick = (e, v) => {
+    if (!v) return;
+    setQuick(v);
+    const r = rangeFor(v);
+    setRange(r);
+    load(r);
+  };
+
   return (
     <>
-      <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
-      <Box sx={{ mt: 2, padding: 2 }}>
-        <Typography variant="h4">Welcome, {user?.user_name}!</Typography>
+      <ResponsiveAppBar />
+      <Box sx={{ p: 2, maxWidth: 1300, mx: "auto" }}>
+        <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Welcome, {user?.user_name}</Typography>
+        <InvoiceAlerts />
 
-        <Box sx={{ mt: 2, padding: 2 }}>
-          <Grid2 container spacing={2}>
-            <Grid2 item size={6}>
-              <TextField
-                type="date"
-                fullWidth
-                label="Start Date"
-                name="start_date"
-                value={formData.start_date}
-                InputLabelProps={{ shrink: true }}
-                onChange={handleChange}
-              ></TextField>
-            </Grid2>{" "}
-            <Grid2 item size={6}>
-              <TextField
-                label="End Date"
-                fullWidth
-                type="date"
-                name="end_date"
-                value={formData.end_date}
-                InputLabelProps={{ shrink: true }}
-                onChange={handleChange}
-              ></TextField>
-            </Grid2>
-            <Grid2 item size={2}>
-              <Button
-                variant="contained"
-                color="success"
-                disabled={!formData.start_date || !formData.end_date}
-                onClick={retrievePMDashboard}
-              >
-                Search
+        <Card sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography fontWeight={700} sx={{ mb: 1.5 }}>Production: made vs damaged</Typography>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
+              <ToggleButtonGroup exclusive size="small" color="primary" value={quick} onChange={pickQuick}>
+                <ToggleButton value="today">Today</ToggleButton>
+                <ToggleButton value="7d">7 days</ToggleButton>
+                <ToggleButton value="month">This month</ToggleButton>
+              </ToggleButtonGroup>
+              <TextField type="date" size="small" label="From" value={range.start_date} InputLabelProps={{ shrink: true }}
+                onChange={(e) => { setQuick(null); setRange((r) => ({ ...r, start_date: e.target.value })); }} />
+              <TextField type="date" size="small" label="To" value={range.end_date} InputLabelProps={{ shrink: true }}
+                onChange={(e) => { setQuick(null); setRange((r) => ({ ...r, end_date: e.target.value })); }} />
+              <Button variant="contained" disabled={!range.start_date || !range.end_date || loading} onClick={() => load(range)}>
+                Show
               </Button>
-            </Grid2>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        <Grid2 container spacing={2}>
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <ChartCard title="By product" loading={loading}>
+              <ProductionDataChart filterBy="product" summary={byProduct} />
+            </ChartCard>
           </Grid2>
-          <h3>Production Qty vs Damaged Qty</h3>
-          <Grid2 container spacing={3}>
-            <Grid2 item size={{ xs: 12, md: 6 }} sx={{ border: "1px solid #ffa133" }}>
-              <ProductionDataChart filterBy={'product'} summary={productSummary} />
-            </Grid2>
-            <Grid2 item size={{ xs: 12, md: 6 }} sx={{ border: "1px solid #ffa133" }}>
-            <ProductionDataChart filterBy={'employee'} summary={empSummary} />
-            </Grid2>
+          <Grid2 size={{ xs: 12, md: 6 }}>
+            <ChartCard title="By employee" loading={loading}>
+              <ProductionDataChart filterBy="employee" summary={byEmployee} />
+            </ChartCard>
           </Grid2>
-        </Box>
+        </Grid2>
       </Box>
     </>
   );

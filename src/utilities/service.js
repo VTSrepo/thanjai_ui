@@ -93,6 +93,78 @@ export const getInvoice = async (invoice_number) => {
   }
 };
 
+// ---- Passwords ----
+export const changePassword = async (current_pwd, new_pwd) => {
+  try {
+    return (await axios.post(`${API_URL}/change-password`, { current_pwd, new_pwd })).data;
+  } catch (err) {
+    throw apiError(err, "Could not change the password");
+  }
+};
+
+export const resetUserPassword = async (user_id, temp_pwd) => {
+  try {
+    return (await axios.post(`${API_URL}/users/reset-password`, { user_id, temp_pwd })).data;
+  } catch (err) {
+    throw apiError(err, "Could not reset the password");
+  }
+};
+
+// ---- Payments & receivables ----
+const orgId = () => encodeURIComponent(currentUser().org_id || "TR");
+
+// status: open | overdue | paid | all
+export const getReceivables = async ({ branch_id, status = "open", from_date, to_date } = {}) => {
+  const qs = new URLSearchParams({ status, ...(branch_id ? { branch_id } : {}),
+    ...(from_date ? { from_date } : {}), ...(to_date ? { to_date } : {}) }).toString();
+  try {
+    return (await axios.get(`${API_URL}/receivables/${orgId()}?${qs}`)).data?.invoices || [];
+  } catch (err) {
+    throw apiError(err, "Could not load invoices");
+  }
+};
+
+export const getReceivablesSummary = async (branch_id) => {
+  const qs = branch_id ? `?branch_id=${encodeURIComponent(branch_id)}` : "";
+  try {
+    return (await axios.get(`${API_URL}/receivables-summary/${orgId()}${qs}`)).data;
+  } catch (err) {
+    throw apiError(err, "Could not load the summary");
+  }
+};
+
+export const getInvoicePayments = async (invoice_number) => {
+  try {
+    return (await axios.get(`${API_URL}/invoice-payments/${orgId()}/${encodeURIComponent(invoice_number)}`)).data;
+  } catch (err) {
+    throw apiError(err, "Could not load payments");
+  }
+};
+
+export const recordPayment = async (payload) => {
+  try {
+    return (await axios.post(`${API_URL}/payment`, payload)).data;
+  } catch (err) {
+    throw apiError(err, "Could not record the payment");
+  }
+};
+
+export const voidPayment = async (payment_id, reason) => {
+  try {
+    return (await axios.post(`${API_URL}/payment/void`, { payment_id, reason })).data;
+  } catch (err) {
+    throw apiError(err, "Could not void the payment");
+  }
+};
+
+export const changeInvoiceTerms = async (invoice_number, credit_term) => {
+  try {
+    return (await axios.post(`${API_URL}/invoice/terms`, { invoice_number, credit_term })).data;
+  } catch (err) {
+    throw apiError(err, "Could not change the terms");
+  }
+};
+
 export const getCategoriesList = async () => {
   try {
     const response = await axios.get(`${API_URL}/categories`);
@@ -338,7 +410,6 @@ export const convertToTimeZone = (time) => {
 export const getProductSummary = async (param) => {
   try {
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     const response = await axios.get(
       `${API_URL}/product-dashboard/${org_id}?start_date='${param.start_date}'&&end_date='${param.end_date}'&&type=${param.type}`
     );
@@ -352,7 +423,6 @@ export const getProductSummary = async (param) => {
 export const getProductReport = async (param) => {
   try {
     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
     let url = `${API_URL}/production-report/${org_id}?start_date='${param.start_date}'&&end_date='${param.end_date}'`;
     if (param.emp_id) {
       url = url+`&&emp_id='${param.emp_id}'`;

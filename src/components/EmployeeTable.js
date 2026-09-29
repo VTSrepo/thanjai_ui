@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { DataGrid } from "@mui/x-data-grid";
+import React, { } from "react";
+import ResponsiveGrid from "./ResponsiveGrid";
 import { Tooltip } from "@mui/material";
 
 import Paper from "@mui/material/Paper";
@@ -40,7 +40,7 @@ export default function EmployeeTable({ list }) {
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
-      <DataGrid
+      <ResponsiveGrid
         rows={list}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}

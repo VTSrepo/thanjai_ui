@@ -24,7 +24,7 @@ import Loader from "../components/Loader";
 import { useUser } from "../utilities/UserContext";
 import { getAllBranches } from "../utilities/service";
 
-const typeLabel = (t) => (t === "K" ? "Kitchen" : "Branch");
+const typeLabel = (t) => (t === "K" ? "Kitchen" : t === "X" ? "External customer" : "Branch");
 
 const Branch = () => {
   document.title = `Branch Master | ${CONFIG.title.name}`;
@@ -98,7 +98,7 @@ const Branch = () => {
             }}
           >
             {filtered.map((b) => {
-              const missingTax = b.branch_type !== "K" && !b.gst_hst_reg_no;
+              const missingTax = b.branch_type === "K" && !b.gst_hst_reg_no; // kitchens issue invoices, so they need tax numbers
               return (
                 <Card key={b.branch_id}>
                   <CardActionArea onClick={() => open(b)}>

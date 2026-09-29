@@ -16,20 +16,17 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
-import ProductionMonitorTable from "../components/ProductionMonitorTable";
 import { dateFromString } from "../utilities/helpers";
 import IndentReportsTable from "../components/IndentReportsTable";
 
 const IndentReports = () => {
   const location = useLocation(); // Access the location object
-  const { user, login, logout } = useUser();
+  const { user } = useUser();
   const { selectedRow } = location.state || {};  
   const navigate = useNavigate();
   const today = FormattedDate(new Date());
   const [loading, setLoading] = useState(false);
   const [indentReportData, setIndentReportData] = useState({});
-  const [empList, setEmpList] = useState([]);
-  const [products, setProducts] = useState([]);
 
   const [formData, setFormData] = useState({
     from_date: today,
@@ -93,6 +90,7 @@ const IndentReports = () => {
       });
       getIndentSummaryReport(selectedRow)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
   }, []);
   
 

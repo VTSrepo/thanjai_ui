@@ -1,409 +1,215 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
-  Toolbar,
-  Typography,
+  Badge,
+  Box,
+  Button,
+  Collapse,
+  Divider,
+  Drawer,
   IconButton,
+  List,
+  ListItemButton,
+  ListItemText,
   Menu,
   MenuItem,
-  Button,
+  Toolbar,
+  Typography,
   useMediaQuery,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import {
-  Menu as MenuIcon,
-  KeyboardArrowDown as ArrowDownIcon,
-} from "@mui/icons-material";
-import { Link } from "react-router-dom"; // Using Link for routing
-import { useUser } from "../utilities/UserContext";
+import MenuIcon from "@mui/icons-material/Menu";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import AccountCircle from "@mui/icons-material/AccountCircle";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useUser, ROLE } from "../utilities/UserContext";
+import { getReceivablesSummary } from "../utilities/service";
 
-const ResponsiveAppBar = ({ user: userProp, onLogout: onLogoutProp }) => {
-  const { user: ctxUser, logoutReset } = useUser();
-  // Prefer the logged-in user record (has user_type, branch_id) over page props.
-  const user = ctxUser || userProp;
-  const onLogout = () => {
-    try {
-      localStorage.removeItem("user");
-      localStorage.removeItem("authToken");
-    } catch (e) {}
-    logoutReset?.();
-    onLogoutProp?.();
-  };
-  const [anchorEl, setAnchorEl] = useState(null); // State for the menu anchor element
-  const [employeeAnchorEl, setEmployeeAnchorEl] = useState(null);
-  const [reportsAnchorEl, setReportsAnchorEl] = useState(null);
-  const [mobileEmployeeAnchorEl, setMobileEmployeeAnchorEl] = useState(null);
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm")); // Check if the screen is mobile-sized
+// One menu definition per role. Items with `children` render as a dropdown.
+export const MENUS = {
+  [ROLE.ADMIN]: [
+    { label: "Admin Home", to: "/admin" },
+    { label: "Indents", to: "/indents" },
+    { label: "Payments", to: "/payments", badge: "overdue" },
+    {
+      label: "Reports",
+      children: [
+        { label: "Invoices", to: "/invoices" },
+        { label: "Production", to: "/reports" },
+        { label: "Indent", to: "/indent" },
+      ],
+    },
+    { label: "Production Monitor", to: "/production-monitor" },
+    { label: "Timesheet", to: "/ts" },
+    {
+      label: "Master",
+      children: [
+        { label: "Product", to: "/product-master" },
+        { label: "Employee", to: "/employee" },
+        { label: "User", to: "/user" },
+        { label: "Category", to: "/category" },
+        { label: "Branch", to: "/branch" },
+      ],
+    },
+  ],
+  [ROLE.BRANCH]: [
+    { label: "Home", to: "/home" },
+    { label: "Indents", to: "/indents" },
+    { label: "My invoices", to: "/my-invoices", badge: "overdue" },
+  ],
+  [ROLE.KITCHEN]: [{ label: "Indents", to: "/indents" }],
+  [ROLE.EXTERNAL]: [
+    { label: "Home", to: "/home" },
+    { label: "Orders", to: "/indents" },
+    { label: "My invoices", to: "/my-invoices", badge: "overdue" },
+  ],
+};
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget); // Open the menu
+// Overdue count for the badge, cached for a minute across page changes
+let badgeCache = { at: 0, value: 0, user: null };
+const useOverdueBadge = (user) => {
+  const [count, setCount] = useState(badgeCache.user === user?.user_id ? badgeCache.value : 0);
+  useEffect(() => {
+    if (!user || user.user_type === ROLE.KITCHEN) return;
+    if (badgeCache.user === user.user_id && Date.now() - badgeCache.at < 60000) return;
+    getReceivablesSummary()
+      .then((s) => {
+        badgeCache = { at: Date.now(), value: s?.totals?.overdue_count || 0, user: user.user_id };
+        setCount(badgeCache.value);
+      })
+      .catch(() => {});
+  }, [user]);
+  return count;
+};
+
+const ResponsiveAppBar = ({ onLogout }) => {
+  const { user, logoutReset } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useMediaQuery((t) => t.breakpoints.down("md"));
+  const [drawer, setDrawer] = useState(false);
+  const [openGroup, setOpenGroup] = useState(null);
+  const [anchor, setAnchor] = useState({ el: null, key: null });
+  const overdue = useOverdueBadge(user);
+  const items = MENUS[user?.user_type] || [];
+
+  const logout = () => {
+    badgeCache = { at: 0, value: 0, user: null };
+    logoutReset();
+    setAnchor({ el: null, key: null });
+    if (onLogout) onLogout();
+    navigate("/login");
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null); // Close the menu
-  };
+  const withBadge = (item, node) =>
+    item.badge === "overdue" && overdue > 0 ? (
+      <Badge color="error" badgeContent={overdue} max={99}>{node}</Badge>
+    ) : (
+      node
+    );
 
-  const handleMobileEmployeeOpen = (event) => {
-    setMobileEmployeeAnchorEl(event.currentTarget);
-  };
-
-  const handleMobileEmployeeClose = () => {
-    setMobileEmployeeAnchorEl(null);
-  };
-
-  const handleMasterMenuOpen = (event) => {
-    setEmployeeAnchorEl(event.currentTarget);
-  };
-
-  const handleMasterMenuClose = () => {
-    setEmployeeAnchorEl(null);
-  };
-
-  const handleReportMenuOpen = (event) => {
-    setReportsAnchorEl(event.currentTarget);
-  };
-
-  const handleReportMenuClose = () => {
-    setReportsAnchorEl(null);
-  };
+  const active = (to) => location.pathname === to;
 
   return (
-    <AppBar position="sticky" sx={{ backgroundColor: "#ffa133" }}>
-      <Toolbar>
-        {/* <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          {user && user.role === "admin" ? "Admin Dashboard" : "User Dashboard"}
-        </Typography> */}
-        <Typography variant="h6" sx={{ flexGrow: 1, lineHeight: 1.1 }} noWrap>
-          Thanjai Caterers
+    <AppBar position="sticky" elevation={1} sx={{ bgcolor: "primary.main" }}>
+      <Toolbar sx={{ gap: 1 }}>
+        {isMobile && (
+          <IconButton color="inherit" edge="start" aria-label="Menu" onClick={() => setDrawer(true)}>
+            <MenuIcon />
+          </IconButton>
+        )}
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="h6" noWrap sx={{ lineHeight: 1.1 }}>Thanjai Caterers</Typography>
           {user?.user_name && (
-            <Typography component="span" variant="caption" sx={{ display: "block", opacity: 0.9 }} noWrap>
-              {user.user_name}
-              {user.branch_id ? ` · ${user.branch_id}` : ""}
+            <Typography variant="caption" noWrap sx={{ display: "block", opacity: 0.9 }}>
+              {user.user_name}{user.branch_id ? ` · ${user.branch_id}` : ""}
             </Typography>
           )}
-        </Typography>
+        </Box>
 
-        {/* For mobile view, show the hamburger icon */}
-        {isMobile ? (
+        {!isMobile &&
+          items.map((item) =>
+            item.children ? (
+              <React.Fragment key={item.label}>
+                <Button color="inherit" endIcon={<ExpandMore />} onClick={(e) => setAnchor({ el: e.currentTarget, key: item.label })}>
+                  {item.label}
+                </Button>
+                <Menu anchorEl={anchor.el} open={anchor.key === item.label} onClose={() => setAnchor({ el: null, key: null })}>
+                  {item.children.map((c) => (
+                    <MenuItem key={c.to} component={Link} to={c.to} selected={active(c.to)}
+                      onClick={() => setAnchor({ el: null, key: null })}>
+                      {c.label}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </React.Fragment>
+            ) : (
+              <Button key={item.to} color="inherit" component={Link} to={item.to}
+                sx={{ fontWeight: active(item.to) ? 800 : 600, textDecoration: active(item.to) ? "underline" : "none" }}>
+                {withBadge(item, <span>{item.label}</span>)}
+              </Button>
+            )
+          )}
+
+        {user && (
           <>
-            <IconButton edge="end" color="inherit" onClick={handleMenuOpen}>
-              <MenuIcon />
+            <IconButton color="inherit" aria-label="Account" onClick={(e) => setAnchor({ el: e.currentTarget, key: "account" })}>
+              <AccountCircle />
             </IconButton>
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-            >
-              {user && user?.user_type === "B" && (
-                <MenuItem component={Link} to="/home" onClick={handleMenuClose}>
-                  Home
-                </MenuItem>
-              )}
-              {user && user?.user_type === "A" && (
-                <MenuItem
-                  component={Link}
-                  to="/production-monitor"
-                  onClick={handleMenuClose}
-                >
-                  Production Monitor
-                </MenuItem>
-              )}
-              {user && (
-                <MenuItem
-                  component={Link}
-                  to="/indents"
-                  onClick={handleMenuClose}
-                >
-                  Indents
-                </MenuItem>
-              )}
-              {user && user?.user_type === "A" && (
-                <MenuItem component={Link} to="/ts" onClick={handleMenuClose}>
-                  Timesheet
-                </MenuItem>
-              )}
-              {user && user?.user_type === "A" && (
-                <Accordion
-                  sx={{ boxShadow: "none", background: "transparent" }}
-                >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    sx={{ pl: 2 }}
-                  >
-                    <Typography>Master</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ p: 0 }}>
-                    <List>
-                    <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/product-master"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="Product" />
-                      </ListItem>
-                      <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/employee"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="Employee" />
-                      </ListItem>
-                      <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/user"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="User" />
-                      </ListItem>
-                      <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/category"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="Category" />
-                      </ListItem>
-                      <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/branch"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="Branch" />
-                      </ListItem>
-                      <Divider />
-                      {/* Add more sub-links here if needed */}
-                    </List>
-                  </AccordionDetails>
-                </Accordion>
-              )}
-
-              {user && user?.user_type === "A" && (
-                <MenuItem
-                  component={Link}
-                  to="/admin"
-                  onClick={handleMenuClose}
-                >
-                  Admin Home
-                </MenuItem>
-              )}
-
-              {user && user?.user_type === "A" && (
-                <Accordion
-                  sx={{ boxShadow: "none", background: "transparent" }}
-                >
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    sx={{ pl: 2 }}
-                  >
-                    <Typography>Reports</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ p: 0 }}>
-                    <List>
-                      <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/reports"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="Production" />
-                      </ListItem>
-                      <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/indent"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="Indent" />
-                      </ListItem>
-                      <Divider />
-                      <ListItem
-                        button
-                        component={Link}
-                        to="/invoices"
-                        onClick={handleMenuClose}
-                      >
-                        <ListItemText primary="Invoices" />
-                      </ListItem>
-                      <Divider />
-                      {/* Add more sub-links here if needed */}
-                    </List>
-                  </AccordionDetails>
-                </Accordion>
-              )}
-              {/* {user && user.role === "admin" && (
-                <MenuItem
-                  component={Link}
-                  to="/product-master"
-                  onClick={handleMenuClose}
-                >
-                  Product Master
-                </MenuItem>
-              )} */}
-
-              <MenuItem
-                onClick={() => {
-                  onLogout();
-                  handleMenuClose();
-                }}
-              >
-                Logout
+            <Menu anchorEl={anchor.el} open={anchor.key === "account"} onClose={() => setAnchor({ el: null, key: null })}>
+              <MenuItem disabled sx={{ opacity: "1 !important" }}>
+                <ListItemText primary={user.user_name} secondary={user.user_id} />
               </MenuItem>
+              <Divider />
+              <MenuItem component={Link} to="/change-password" onClick={() => setAnchor({ el: null, key: null })}>
+                Change password
+              </MenuItem>
+              <MenuItem onClick={logout}>Logout</MenuItem>
             </Menu>
-          </>
-        ) : (
-          // For larger screens, show the regular navigation bar
-          <>
-            {user && user?.user_type === "B" && (
-              <Button color="inherit" component={Link} to="/home">
-                Home
-              </Button>
-            )}
-
-            {user && user?.user_type === "A" && (
-              <Button color="inherit" component={Link} to="/admin">
-                Admin Home
-              </Button>
-            )}
-            
-            {user && user?.user_type === "A" && (
-              <>
-                <Button
-                  color="inherit"
-                  onClick={handleReportMenuOpen}
-                  endIcon={<ArrowDownIcon />}
-                >
-                  Reports
-                </Button>
-                <Menu
-                  anchorEl={reportsAnchorEl}
-                  open={Boolean(reportsAnchorEl)}
-                  onClose={handleReportMenuClose}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                  transformOrigin={{ vertical: "top", horizontal: "left" }}
-                >
-                  <MenuItem
-                    component={Link}
-                    to="/reports"
-                    onClick={handleReportMenuClose}
-                  >
-                    Production
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/indent"
-                    onClick={handleReportMenuClose}
-                  >
-                    Indent
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/invoices"
-                    onClick={handleReportMenuClose}
-                  >
-                    Invoices
-                  </MenuItem>
-                </Menu>{" "}
-              </>
-            )}
-            {user && (
-              <Button color="inherit" component={Link} to="/indents">
-                Indents
-              </Button>
-            )}
-            {user && user?.user_type === "A" && (
-              <Button component={Link} to="/production-monitor" color="inherit">
-                Production Monitor
-              </Button>
-            )}
-            {user && user?.user_type === "A" && (
-              <Button component={Link} to="/ts" color="inherit">
-                Timesheet
-              </Button>
-            )}
-            {/* <Button component={Link} to="/employee" color="inherit">
-              Employee
-            </Button> */}
-            
-
-            {user && user?.user_type === "A" && (
-              <>
-                <Button
-                  color="inherit"
-                  onClick={handleMasterMenuOpen}
-                  endIcon={<ArrowDownIcon />}
-                >
-                  Master
-                </Button>
-                <Menu
-                  anchorEl={employeeAnchorEl}
-                  open={Boolean(employeeAnchorEl)}
-                  onClose={handleMasterMenuClose}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                  transformOrigin={{ vertical: "top", horizontal: "left" }}
-                >
-                  <MenuItem
-                    component={Link}
-                    to="/product-master"
-                    onClick={handleMasterMenuClose}
-                  >
-                    Product
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/employee"
-                    onClick={handleMasterMenuClose}
-                  >
-                    Employee
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/user"
-                    onClick={handleMasterMenuClose}
-                  >
-                    User
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/category"
-                    onClick={handleMasterMenuClose}
-                  >
-                    Category
-                  </MenuItem>
-                  <MenuItem
-                    component={Link}
-                    to="/branch"
-                    onClick={handleMasterMenuClose}
-                  >
-                    Branch
-                  </MenuItem>
-                </Menu>{" "}
-              </>
-            )}
-
-            <Button color="inherit" onClick={onLogout}>
-              Logout
-            </Button>
           </>
         )}
       </Toolbar>
+
+      {/* Phone navigation drawer */}
+      <Drawer open={drawer} onClose={() => setDrawer(false)}>
+        <Box sx={{ width: 270 }} role="navigation">
+          <Box sx={{ p: 2, bgcolor: "primary.main", color: "#fff" }}>
+            <Typography fontWeight={700}>Thanjai Caterers</Typography>
+            <Typography variant="caption">{user?.user_name}</Typography>
+          </Box>
+          <List>
+            {items.map((item) =>
+              item.children ? (
+                <React.Fragment key={item.label}>
+                  <ListItemButton onClick={() => setOpenGroup(openGroup === item.label ? null : item.label)}>
+                    <ListItemText primary={item.label} />
+                    {openGroup === item.label ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+                  <Collapse in={openGroup === item.label}>
+                    {item.children.map((c) => (
+                      <ListItemButton key={c.to} sx={{ pl: 4 }} component={Link} to={c.to} selected={active(c.to)}
+                        onClick={() => setDrawer(false)}>
+                        <ListItemText primary={c.label} />
+                      </ListItemButton>
+                    ))}
+                  </Collapse>
+                </React.Fragment>
+              ) : (
+                <ListItemButton key={item.to} component={Link} to={item.to} selected={active(item.to)} onClick={() => setDrawer(false)}>
+                  <ListItemText primary={withBadge(item, <span>{item.label}</span>)} />
+                </ListItemButton>
+              )
+            )}
+            <Divider sx={{ my: 1 }} />
+            <ListItemButton component={Link} to="/change-password" onClick={() => setDrawer(false)}>
+              <ListItemText primary="Change password" />
+            </ListItemButton>
+            <ListItemButton onClick={logout}>
+              <ListItemText primary="Logout" />
+            </ListItemButton>
+          </List>
+        </Box>
+      </Drawer>
     </AppBar>
   );
 };

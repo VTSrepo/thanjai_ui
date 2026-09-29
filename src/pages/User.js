@@ -38,6 +38,8 @@ const User = ({ dashboard }) => {
               ? "Kitchen"
               : item.user_type === "B"
               ? "Branch"
+              : item.user_type === "X"
+              ? "External"
               : "",
           user_status:
             item.user_status === "A"

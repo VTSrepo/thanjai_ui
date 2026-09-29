@@ -1,22 +1,21 @@
+import { toast } from "./ToastProvider";
 import React, { useState } from "react";
-import { DataGrid } from "@mui/x-data-grid";
+import ResponsiveGrid from "./ResponsiveGrid";
 import {
   Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  DialogContentText,
+  
   Button,
-  TextField,
-} from "@mui/material";
+  TextField } from "@mui/material";
 
 import Paper from "@mui/material/Paper";
 import { getSellingPriceRecord, setSellingPrice } from "../utilities/service";
 import { useNavigate } from "react-router-dom";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import PriceChangeIcon from '@mui/icons-material/PriceChange';
-import { alignProperty } from "@mui/material/styles/cssUtils";
 export default function ProductTable({ list }) {
   const paginationModel = { page: 0, pageSize: 10 };
 
@@ -43,8 +42,8 @@ export default function ProductTable({ list }) {
 
   const handleSave = async() => {
    // const payload = {}
-    const res = await setSellingPrice(sp);
-    alert('Data saved');
+    await setSellingPrice(sp);
+    toast.success('Selling price saved');
   }
 
   const handleChange = (e) => {
@@ -115,7 +114,7 @@ export default function ProductTable({ list }) {
   ];
   return (
     <Paper sx={{ height: "100%", width: "100%" }}>
-      <DataGrid
+      <ResponsiveGrid
         rows={list}
         columns={columns}
         initialState={{ pagination: { paginationModel } }}

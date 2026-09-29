@@ -47,7 +47,7 @@ const DisabledFormWrapper = ({ children, disabled }) => {
 };
 
 function TimesheetForm() {
-  const { user, login, logout } = useUser();
+  const { user } = useUser();
   const location = useLocation(); // Access the location object
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const currentDate = FormattedDate(new Date());
@@ -58,7 +58,7 @@ function TimesheetForm() {
   const [empList, setEmpList] = useState([]);
   const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [heading, setHeading] = useState("Job Create");
-  const [error, setError] = useState("");
+  const [error] = useState("");
 
   const [formData, setFormData] = useState({
     product_id: null,

@@ -20,9 +20,9 @@ import { getBu, referenceRecord, getCategoryList } from "../utilities/service";
 
 function ProductForm() {
   const location = useLocation(); // Access the location object
-   const { user, login, logout } = useUser();
+   const { user } = useUser();
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const navigate = useNavigate();
   const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
   const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
@@ -105,6 +105,7 @@ function ProductForm() {
         branch_id: branch_id,
       });
     }    
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
   }, [selectedRow]);
 
   const handleLogout = () => {

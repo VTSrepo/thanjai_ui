@@ -23,6 +23,7 @@ import Loader from "../components/Loader";
 import { useUser } from "../utilities/UserContext";
 import { getBranch, saveBranch } from "../utilities/service";
 import { PROVINCES, provinceByCode, GST_PATTERN, QST_PATTERN } from "../utilities/tax";
+import { CREDIT_TERMS } from "../utilities/helpers";
 
 const EMPTY = {
   branch_id: "",
@@ -46,6 +47,7 @@ const EMPTY = {
   gst_hst_rate: "",
   qst_rate: "",
   invoice_notes: "",
+  credit_term: "EOM",
 };
 
 const Section = ({ title, hint, children }) => (
@@ -159,8 +161,16 @@ const BranchForm = () => {
               onChange={(e, v) => v && set("branch_type", v)}>
               <ToggleButton value="B">Branch</ToggleButton>
               <ToggleButton value="K">Kitchen</ToggleButton>
+              <ToggleButton value="X">External</ToggleButton>
             </ToggleButtonGroup>
           </Grid2>
+          {form.branch_type === "X" ? (
+            <Grid2 size={{ xs: 12, md: 6 }}>
+              <Typography variant="body2" color="text.secondary">
+                External customer: can place orders, track them, confirm receipt and see their invoices. Create their login in User Master with type External.
+              </Typography>
+            </Grid2>
+          ) : (
           <Grid2 size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>Ownership</Typography>
             <ToggleButtonGroup exclusive fullWidth color="primary" value={form.ownership_type}
@@ -169,6 +179,13 @@ const BranchForm = () => {
               <ToggleButton value="F">Franchise</ToggleButton>
             </ToggleButtonGroup>
           </Grid2>
+          )}
+          {form.branch_type !== "K" && (
+            <Field select label="Default credit term" name="credit_term" value={form.credit_term || "EOM"} onChange={onChange}
+              helperText="Copied onto each invoice billed to this customer">
+              {CREDIT_TERMS.map((t) => <MenuItem key={t.code} value={t.code}>{t.label} ({t.printed})</MenuItem>)}
+            </Field>
+          )}
           <Field select label="Status" name="branch_status" value={form.branch_status} onChange={onChange}>
             <MenuItem value="A">Active</MenuItem>
             <MenuItem value="I">Inactive</MenuItem>

@@ -15,15 +15,13 @@ import {
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
-import { format, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
-import { parseISO } from "date-fns";
+import { format } from "date-fns-tz";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import InfoDialog from "../components/InfoDialog";
 import { getProducts, getEmployees, saveJob } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
-import { dateFromString } from "../utilities/helpers";
 
 function FormattedDate(date) {
   const year = date.getFullYear();
@@ -49,17 +47,14 @@ const DisabledFormWrapper = ({ children, disabled }) => {
 
 function ProductionMonitorForm() {
   const location = useLocation(); // Access the location object
-  const { user, login, logout } = useUser();
+  const { user } = useUser();
   const { selectedRow, backPath, parentFormData } = location.state || {}; // Extract the selected row from location state
   const currentDate = FormattedDate(new Date());
   const [openDialog, setOpenDialog] = useState(false);
   const [message, setMessage] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const navigate = useNavigate();
-  const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-  const branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
   const [empList, setEmpList] = useState([]);
-  const [uom, setUOM] = useState([]);
   const [products, setProducts] = useState([]);
   const [isFormDisabled, setIsFormDisabled] = useState(false);
   const [heading, setHeading] = useState("Job Create");
@@ -144,6 +139,7 @@ function ProductionMonitorForm() {
         remarks: selectedRow.remarks,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
   }, [selectedRow]);
 
   const handleChangeStartTime = (e) => {
@@ -221,7 +217,7 @@ function ProductionMonitorForm() {
 
   const handleProdQtyChange = (e) => {
     const min = 1;
-    const { name, value } = e.target;
+    const { value } = e.target;
     const val = String(Number(value));
 
     if (Number(val) <= 0 || isNaN(val)) {

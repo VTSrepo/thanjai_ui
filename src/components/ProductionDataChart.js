@@ -20,6 +20,7 @@ export default function ProductionDataChart({ summary, filterBy }) {
       ];
       setQuantites(quantities);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
   }, [summary]);
 
   return (
