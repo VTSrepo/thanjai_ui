@@ -293,7 +293,9 @@ const Payments = () => {
   const [selected, setSelected] = useState([]);
   const [page, setPage] = useState(0);
   const [perPage, setPerPage] = useState(10);
-  const [payOpen, setPayOpen] = useState(false);
+  const [payInvoices, setPayInvoices] = useState(null); // invoices in the Record payment dialog
+  const [pickOpen, setPickOpen] = useState(false);
+  const toast = useToast();
   const [history, setHistory] = useState(null);
   const [termsFor, setTermsFor] = useState(null);
 
@@ -330,6 +332,19 @@ const Payments = () => {
     setSelected((s) => (s.includes(inv.invoice_number) ? s.filter((x) => x !== inv.invoice_number) : [...s, inv.invoice_number]));
   };
   const pageRows = rows.slice(page * perPage, page * perPage + perPage);
+
+  // Record a payment for a customer: all of their open invoices, applied oldest first
+  const payCustomer = async (branch_id) => {
+    setPickOpen(false);
+    try {
+      const open = (await getReceivables({ branch_id, status: "open" })).filter((i) => i.balance_due > 0);
+      if (!open.length) return toast.info("This customer has nothing to pay.");
+      setPayInvoices(open);
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+  const startPayment = () => (customer ? payCustomer(customer) : setPickOpen(true));
   const t = summary?.totals;
 
   const tiles = t ? [
@@ -340,10 +355,13 @@ const Payments = () => {
   ] : [];
 
   const actions = (inv) => (
-    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+    <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
       <Tooltip title="Payments"><IconButton size="small" onClick={() => setHistory(inv.invoice_number)}><HistoryIcon fontSize="small" /></IconButton></Tooltip>
       {inv.amount_paid <= 0 && (
         <Tooltip title="Change credit term"><IconButton size="small" onClick={() => setTermsFor(inv)}><EventIcon fontSize="small" /></IconButton></Tooltip>
+      )}
+      {inv.balance_due > 0 && (
+        <Button size="small" variant="contained" onClick={() => setPayInvoices([inv])} sx={{ minWidth: 56, ml: 0.5 }}>Pay</Button>
       )}
     </Stack>
   );
@@ -352,7 +370,8 @@ const Payments = () => {
     <>
       <ResponsiveAppBar />
       <Box sx={{ p: 2, maxWidth: 1300, mx: "auto", pb: selected.length ? 12 : 2 }}>
-        <PageHeader title="Payments" subtitle="Record customer payments and track what is owed" />
+        <PageHeader title="Payments" subtitle="Record customer payments and track what is owed"
+          action={<Button variant="contained" startIcon={<PaymentsIcon />} onClick={startPayment}>Record payment</Button>} />
 
         <Box sx={{ display: "grid", gap: 1.5, mb: 2, gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" } }}>
           {tiles.map(([k, v, sub, color]) => (
@@ -383,12 +402,17 @@ const Payments = () => {
         </Stack>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {tab !== "aging" && rows.some((r) => r.balance_due > 0) && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Press <b>Pay</b> on an invoice, or tick several invoices of one customer and press <b>Record payment</b> at the bottom.
+          </Typography>
+        )}
         {loading ? <Loader inline /> : tab === "aging" ? (
           <TableContainer component={Card}>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  {["Customer", "Open", "Current", "1-30 days", "31-60 days", "60+ days", "Outstanding"].map((h, i) => (
+                  {["Customer", "Open", "Current", "1-30 days", "31-60 days", "60+ days", "Outstanding", ""].map((h, i) => (
                     <TableCell key={h} align={i ? "right" : "left"} sx={{ fontWeight: 700 }}>{h}</TableCell>
                   ))}
                 </TableRow>
@@ -403,16 +427,23 @@ const Payments = () => {
                     <TableCell align="right" sx={{ color: a.d31_60 ? "error.main" : undefined }}>{money(a.d31_60)}</TableCell>
                     <TableCell align="right" sx={{ color: a.d60_plus ? "error.main" : undefined }}>{money(a.d60_plus)}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>{money(a.outstanding)}</TableCell>
+                    <TableCell align="right">
+                      {a.outstanding > 0 && (
+                        <Button size="small" variant="contained" onClick={(e) => { e.stopPropagation(); payCustomer(a.branch_id); }}>Pay</Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
                 {!summary?.aging?.length && (
-                  <TableRow><TableCell colSpan={7} align="center">Nothing outstanding.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} align="center">Nothing outstanding.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
         ) : !rows.length ? (
-          <Typography color="text.secondary" sx={{ textAlign: "center", py: 6 }}>No invoices here.</Typography>
+          <Typography color="text.secondary" sx={{ textAlign: "center", py: 6 }}>
+            No invoices here. An invoice is created when a branch or customer confirms receipt of an indent.
+          </Typography>
         ) : isMobile ? (
           <Stack spacing={1.25}>
             {pageRows.map((inv) => (
@@ -490,14 +521,35 @@ const Payments = () => {
               : "Pick invoices of one customer only"}
           </Typography>
           <Button color="secondary" onClick={() => setSelected([])}>Clear</Button>
-          <Button variant="contained" startIcon={<PaymentsIcon />} disabled={!sameCustomer} onClick={() => setPayOpen(true)}>
+          <Button variant="contained" startIcon={<PaymentsIcon />} disabled={!sameCustomer} onClick={() => setPayInvoices(selectedRows)}>
             Record payment
           </Button>
         </Box>
       )}
 
-      <RecordPaymentDialog open={payOpen} invoices={selectedRows} onClose={() => setPayOpen(false)}
-        onSaved={() => { setPayOpen(false); load(); }} />
+      <RecordPaymentDialog open={!!payInvoices} invoices={payInvoices || []} onClose={() => setPayInvoices(null)}
+        onSaved={() => { setPayInvoices(null); load(); }} />
+
+      <Dialog open={pickOpen} onClose={() => setPickOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Who paid?</DialogTitle>
+        <DialogContent>
+          {(summary?.aging || []).filter((a) => a.outstanding > 0).length ? (
+            <Stack spacing={1} sx={{ pt: 0.5 }}>
+              {(summary?.aging || []).filter((a) => a.outstanding > 0).map((a) => (
+                <Button key={a.branch_id} variant="outlined" onClick={() => payCustomer(a.branch_id)}
+                  sx={{ justifyContent: "space-between", textTransform: "none" }}>
+                  <span>{a.name}</span><b>{money(a.outstanding, true)}</b>
+                </Button>
+              ))}
+            </Stack>
+          ) : (
+            <Typography color="text.secondary">
+              Nobody owes anything right now. Invoices appear here once a branch or customer confirms receipt of an indent.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions><Button color="secondary" onClick={() => setPickOpen(false)}>Cancel</Button></DialogActions>
+      </Dialog>
       <HistoryDialog invoiceNumber={history} onClose={() => setHistory(null)} onChanged={load} />
       <TermsDialog inv={termsFor} onClose={() => setTermsFor(null)} onSaved={() => { setTermsFor(null); load(); }} />
     </>
