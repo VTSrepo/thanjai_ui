@@ -45,6 +45,7 @@ const EMPTY = {
   qst_reg_no: "",
   gst_hst_rate: "",
   qst_rate: "",
+  invoice_notes: "",
 };
 
 const Section = ({ title, hint, children }) => (
@@ -111,14 +112,12 @@ const BranchForm = () => {
       ...f,
       province_code: e.target.value,
       gst_hst_rate: p ? String(p.gst) : f.gst_hst_rate,
-      qst_rate: p?.qst ? String(p.qst) : "",
-      qst_reg_no: p?.code === "QC" ? f.qst_reg_no : "",
+      qst_rate: p ? String(p.qst ?? 0) : f.qst_rate,
     }));
   };
 
   const prov = provinceByCode(form.province_code);
   const gstLabel = prov?.gstLabel || "GST/HST";
-  const isQC = form.province_code === "QC";
   const gstInvalid = form.gst_hst_reg_no && !GST_PATTERN.test(form.gst_hst_reg_no.replace(/\s/g, ""));
   const qstInvalid = form.qst_reg_no && !QST_PATTERN.test(form.qst_reg_no.replace(/\s/g, ""));
   const canSave = form.branch_name.trim() && !gstInvalid && !qstInvalid && !saving;
@@ -201,7 +200,7 @@ const BranchForm = () => {
 
         <Section
           title="Tax & invoicing"
-          hint="Printed on indent invoices. Choosing a province fills the standard rates; you can edit them."
+          hint="Printed on invoices. For a kitchen these are the taxes it charges. Choosing a province fills the standard rates (Quebec: GST 5% + QST 9.975%); you can edit them."
         >
           <Field md={12} label="Legal / billing name" name="legal_name" value={form.legal_name} onChange={onChange}
             helperText={form.ownership_type === "F" ? "Franchise's registered business name" : "Leave blank to use the branch name"} />
@@ -212,17 +211,19 @@ const BranchForm = () => {
           <Field label={`${gstLabel} rate`} name="gst_hst_rate" value={form.gst_hst_rate} onChange={onChange}
             type="number" inputProps={{ step: "0.001", min: 0, max: 20 }}
             InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} helperText=" " />
-          {(isQC || form.qst_reg_no) && (
-            <>
+          <>
               <Field label="QST registration no." name="qst_reg_no" value={form.qst_reg_no} onChange={onChange}
                 placeholder="1234567890TQ0001" error={!!qstInvalid}
                 helperText={qstInvalid ? "Format: 10 digits + TQ + 4 digits" : " "}
                 inputProps={{ style: { textTransform: "uppercase" } }} />
               <Field label="QST rate" name="qst_rate" value={form.qst_rate} onChange={onChange}
                 type="number" inputProps={{ step: "0.001", min: 0, max: 20 }}
-                InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} helperText=" " />
+                InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                helperText={form.province_code && form.province_code !== "QC" ? "QST applies in Quebec only - usually 0" : " "} />
             </>
-          )}
+          <Field md={12} label="Invoice notes" name="invoice_notes" value={form.invoice_notes} onChange={onChange}
+            multiline minRows={2} placeholder="e.g. Thanks for your business. Please send the payment by Interac: info@thanjaisnacks.com"
+            helperText="Printed at the bottom of invoices this kitchen issues" />
         </Section>
       </Box>
 

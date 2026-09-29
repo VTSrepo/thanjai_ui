@@ -5,6 +5,7 @@ import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ChecklistRtlIcon from "@mui/icons-material/ChecklistRtl";
 import CallReceivedIcon from "@mui/icons-material/CallReceived";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import CreateIndent from "../pages/CreateIndent";
 import IndentListing from "../pages/IndentListing";
 import { useUser } from "../utilities/UserContext";
@@ -22,12 +23,13 @@ const TABS = {
   accept: { label: "To accept", icon: <ChecklistRtlIcon />, statuses: ["C"], empty: "No new requests to accept." },
   dispatch: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["A"], empty: "Nothing waiting for dispatch." },
   receive: { label: "To receive", icon: <CallReceivedIcon />, statuses: ["D"], empty: "Nothing on the way." },
+  done: { label: "Received", icon: <TaskAltIcon />, statuses: ["R"], empty: "No completed indents yet.", noBadge: true },
 };
 
 const ROLE_TABS = {
-  B: ["receive", "create", "progress"],
-  K: ["accept", "dispatch"],
-  A: ["accept", "dispatch", "receive"],
+  B: ["receive", "create", "progress", "done"],
+  K: ["accept", "dispatch", "done"],
+  A: ["accept", "dispatch", "receive", "done"],
 };
 
 export default function NavTab() {
@@ -60,7 +62,7 @@ export default function NavTab() {
     const next = {};
     await Promise.all(
       keys
-        .filter((k) => TABS[k].statuses)
+        .filter((k) => TABS[k].statuses && !TABS[k].noBadge)
         .map(async (k) => {
           try {
             next[k] = (await fetchIndents(TABS[k].statuses, scope)).length;

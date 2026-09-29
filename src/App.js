@@ -31,6 +31,7 @@ import CreateCategoryForm from "./pages/CreateCategoryForm";
 import IndentReports from "./pages/IndentReports";
 import Branch from "./pages/Branch";
 import BranchForm from "./pages/BranchForm";
+import InvoiceReport from "./pages/InvoiceReport";
 import appTheme from "./utilities/theme";
 import { useUser } from "./utilities/UserContext";
 
@@ -152,6 +153,10 @@ function App() {
             <Route
               path="/branch"
               element={<RequireAdmin><Branch /></RequireAdmin>}
+            />
+            <Route
+              path="/invoices"
+              element={<RequireAdmin><InvoiceReport /></RequireAdmin>}
             />
             <Route
               path="/branch-form"
