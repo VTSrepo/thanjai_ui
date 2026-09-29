@@ -15,6 +15,44 @@ export const getBranchLists = async () => {
   }
 };
 
+const currentUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user")) || {};
+  } catch (e) {
+    return {};
+  }
+};
+
+// Branch Master (all branches & kitchens of the org, optional branch_type filter: B | K)
+export const getAllBranches = async (branchType) => {
+  const org_id = currentUser().org_id || "TR";
+  const qs = branchType ? `?branch_type=${encodeURIComponent(branchType)}` : "";
+  const response = await axios.get(`${API_URL}/branches/${encodeURIComponent(org_id)}${qs}`);
+  return response.data?.branches || [];
+};
+
+export const getBranch = async (branchId) => {
+  const org_id = currentUser().org_id || "TR";
+  const response = await axios.get(
+    `${API_URL}/branch/${encodeURIComponent(org_id)}/${encodeURIComponent(branchId)}`
+  );
+  return response.data?.branch;
+};
+
+// Creates when branch.branch_id is empty, otherwise updates. Throws with server message on failure.
+export const saveBranch = async (branch) => {
+  const u = currentUser();
+  try {
+    const response = await axios.post(`${API_URL}/branch`, {
+      user_id: u.user_id,
+      branch: { ...branch, org_id: u.org_id || "TR" },
+    });
+    return response.data;
+  } catch (err) {
+    throw new Error(err.response?.data?.message || "Could not save branch");
+  }
+};
+
 export const getCategoriesList = async () => {
   try {
     const response = await axios.get(`${API_URL}/categories`);
@@ -183,6 +221,29 @@ export const createNewIndent = async (payload) => {
 export const getListing = (params) => {
   const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
   return axios.get(`${API_URL}/indents/${org_id}?status=${params.status}`);
+};
+
+// Indents for one or more statuses, optionally scoped to { branch_id } or { kitchen_id }.
+// The API answers 404 when there are none, which is treated as an empty list.
+export const fetchIndents = async (statuses = [], scope = {}) => {
+  const org_id = currentUser().org_id;
+  const lists = await Promise.all(
+    statuses.map(async (status) => {
+      const qs = new URLSearchParams({ status, ...scope }).toString();
+      try {
+        const res = await axios.get(`${API_URL}/indents/${encodeURIComponent(org_id)}?${qs}`);
+        return res.data?.indents || [];
+      } catch (err) {
+        if (err.response?.status === 404 || err.response?.data?.status === 404) return [];
+        throw err;
+      }
+    })
+  );
+  // Priority first, then earliest delivery
+  return lists.flat().sort((a, b) => {
+    if ((a.priority_flag === "Y") !== (b.priority_flag === "Y")) return a.priority_flag === "Y" ? -1 : 1;
+    return new Date(a.delivery_by_datetime || 0) - new Date(b.delivery_by_datetime || 0);
+  });
 };
 
 export const getIndentDetail = (params) => {

@@ -1,418 +1,220 @@
-import React, { useState, useEffect } from "react";
-import { Typography, Box, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import Loader from "../components/Loader";
+import React, { useEffect, useState } from "react";
 import {
-  Container,
-  TextField,
-  FormHelperText,
-  Select,
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
   MenuItem,
-  FormControl,
-  InputLabel,
-  Grid2,
-  Autocomplete
+  Snackbar,
+  Stack,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
 } from "@mui/material";
-
+import AddIcon from "@mui/icons-material/Add";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import IndentItems from "../components/IndentItems";
+import ItemPickerDialog from "../components/ItemPickerDialog";
+import Loader from "../components/Loader";
+import { createNewIndent, getAllBranches, getProducts } from "../utilities/service";
+import { useUser } from "../utilities/UserContext";
 
-import IndentItemTable from "../components/IndentItemTable";
-import ItemAdd from "./ItemAdd";
-import { createNewIndent, getBranchLists } from "../utilities/service";
-import { FilePresent } from "@mui/icons-material";
+// Canadian phone: 514-555-1234, (514) 555-1234, 5145551234
+const PHONE_RE = /^(\(\d{3}\)\s?|\d{3}[-\s]?)\d{3}[-\s]?\d{4}$/;
 
-const CreateIndent = ({ user, sendToParent }) => {
-  const navigate = useNavigate();
-  const currentDate = new Date();
-  const [branchList, setBranchList] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
-  const [errors, setErrors] = useState({
-    customer_phone: "",
-  });
+// Default delivery: 2 hours from now, rounded up to the next 15 minutes
+const defaultDelivery = () => {
+  const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
+  return d;
+};
+
+const emptyForm = (kitchenId) => ({
+  self_customer: "S",
+  priority_flag: "N",
+  delivery_by_datetime: defaultDelivery(),
+  kitchen_id: kitchenId || "",
+  customer_name: "",
+  customer_phone: "",
+  customer_address: "",
+  customer_pin: "",
+});
+
+const CreateIndent = ({ onCreated }) => {
+  const { user } = useUser();
+  const [kitchens, setKitchens] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [form, setForm] = useState(emptyForm());
   const [rows, setRows] = useState([]);
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [formData, setFormData] = useState({
-    self_customer: "S",
-    delivery_by_datetime: currentDate,
-    kitchen_id: "TR002",
-    priority_flag:'N'
-  });
-
-  const addItem = () => {
-    setShowAdd(true);
-  };
+  const [picker, setPicker] = useState({ open: false, item: null });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const [minDelivery] = useState(() => new Date(Date.now() - 60 * 1000));
 
   useEffect(() => {
-    const getBranchList = async () => {
+    (async () => {
       try {
-        const result = await getBranchLists();
-        setBranchList(result.branches);
-      } catch (err) {
-        console.log(err);
+        const [k, p] = await Promise.all([getAllBranches("K"), getProducts()]);
+        const activeKitchens = k.filter((b) => b.branch_status !== "I");
+        setKitchens(activeKitchens);
+        setProducts(p?.products || []);
+        setForm(emptyForm(activeKitchens[0]?.branch_id));
+      } catch (e) {
+        setError("Could not load kitchens or products");
+      } finally {
+        setLoading(false);
       }
-    };
-    getBranchList();
+    })();
   }, []);
 
-  const createIndent = async () => {
-    setLoading(true);
-    const payload = formData;
-    payload.indent_details = rows;
-    payload.indent_details.forEach((element) => {
-      delete element.item;
-      delete element.id;
-      delete element.uom;
+  const set = (name, value) => setForm((f) => ({ ...f, [name]: value }));
+  const forCustomer = form.self_customer === "C";
+  const phoneInvalid = forCustomer && form.customer_phone && !PHONE_RE.test(form.customer_phone.trim());
+  const canSubmit =
+    rows.length > 0 &&
+    form.kitchen_id &&
+    form.delivery_by_datetime &&
+    (!forCustomer || (form.customer_name.trim() && form.customer_phone.trim() && !phoneInvalid)) &&
+    !saving;
+
+  const saveItem = (item) => {
+    setRows((rs) => {
+      const exists = rs.find((r) => r.item_code === item.item_code);
+      if (exists) return rs.map((r) => (r.item_code === item.item_code ? { ...r, ...item } : r));
+      return [...rs, { ...item, id: item.item_code }];
     });
-    payload.org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
-    payload.kitchen_id = payload.kitchen_id;    
-    payload.branch_id = JSON.parse(localStorage.getItem("user"))?.branch_id;
-    payload.status = "C";
-    payload.user_id = JSON.parse(localStorage.getItem("user"))?.user_id;
-    console.log(payload);
-
-    const res = await createNewIndent(payload);
-    if (res) {
-      setLoading(false);
-      setRows([]);
-      setFormData({
-        self_customer: "S",
-        delivery_by_datetime: null,
-        kitchen_id: null,
-        priority_flag:'N'
-      });
-      sendToParent(3);
-    } else {
-      setLoading(false);      
-    }
+    setPicker({ open: false, item: null });
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "self_customer") {
-      setFormData({
-        ...formData,
-        [name]: value,
-        customer_name: null,
-        customer_address: null,
-        customer_phone: null,
-        customer_pin: null,
-      });
-    } else {
-      const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
-
-      if (name === "customer_phone") {
-        // Validate phone number
-        if (phoneRegex.test(value)) {
-          setErrors({ ...errors, customer_phone: "" });
-        } else {
-          setErrors({
-            ...errors,
-            customer_phone:
-              "Please enter a valid Canadian phone number (XXX-XXX-XXXX or (XXX) XXX-XXXX)",
-          });
-        }
-      }
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
-  };
-
-  const handleChangeDeliveryTime = (e) => {
-    setFormData({
-      ...formData,
-      delivery_by_datetime: e,
-    });
-  };
-
-  const handleBack = () => {
-    if (user.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/home");
-    }
-  };
-
-  const addRow = (item) => {
-    // Define the object structure to be added
-    const newRow = {
-      item_name: item.item.product_name,
-      item_code: item.item.product_id,
-      ...item,
+  const submit = async () => {
+    setSaving(true);
+    setError("");
+    const payload = {
+      ...form,
+      customer_name: forCustomer ? form.customer_name.trim() : null,
+      customer_phone: forCustomer ? form.customer_phone.trim() : null,
+      customer_address: forCustomer ? form.customer_address.trim() || null : null,
+      customer_pin: forCustomer ? form.customer_pin.trim() || null : null,
+      org_id: user?.org_id,
+      branch_id: user?.branch_id,
+      user_id: user?.user_id,
+      status: "C",
+      indent_details: rows.map(({ id, uom, ...r }) => r),
     };
-    newRow.id = rows.length + 1;
-    // Step 3: Update the rows state to add the new row
-    setRows([...rows, newRow]);
-  };
-
-  const updateShowAdd = (item) => {
-    if (item.qty_ordered) {
-      addRow(item);
-    }
-    setShowAdd(false);
-  };
-
-  const alterRows = (item) => {
-    if (!item.delete) {
-      setSelectedRow(item);
-      setShowAdd(true);
+    const res = await createNewIndent(payload);
+    setSaving(false);
+    if (res?.status === 200) {
+      const no = res.indent?.indent_number;
+      setToast(no ? `Indent ${no} sent to kitchen` : "Indent sent to kitchen");
+      setRows([]);
+      setForm(emptyForm(form.kitchen_id));
+      setTimeout(() => onCreated?.(), 1200);
     } else {
-      const updatedRows = rows.filter(
-        (row) => row.item_code !== item.item_code
-      );
-      // Update the state with the new array (without the deleted item)
-      setRows(updatedRows);
+      setError(res?.response?.data?.message || "Could not create the indent. Please try again.");
     }
   };
 
-  /**
-   * 
-   * phone number canada validation
-   * const phoneRegex = /^(?:\(\d{3}\)\s?|\d{3}[-\s])?\d{3}[-\s]?\d{4}$/;
-   * if (phoneRegex.test(value)) {
-      setError('');
-    } else {
-      setError('Invalid phone number format');
-    }
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-   */
-
-  if (loading) return <Loader />; // Show loader while data is being fetched
+  if (loading) return <Loader inline />;
 
   return (
-    <>
-      {!showAdd && (
-        <Box>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Create Indent
-          </Typography>
+    <Box sx={{ pb: 10 }}>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-          <Box sx={{ mt: 2 }}>
-            <form>
-              <Grid2 container spacing={4}>
-                <Grid2
-                  item
-                  sx={{
-                    width: { xs: "100%", sm: "30%", lg: "20%" },
-                  }}
-                >
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DateTimePicker
-                      label="Delivery By Date"
-                      value={formData.delivery_by_datetime || ""}
-                      onChange={handleChangeDeliveryTime}
-                      minDateTime={currentDate} // Disable all previous dates
-                      renderInput={(params) => <TextField {...params} />}
-                    />
-                  </LocalizationProvider>
-                </Grid2>
-
-                <Grid2
-                  item
-                  sx={{
-                    width: { xs: "100%", sm: "30%", lg: "20%" },
-                  }}
-                >
-                  <FormControl sx={{width:'100%'}}>
-                    <InputLabel>Requested For</InputLabel>
-                    <Select
-                      name="self_customer"                      
-                      value={formData.self_customer}
-                      onChange={handleChange}
-                      label="Requested For"
-                      required
-                    >
-                      <MenuItem value="S">Self</MenuItem>
-                      <MenuItem value="C">Customer</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid2>
-
-                <Grid2
-                  item
-                  sx={{
-                    width: { xs: "100%", sm: "30%", lg: "20%" },
-                  }}
-                >
-                  <FormControl sx={{width:'100%'}}>
-                    <InputLabel>Priority Order</InputLabel>
-                    <Select
-                      name="priority_flag"
-                      value={formData.priority_flag}
-                      onChange={handleChange}
-                      label="Priority Order"
-                      required
-                    >
-                      <MenuItem value="Y">Yes</MenuItem>
-                      <MenuItem value="N">No</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid2>
-
-                <Grid2
-                  item
-                  sx={{
-                    width: { xs: "100%", sm: "30%", lg: "20%" },
-                  }}
-                >
-                  {/* <FormControl style={{ minWidth: 120 }}>
-                    <InputLabel>Kitchen Id</InputLabel>
-                    <Select
-                      name="kitchen_id"
-                      value={formData.kitchen_id}
-                      onChange={handleChange}
-                      label="Kitchen Id"
-                      required
-                    >
-                      <MenuItem value="TR002">TR002</MenuItem>
-                    </Select>
-                  </FormControl> */}
-                  <Autocomplete
-                    options={branchList || []}
-                    getOptionLabel={(option) => option.branch_name || ""}
-                    value={
-                      branchList?.find(
-                        (branch) => branch.branch_id === formData.kitchen_id
-                      ) || null
-                    }
-                    onChange={handleChange}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Branch Name"
-                        required
-                        fullWidth
-                      />
-                    )}
-                  />
-                </Grid2>
-
-                {formData.self_customer === "C" && (
-                  <Grid2
-                    item
-                    sx={{
-                      width: { xs: "100%", sm: "40%", lg: "20%" },
-                    }}
-                  >
-                    <TextField
-                      label="Customer Name"
-                      name="customer_name"
-                      value={formData.customer_name}
-                      onChange={handleChange}
-                      type="text"
-                    />
-                  </Grid2>
-                )}
-                {formData.self_customer === "C" && (
-                  <Grid2
-                    item
-                    sx={{
-                      width: { xs: "100%", sm: "40%", lg: "20%" },
-                    }}
-                  >
-                    <TextField
-                      label="Customer Address"
-                      name="customer_address"
-                      value={formData.customer_address}
-                      onChange={handleChange}
-                      type="text"
-                    />
-                  </Grid2>
-                )}
-
-                {formData.self_customer === "C" && (
-                  <Grid2
-                    item
-                    sx={{
-                      width: { xs: "100%", sm: "40%", lg: "20%" },
-                    }}
-                  >
-                    <TextField
-                      label="Customer Phone"
-                      name="customer_phone"
-                      value={formData.customer_phone}
-                      onChange={handleChange}
-                      type="text"
-                    />
-                    {errors.customer_phone && (
-                      <FormHelperText>{errors.customer_phone}</FormHelperText>
-                    )}
-                  </Grid2>
-                )}
-                {formData.self_customer === "C" && (
-                  <Grid2
-                    item
-                    sx={{
-                      width: { xs: "100%", sm: "40%", lg: "20%" },
-                    }}
-                  >
-                    <TextField
-                      label="Customer Pin"
-                      name="customer_pin"
-                      value={formData.customer_pin}
-                      onChange={handleChange}
-                      type="text"
-                    />
-                  </Grid2>
-                )}
-
-                <Grid2 item size={6}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    type="submit"
-                    onClick={addItem}
-                  >
-                    Add Item
-                  </Button>
-                </Grid2>
-              </Grid2>
-            </form>
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Typography fontWeight={700} sx={{ mb: 1.5 }}>Request details</Typography>
+          <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(4, 1fr)" } }}>
+            <TextField select label="Kitchen" value={form.kitchen_id} onChange={(e) => set("kitchen_id", e.target.value)} required>
+              {kitchens.map((k) => (
+                <MenuItem key={k.branch_id} value={k.branch_id}>{k.branch_name}</MenuItem>
+              ))}
+            </TextField>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DateTimePicker
+                label="Deliver by"
+                value={form.delivery_by_datetime}
+                onChange={(v) => set("delivery_by_datetime", v)}
+                minDateTime={minDelivery}
+                slotProps={{ textField: { required: true } }}
+              />
+            </LocalizationProvider>
+            <Box>
+              <Typography variant="caption" color="text.secondary">Requested for</Typography>
+              <ToggleButtonGroup exclusive fullWidth size="small" color="primary" value={form.self_customer}
+                onChange={(e, v) => v && set("self_customer", v)}>
+                <ToggleButton value="S">Self</ToggleButton>
+                <ToggleButton value="C">Customer</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary">Priority</Typography>
+              <ToggleButtonGroup exclusive fullWidth size="small" color="primary" value={form.priority_flag}
+                onChange={(e, v) => v && set("priority_flag", v)}>
+                <ToggleButton value="N">Normal</ToggleButton>
+                <ToggleButton value="Y">Priority</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
           </Box>
-          <Box sx={{ mt: 2, textAlign: "center" }}>
-            <IndentItemTable data={rows} sendToParent={alterRows} />
 
-            {formData.self_customer === "S" && (
-              <Button
-                sx={{ mt: 2 }}
-                variant="contained"
-                color="primary"
-                type="submit"
-                onClick={createIndent}
-                disabled={rows && rows.length === 0}
-              >
-                Submit
-              </Button>
-            )}
-            {formData.self_customer === "C" && (
-              <Button
-                sx={{ mt: 2 }}
-                variant="contained"
-                color="primary"
-                type="submit"
-                onClick={createIndent}
-                disabled={
-                  rows?.length === 0 ||
-                  formData.customer_name === null ||
-                  formData.customer_phone === null
-                }
-              >
-                Submit For Customer
-              </Button>
-            )}
-          </Box>
-        </Box>
-      )}
-      {showAdd && (
-        <Box sx={{ mt: 2 }}>
-          <ItemAdd data={selectedRow} sendToParent={updateShowAdd} />
-        </Box>
-      )}
-    </>
+          {forCustomer && (
+            <Box sx={{ mt: 2, display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" } }}>
+              <TextField label="Customer name" value={form.customer_name} onChange={(e) => set("customer_name", e.target.value)} required />
+              <TextField label="Customer phone" type="tel" value={form.customer_phone}
+                onChange={(e) => set("customer_phone", e.target.value)} required error={!!phoneInvalid}
+                helperText={phoneInvalid ? "e.g. 514-555-1234 or (514) 555-1234" : " "} />
+              <TextField label="Customer address" value={form.customer_address} onChange={(e) => set("customer_address", e.target.value)} />
+              <TextField label="Postal code" value={form.customer_pin} onChange={(e) => set("customer_pin", e.target.value)}
+                inputProps={{ style: { textTransform: "uppercase" } }} />
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
+        <Typography variant="subtitle1" fontWeight={700} sx={{ flexGrow: 1 }}>
+          Items ({rows.length})
+        </Typography>
+        <Button startIcon={<AddIcon />} onClick={() => setPicker({ open: true, item: null })}>
+          Add item
+        </Button>
+      </Stack>
+      <IndentItems
+        items={rows}
+        mode="create"
+        onEdit={(it) => setPicker({ open: true, item: it })}
+        onDelete={(it) => setRows((rs) => rs.filter((r) => r.item_code !== it.item_code))}
+      />
+
+      <Box sx={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 10, p: 1.5,
+        pb: "calc(12px + env(safe-area-inset-bottom))", bgcolor: "background.paper",
+        borderTop: 1, borderColor: "divider", display: "flex", gap: 1, alignItems: "center" }}>
+        <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+          {rows.length ? `${rows.length} item(s)` : "Add at least one item"}
+        </Typography>
+        <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setPicker({ open: true, item: null })}>
+          Item
+        </Button>
+        <Button variant="contained" disabled={!canSubmit} onClick={submit}>
+          {saving ? "Sending..." : forCustomer ? "Submit for customer" : "Submit indent"}
+        </Button>
+      </Box>
+
+      <ItemPickerDialog
+        open={picker.open}
+        initial={picker.item}
+        products={products}
+        existingCodes={rows.map((r) => r.item_code)}
+        onClose={() => setPicker({ open: false, item: null })}
+        onSave={saveItem}
+      />
+      <Snackbar open={!!toast} autoHideDuration={3000} onClose={() => setToast("")} message={toast} />
+    </Box>
   );
 };
 
