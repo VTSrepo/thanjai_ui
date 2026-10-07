@@ -42,7 +42,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   const [saving, setSaving] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [justReceived, setJustReceived] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState(() => FormattedDate(new Date())); // kitchen enters at dispatch
+  const [deliveryDate, setDeliveryDate] = useState(() => FormattedDate(new Date())); // kitchen enters when accepting
 
   useEffect(() => {
     (async () => {
@@ -72,9 +72,10 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   const action = indent ? ACTIONS[indent.status] : null;
   const canAct = !!action && action.roles.includes(user?.user_type);
   const mode = canAct && indent.status === "A" ? "kitchen" : canAct && indent.status === "D" ? "receive" : "view";
+  const accepting = canAct && indent.status === "C";
   const invalidCount = useMemo(
-    () => rows.filter((r) => itemError(r, mode)).length + (mode === "kitchen" && !deliveryDate ? 1 : 0),
-    [rows, mode, deliveryDate]
+    () => rows.filter((r) => itemError(r, mode)).length + (accepting && !deliveryDate ? 1 : 0),
+    [rows, mode, accepting, deliveryDate]
   );
 
   const patchRow = (id, patch) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -93,7 +94,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
     setSaving(true);
     setError("");
     const payload = { ...indent, status: action.next };
-    if (action.next === "D") payload.delivery_date = deliveryDate;
+    if (action.next === "A") payload.delivery_date = deliveryDate;
     if (indent.status !== "C") {
       payload.indent_details = rows.map((r) => ({
         ...r,
@@ -129,7 +130,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
 
       <IndentHeaderCard indent={indent} itemCount={rows.length} />
 
-      {mode === "kitchen" && (
+      {accepting && (
         <TextField
           type="date"
           label="Delivery date"
