@@ -60,7 +60,7 @@ const Due = ({ inv }) => (
   </Box>
 );
 
-// ---------- Record payment ----------
+// ---------- Payment detail (record a payment) ----------
 const RecordPaymentDialog = ({ open, invoices, onClose, onSaved }) => {
   const fullScreen = useMediaQuery((t) => t.breakpoints.down("sm"));
   const toast = useToast();
@@ -108,7 +108,7 @@ const RecordPaymentDialog = ({ open, invoices, onClose, onSaved }) => {
   const set = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
   return (
     <Dialog open={open} onClose={onClose} fullScreen={fullScreen} fullWidth maxWidth="sm">
-      <DialogTitle>Record payment</DialogTitle>
+      <DialogTitle>Payment detail</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           {invoices[0]?.bill_to_name} · {invoices.length} invoice(s) · balance {money(balance, true)}
@@ -145,7 +145,7 @@ const RecordPaymentDialog = ({ open, invoices, onClose, onSaved }) => {
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
         <Button color="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" disabled={invalid || saving} onClick={save}>{saving ? "Saving..." : "Record payment"}</Button>
+        <Button variant="contained" disabled={invalid || saving} onClick={save}>{saving ? "Saving..." : "Save payment"}</Button>
       </DialogActions>
     </Dialog>
   );
@@ -371,7 +371,7 @@ const Payments = () => {
       <ResponsiveAppBar />
       <Box sx={{ p: 2, maxWidth: 1300, mx: "auto", pb: selected.length ? 12 : 2 }}>
         <PageHeader title="Payments" subtitle="Record customer payments and track what is owed"
-          action={<Button variant="contained" startIcon={<PaymentsIcon />} onClick={startPayment}>Record payment</Button>} />
+          action={<Button variant="contained" startIcon={<PaymentsIcon />} onClick={startPayment}>Payment Detail</Button>} />
 
         <Box sx={{ display: "grid", gap: 1.5, mb: 2, gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" } }}>
           {tiles.map(([k, v, sub, color]) => (
@@ -404,7 +404,7 @@ const Payments = () => {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {tab !== "aging" && rows.some((r) => r.balance_due > 0) && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Press <b>Pay</b> on an invoice, or tick several invoices of one customer and press <b>Record payment</b> at the bottom.
+            Press <b>Pay</b> on an invoice, or tick several invoices of one customer and press <b>Payment Detail</b> at the bottom.
           </Typography>
         )}
         {loading ? <Loader inline /> : tab === "aging" ? (
@@ -522,7 +522,7 @@ const Payments = () => {
           </Typography>
           <Button color="secondary" onClick={() => setSelected([])}>Clear</Button>
           <Button variant="contained" startIcon={<PaymentsIcon />} disabled={!sameCustomer} onClick={() => setPayInvoices(selectedRows)}>
-            Record payment
+            Payment Detail
           </Button>
         </Box>
       )}

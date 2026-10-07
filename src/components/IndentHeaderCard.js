@@ -40,6 +40,7 @@ const IndentHeaderCard = ({ indent, itemCount }) => {
           <Info label="To kitchen">{indent.kitchen_name || indent.kitchen_id}</Info>
           <Info label="Indent date">{formatDate(indent.indent_date)}</Info>
           <Info label="Deliver by">{formatDateTime(indent.delivery_by_datetime)}</Info>
+          {indent.delivery_date && <Info label="Delivery date">{formatDate(indent.delivery_date)}</Info>}
           <Info label="Requested for">{forCustomer ? "Customer" : "Self (branch)"}</Info>
           {itemCount !== undefined && <Info label="Items">{itemCount}</Info>}
         </Box>

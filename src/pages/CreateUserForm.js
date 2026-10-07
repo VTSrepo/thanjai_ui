@@ -27,6 +27,8 @@ import { createNewUser, getBranchLists, updateUser } from "../utilities/service"
 import { useToast } from "../components/ToastProvider";
 import ResetPasswordDialog from "../components/ResetPasswordDialog";
 
+const USER_ID_OK = /^[A-Za-z0-9._@-]{3,50}$/;
+
 function CreateUserForm() {
   const { user } = useUser();
   document.title = `Create User | ${CONFIG.title.name}`;
@@ -44,6 +46,7 @@ function CreateUserForm() {
   const [contactError, setContactError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [formData, setFormData] = useState({
+    user_id: "",
     user_name: null,
     dob: null,
     doj: null,
@@ -74,6 +77,7 @@ function CreateUserForm() {
       setUserStatus(selectedUserStatus);
       setUserType(selectedUserType);
         setFormData({
+          user_id: selectedRow.user_id,
           branch_id: selectedRow.branch_id,
           user_name: selectedRow.user_name,
           dob: selectedRow.dob,
@@ -132,7 +136,7 @@ function CreateUserForm() {
             try {
                   const payload = {
                     user: {
-                      user_id: formData.email_id,
+                      user_id: (formData.user_id || "").trim(),
                       org_id: org_id,
                       branch_id: formData.branch_id,
                       user_name: formData.user_name,
@@ -187,7 +191,7 @@ function CreateUserForm() {
 
     if (name === "email_id") {
       const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      setEmailError(!isValidEmail);
+      setEmailError(value !== "" && !isValidEmail);
     }
 
     setFormData({
@@ -233,7 +237,19 @@ function CreateUserForm() {
               </Grid2>
 
               <TextField
-                label="Email*"
+                label="User ID*"
+                name="user_id"
+                value={formData.user_id || ""}
+                onChange={(e) => setFormData({ ...formData, user_id: e.target.value.replace(/\s/g, "") })}
+                fullWidth
+                disabled={!!selectedRow}
+                error={!!formData.user_id && !USER_ID_OK.test(formData.user_id)}
+                helperText={selectedRow ? "User ID cannot be changed" : "Used to log in. 3-50 characters: letters, numbers, . _ - @"}
+                inputProps={{ maxLength: 50, autoComplete: "off" }}
+              />
+
+              <TextField
+                label="Email"
                 name="email_id"
                 value={formData.email_id || ""}
                 onChange={handleChange}
@@ -313,29 +329,6 @@ function CreateUserForm() {
                 />
               </Grid2>
 
-              <Grid2 item xs={12} style={{ width: "100%" }}>
-                <FormControl fullWidth>
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DatePicker
-                      label="Date of Birth"
-                      value={formData.dob ? parseISO(formData.dob) : null}
-                      onChange={(newValue) => {
-                        const formattedDate = newValue
-                          ? format(newValue, "yyyy-MM-dd")
-                          : "";
-                        setFormData({ ...formData, dob: formattedDate });
-                      }}
-                      format="yyyy-MM-dd"
-                      renderInput={(params) => <TextField {...params} />}
-                      // slotProps={{
-                      //     textField: {
-                      //       fullWidth: true,
-                      //     },
-                      //   }}
-                    />
-                  </LocalizationProvider>
-                </FormControl>
-              </Grid2>
 
               <Grid2 item xs={12} style={{ width: "100%" }}>
                 <FormControl fullWidth>
@@ -460,7 +453,7 @@ function CreateUserForm() {
                   <RadioGroup
                     row
                     aria-labelledby="demo-row-radio-buttons-group-label"
-                    name="row-radio-buttons-group"
+                    name="user-type"
                     value={userType}
                     onChange={(e) => setUserType(e.target.value)}
                   >
@@ -495,7 +488,7 @@ function CreateUserForm() {
                 <RadioGroup
                   row
                   aria-labelledby="demo-row-radio-buttons-group-label"
-                  name="row-radio-buttons-group"
+                  name="user-status"
                   value={userStatus}
                   onChange={(e) => setUserStatus(e.target.value)}
                 >
@@ -520,7 +513,8 @@ function CreateUserForm() {
                 color="success"
                 disabled={
                   !formData.user_name ||
-                  !formData.email_id ||
+                  (!selectedRow && !USER_ID_OK.test(formData.user_id || "")) ||
+                  emailError ||
                   contactError ||
                   mobileError||
                   !formData.branch_id||

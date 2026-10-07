@@ -15,7 +15,7 @@ const Login = () => {
   const [busy, setBusy] = useState(false);
 
   const handleLogin = async () => {
-    if (!username.trim() || !password) return setError("Enter your username and password");
+    if (!username.trim() || !password) return setError("Enter your user ID and password");
     setBusy(true);
     setError("");
     try {
@@ -42,7 +42,7 @@ const Login = () => {
         <Box sx={{ textAlign: "center", mb: 2 }}>
           <img src={`${process.env.PUBLIC_URL}/logo.png`} alt="Thanjai" style={{ maxWidth: "70%" }} />
         </Box>
-        <TextField label="Username" fullWidth sx={{ mt: 2 }} value={username} autoComplete="username"
+        <TextField label="User ID" fullWidth sx={{ mt: 2 }} value={username} autoComplete="username"
           autoCapitalize="none" onChange={(e) => setUsername(e.target.value)} />
         <TextField label="Password" type="password" fullWidth sx={{ mt: 2 }} value={password}
           autoComplete="current-password" onChange={(e) => setPassword(e.target.value)} />
