@@ -36,12 +36,25 @@ export const money = (n, withSign = false) => {
   return withSign ? `$${s}` : s;
 };
 
+// Payment terms (same codes as the API): POI, EOM, EONM, N<days>
 export const CREDIT_TERMS = [
-  { code: "POI", label: "Payment on invoice", printed: "Due on receipt" },
-  { code: "EOM", label: "End of month", printed: "Due end of the month" },
-  { code: "N30", label: "Net 30", printed: "Net 30" },
+  { code: "POI", label: "Due on receipt" },
+  { code: "EOM", label: "Due end of the month" },
+  { code: "EONM", label: "Due end of next month" },
+  { code: "N7", label: "Net 7" },
+  { code: "N10", label: "Net 10" },
+  { code: "N15", label: "Net 15" },
+  { code: "N30", label: "Net 30" },
+  { code: "N45", label: "Net 45" },
 ];
-export const termLabel = (c) => CREDIT_TERMS.find((t) => t.code === c)?.label || c || "-";
+export const netDays = (c) => {
+  const m = /^N(\d{1,3})$/.exec(c || "");
+  const d = m ? parseInt(m[1], 10) : 0;
+  return d >= 1 && d <= 365 ? d : null;
+};
+export const isTerm = (c) => ["POI", "EOM", "EONM"].includes(c) || netDays(c) !== null;
+export const termLabel = (c) =>
+  CREDIT_TERMS.find((t) => t.code === c)?.label || (netDays(c) ? `Net ${netDays(c)}` : c || "-");
 
 export const PAYMENT_MODES = [
   { code: "INTERAC", label: "Interac e-Transfer" },

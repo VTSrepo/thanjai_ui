@@ -19,7 +19,7 @@ const Home = () => {
 
   useEffect(() => {
     const scope = { branch_id: user?.branch_id };
-    Promise.all([fetchIndents(["D"], scope), fetchIndents(["C", "A"], scope)])
+    Promise.all([fetchIndents(["D"], scope), fetchIndents(["C", "A", "F"], scope)])
       .then(([toReceive, open]) =>
         setCounts({
           toReceive: toReceive.length,

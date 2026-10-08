@@ -6,6 +6,7 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ChecklistRtlIcon from "@mui/icons-material/ChecklistRtl";
 import CallReceivedIcon from "@mui/icons-material/CallReceived";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import CreateIndent from "../pages/CreateIndent";
 import IndentListing from "../pages/IndentListing";
 import { useLocation } from "react-router-dom";
@@ -14,24 +15,27 @@ import { fetchIndents, getAllBranches } from "../utilities/service";
 
 /*
  * Tabs by role (BRD "Indent Management"):
- *   Branch  (B): New indent · In progress (C + A, view only) · To receive (D)
- *   Kitchen (K): To accept (C) · To dispatch (A)
- *   Admin   (A): all queues, view only
+ *   Branch  (B): New indent · In progress (C + A + F, view only) · To receive (D)
+ *   Kitchen (K): To accept (C) · To dispatch (F = admin finalized the invoice)
+ *   Admin   (A): all queues; finalizes the invoice for accepted indents (A -> F)
  *   External customer (X): same as branch, limited to their own orders
  */
 const TABS = {
   create: { label: "New indent", icon: <AddShoppingCartIcon /> },
-  progress: { label: "In progress", icon: <HourglassTopIcon />, statuses: ["C", "A"], empty: "No open requests." },
+  progress: { label: "In progress", icon: <HourglassTopIcon />, statuses: ["C", "A", "F"], empty: "No open requests." },
+  finalize: { label: "To finalize", icon: <ReceiptLongIcon />, statuses: ["A"], empty: "No accepted indents waiting for an invoice decision." },
   accept: { label: "To accept", icon: <ChecklistRtlIcon />, statuses: ["C"], empty: "No new requests to accept." },
-  dispatch: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["A"], empty: "Nothing waiting for dispatch." },
+  dispatch: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["F"], empty: "Nothing waiting for dispatch." },
+  // kitchen also sees accepted indents still waiting for the admin's invoice step (badge counts only ready ones)
+  dispatchK: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["F", "A"], badgeStatuses: ["F"], empty: "Nothing waiting for dispatch." },
   receive: { label: "To receive", icon: <CallReceivedIcon />, statuses: ["D"], empty: "Nothing on the way." },
   done: { label: "Received", icon: <TaskAltIcon />, statuses: ["R"], empty: "No completed indents yet.", noBadge: true },
 };
 
 const ROLE_TABS = {
   B: ["receive", "create", "progress", "done"],
-  K: ["accept", "dispatch", "done"],
-  A: ["accept", "dispatch", "receive", "done"],
+  K: ["accept", "dispatchK", "done"],
+  A: ["accept", "finalize", "dispatch", "receive", "done"],
   X: ["receive", "create", "progress", "done"],
 };
 
@@ -69,7 +73,7 @@ export default function NavTab() {
         .filter((k) => TABS[k].statuses && !TABS[k].noBadge)
         .map(async (k) => {
           try {
-            next[k] = (await fetchIndents(TABS[k].statuses, scope)).length;
+            next[k] = (await fetchIndents(TABS[k].badgeStatuses || TABS[k].statuses, scope)).length;
           } catch (e) {
             next[k] = 0;
           }

@@ -23,7 +23,7 @@ import Loader from "../components/Loader";
 import { useUser } from "../utilities/UserContext";
 import { getBranch, saveBranch } from "../utilities/service";
 import { PROVINCES, provinceByCode, GST_PATTERN, QST_PATTERN } from "../utilities/tax";
-import { CREDIT_TERMS } from "../utilities/helpers";
+import TermPicker from "../components/TermPicker";
 
 const EMPTY = {
   branch_id: "",
@@ -181,10 +181,10 @@ const BranchForm = () => {
           </Grid2>
           )}
           {form.branch_type !== "K" && (
-            <Field select label="Default credit term" name="credit_term" value={form.credit_term || "EOM"} onChange={onChange}
-              helperText="Copied onto each invoice billed to this customer">
-              {CREDIT_TERMS.map((t) => <MenuItem key={t.code} value={t.code}>{t.label} ({t.printed})</MenuItem>)}
-            </Field>
+            <Grid2 size={{ xs: 12, md: 6 }}>
+              <TermPicker label="Default payment terms" value={form.credit_term || "EOM"} onChange={(v) => set("credit_term", v)}
+                helperText="Pre-selected when the admin finalizes an invoice for this customer" />
+            </Grid2>
           )}
           <Field select label="Status" name="branch_status" value={form.branch_status} onChange={onChange}>
             <MenuItem value="A">Active</MenuItem>

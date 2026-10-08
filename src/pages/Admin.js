@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Box, Button, Card, CardContent, CircularProgress, Grid2, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import { Alert, Box, Button, Card, CardContent, CircularProgress, Grid2, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { CONFIG } from "../config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import InvoiceAlerts from "../components/InvoiceAlerts";
 import ProductionDataChart from "../components/ProductionDataChart";
 import { FormattedDate } from "../utilities/helpers";
-import { getProductSummary } from "../utilities/service";
+import { fetchIndents, getProductSummary } from "../utilities/service";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../utilities/UserContext";
 
 const rangeFor = (key) => {
@@ -33,6 +34,13 @@ const Admin = () => {
   const [loading, setLoading] = useState(false);
   const [byProduct, setByProduct] = useState({});
   const [byEmployee, setByEmployee] = useState({});
+  const [toFinalize, setToFinalize] = useState(0);
+  const navigate = useNavigate();
+
+  // Accepted indents waiting for the admin's invoice decision (kitchen cannot dispatch until then)
+  useEffect(() => {
+    fetchIndents(["A"], {}).then((l) => setToFinalize(l.length)).catch(() => {});
+  }, []);
 
   const load = useCallback(async (r) => {
     setLoading(true);
@@ -65,6 +73,12 @@ const Admin = () => {
       <ResponsiveAppBar />
       <Box sx={{ p: 2, maxWidth: 1300, mx: "auto" }}>
         <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Welcome, {user?.user_name}</Typography>
+        {toFinalize > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}
+            action={<Button color="inherit" size="small" onClick={() => navigate("/indents", { state: { tab: "finalize" } })}>Open</Button>}>
+            {toFinalize} accepted indent(s) waiting for you to finalize the invoice before the kitchen can dispatch.
+          </Alert>
+        )}
         <InvoiceAlerts />
 
         <Card sx={{ mb: 2 }}>

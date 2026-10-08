@@ -4,6 +4,7 @@ import { Chip } from "@mui/material";
 export const INDENT_STATUS = {
   C: { label: "Requested", color: "#1e6fd9", bg: "#e7f0fc" },
   A: { label: "Accepted", color: "#8a5a00", bg: "#fff3d6" },
+  F: { label: "Invoice finalized", color: "#00695c", bg: "#e0f2f1" },
   D: { label: "Dispatched", color: "#6b3fd4", bg: "#efe9fc" },
   R: { label: "Received", color: "#1b7f4b", bg: "#e4f5ec" },
 };

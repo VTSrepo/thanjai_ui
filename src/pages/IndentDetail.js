@@ -14,6 +14,7 @@ import {
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import InvoiceDialog from "../components/InvoiceDialog";
+import InvoiceSetup from "../components/InvoiceSetup";
 import { getIndentDetail, createNewIndent } from "../utilities/service";
 import { useUser } from "../utilities/UserContext";
 import Loader from "../components/Loader";
@@ -26,7 +27,8 @@ import { FormattedDate } from "../utilities/helpers";
 const ACTIONS = {
   // current status -> who may act, the next status, and wording
   C: { roles: ["K"], next: "A", label: "Accept indent", confirm: "Accept this indent? The branch will see it as accepted." },
-  A: { roles: ["K"], next: "D", label: "Dispatch", confirm: "Dispatch with the agreed quantities?" },
+  // A -> F is the admin's invoice setup (InvoiceSetup); the kitchen dispatches only after that
+  F: { roles: ["K"], next: "D", label: "Dispatch", confirm: "Dispatch with the agreed quantities?" },
   D: { roles: ["B", "X"], next: "R", label: "Confirm receipt", confirm: "Confirm the received quantities? This closes the indent and generates the kitchen's invoice." },
 };
 
@@ -56,7 +58,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
             id: item.id || index + 1,
             // Full-qty items: kitchen agreed qty is fixed to the requested qty (BRD)
             qty_agreed_kitchen:
-              data.status === "A" && item.mandatory_status === "Y" && (item.qty_agreed_kitchen ?? null) === null
+              data.status === "F" && item.mandatory_status === "Y" && (item.qty_agreed_kitchen ?? null) === null
                 ? item.qty_ordered
                 : item.qty_agreed_kitchen,
           }))
@@ -71,7 +73,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
 
   const action = indent ? ACTIONS[indent.status] : null;
   const canAct = !!action && action.roles.includes(user?.user_type);
-  const mode = canAct && indent.status === "A" ? "kitchen" : canAct && indent.status === "D" ? "receive" : "view";
+  const mode = canAct && indent.status === "F" ? "kitchen" : canAct && indent.status === "D" ? "receive" : "view";
   const accepting = canAct && indent.status === "C";
   const invalidCount = useMemo(
     () => rows.filter((r) => itemError(r, mode)).length + (accepting && !deliveryDate ? 1 : 0),
@@ -129,6 +131,13 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <IndentHeaderCard indent={indent} itemCount={rows.length} />
+
+      {user?.user_type === "A" && ["A", "F"].includes(indent?.status) && (
+        <InvoiceSetup indentNumber={indent.indent_number} onDone={(message) => sendToParent?.({ message: `${indent.indent_number}: ${message}` })} />
+      )}
+      {user?.user_type === "K" && indent?.status === "A" && (
+        <Alert severity="info" sx={{ mb: 2 }}>Accepted. Waiting for admin to finalize the invoice; you can dispatch after that.</Alert>
+      )}
 
       {accepting && (
         <TextField

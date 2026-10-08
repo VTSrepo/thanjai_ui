@@ -165,6 +165,25 @@ export const changeInvoiceTerms = async (invoice_number, credit_term) => {
   }
 };
 
+// ---- Invoice setup (admin, between kitchen accept and dispatch) ----
+export const getInvoiceSetup = async (indent_number) => {
+  const org_id = currentUser().org_id || "TR";
+  try {
+    const res = await axios.get(`${API_URL}/invoice-setup/${encodeURIComponent(org_id)}/${encodeURIComponent(indent_number)}`);
+    return res.data.setup;
+  } catch (err) {
+    throw apiError(err, "Could not load the invoice settings");
+  }
+};
+
+export const saveInvoiceSetup = async (payload) => {
+  try {
+    return (await axios.post(`${API_URL}/invoice-setup`, payload)).data;
+  } catch (err) {
+    throw apiError(err, "Could not save the invoice settings");
+  }
+};
+
 export const getCategoriesList = async () => {
   try {
     const response = await axios.get(`${API_URL}/categories`);

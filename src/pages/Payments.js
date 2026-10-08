@@ -38,12 +38,13 @@ import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import PageHeader from "../components/PageHeader";
 import Loader from "../components/Loader";
 import InvoiceDialog from "../components/InvoiceDialog";
+import TermPicker from "../components/TermPicker";
 import { useToast } from "../components/ToastProvider";
 import {
   changeInvoiceTerms, getAllBranches, getInvoicePayments, getReceivables, getReceivablesSummary, recordPayment, voidPayment,
 } from "../utilities/service";
 import {
-  CREDIT_TERMS, FormattedDate, PAYMENT_MODES, formatDate, modeLabel, money, payStatus, termLabel,
+  FormattedDate, PAYMENT_MODES, formatDate, modeLabel, money, payStatus, termLabel,
 } from "../utilities/helpers";
 
 const StatusChip = ({ inv }) => {
@@ -264,16 +265,13 @@ const TermsDialog = ({ inv, onClose, onSaved }) => {
   };
   return (
     <Dialog open={!!inv} onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>Credit term · {inv?.invoice_number}</DialogTitle>
+      <DialogTitle>Payment terms · {inv?.invoice_number}</DialogTitle>
       <DialogContent>
-        <TextField select fullWidth label="Credit term" value={term} onChange={(e) => setTerm(e.target.value)} sx={{ mt: 1 }}
-          helperText="The due date is recalculated from the invoice date">
-          {CREDIT_TERMS.map((t) => <MenuItem key={t.code} value={t.code}>{t.label} ({t.printed})</MenuItem>)}
-        </TextField>
+        <TermPicker value={term} onChange={setTerm} sx={{ mt: 1 }} helperText="The due date is recalculated from the invoice date" />
       </DialogContent>
       <DialogActions>
         <Button color="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="contained" onClick={save}>Save</Button>
+        <Button variant="contained" disabled={!term} onClick={save}>Save</Button>
       </DialogActions>
     </Dialog>
   );
@@ -358,7 +356,7 @@ const Payments = () => {
     <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
       <Tooltip title="Payments"><IconButton size="small" onClick={() => setHistory(inv.invoice_number)}><HistoryIcon fontSize="small" /></IconButton></Tooltip>
       {inv.amount_paid <= 0 && (
-        <Tooltip title="Change credit term"><IconButton size="small" onClick={() => setTermsFor(inv)}><EventIcon fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title="Change payment terms"><IconButton size="small" onClick={() => setTermsFor(inv)}><EventIcon fontSize="small" /></IconButton></Tooltip>
       )}
       {inv.balance_due > 0 && (
         <Button size="small" variant="contained" onClick={() => setPayInvoices([inv])} sx={{ minWidth: 56, ml: 0.5 }}>Pay</Button>

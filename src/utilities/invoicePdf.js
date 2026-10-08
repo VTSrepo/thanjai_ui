@@ -88,17 +88,20 @@ export const buildInvoicePdf = async (inv) => {
   const billLines = addressLines(inv.bill_to).filter((t) => t !== inv.bill_to?.email && t !== inv.bill_to?.phone);
   billLines.forEach((t, i) => doc.text(t, L, y + 43 + i * 12));
 
-  // Items
+  // Items (Tax column: which lines carry GST/QST; non-taxable lines are marked Exempt)
+  const taxName = `${inv.gst_label || "GST"}${Number(inv.qst_rate) > 0 ? "/QST" : ""}`;
+  const anyExempt = inv.lines.some((l) => l.taxable === false);
   const tableTop = Math.max(y + 70, y + 50 + billLines.length * 12);
   autoTable(doc, {
     startY: tableTop,
     margin: { left: L, right: W - R },
-    head: [["#", "Item & Description", "Qty", "Rate", "Amount"]],
+    head: [["#", "Item & Description", "Qty", "Rate", "Tax", "Amount"]],
     body: inv.lines.map((l, i) => [
       i + 1,
       l.uom ? `${l.item_name}\n${l.uom}` : l.item_name,
       qtyFmt(l.qty),
       money(l.rate),
+      l.taxable === false ? "Exempt" : taxName,
       money(l.amount),
     ]),
     theme: "plain",
@@ -107,19 +110,22 @@ export const buildInvoicePdf = async (inv) => {
     bodyStyles: { lineWidth: { bottom: 0.6 } },
     columnStyles: {
       0: { cellWidth: 30, halign: "center" },
-      2: { halign: "right", cellWidth: 70 },
-      3: { halign: "right", cellWidth: 60 },
-      4: { halign: "right", cellWidth: 80 },
+      2: { halign: "right", cellWidth: 55 },
+      3: { halign: "right", cellWidth: 55 },
+      4: { halign: "center", cellWidth: 62 },
+      5: { halign: "right", cellWidth: 75 },
     },
   });
 
   // Totals
   let ty = doc.lastAutoTable.finalY + 22;
   const tLabel = R - 110;
-  const totals = [
-    ["Sub Total", money(inv.sub_total)],
-    [`${inv.gst_label || "GST"} (${pct(inv.gst_rate)})`, money(inv.gst_amount)],
-  ];
+  const totals = [["Sub Total", money(inv.sub_total)]];
+  if (anyExempt) {
+    const taxable = inv.lines.filter((l) => l.taxable !== false).reduce((a, l) => a + Number(l.amount || 0), 0);
+    totals.push(["Taxable amount", money(taxable)]);
+  }
+  totals.push([`${inv.gst_label || "GST"} (${pct(inv.gst_rate)})`, money(inv.gst_amount)]);
   if (Number(inv.qst_rate) > 0) totals.push([`QST (${pct(inv.qst_rate)})`, money(inv.qst_amount)]);
   doc.setFontSize(9.5).setFont("helvetica", "normal").setTextColor(40);
   totals.forEach(([k, v]) => {
