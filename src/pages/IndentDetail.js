@@ -15,8 +15,9 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import InvoiceDialog from "../components/InvoiceDialog";
 import InvoiceSetup from "../components/InvoiceSetup";
+import BatchPicker, { DispatchedBatches } from "../components/BatchPicker";
 import { getIndentDetail, createNewIndent } from "../utilities/service";
-import { useUser } from "../utilities/UserContext";
+import { useUser, canUse } from "../utilities/UserContext";
 import Loader from "../components/Loader";
 import PageHeader from "../components/PageHeader";
 import IndentHeaderCard from "../components/IndentHeaderCard";
@@ -44,6 +45,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   const [saving, setSaving] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [justReceived, setJustReceived] = useState(false);
+  const [batchState, setBatchState] = useState({ alloc: {}, problems: [], ready: true });
   const [deliveryDate, setDeliveryDate] = useState(() => FormattedDate(new Date())); // kitchen enters when accepting
 
   useEffect(() => {
@@ -76,8 +78,14 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
   const mode = canAct && indent.status === "F" ? "kitchen" : canAct && indent.status === "D" ? "receive" : "view";
   const accepting = canAct && indent.status === "C";
   const invalidCount = useMemo(
-    () => rows.filter((r) => itemError(r, mode)).length + (accepting && !deliveryDate ? 1 : 0),
-    [rows, mode, accepting, deliveryDate]
+    () => rows.filter((r) => itemError(r, mode)).length + (accepting && !deliveryDate ? 1 : 0)
+      + (mode === "kitchen" ? batchState.problems.length : 0),
+    [rows, mode, accepting, deliveryDate, batchState]
+  );
+  // dispatch quantities for the batch picker
+  const qtyByItem = useMemo(
+    () => Object.fromEntries(rows.map((r) => [r.item_code, toNum(r.qty_agreed_kitchen) ?? 0])),
+    [rows]
   );
 
   const patchRow = (id, patch) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -97,6 +105,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
     setError("");
     const payload = { ...indent, status: action.next };
     if (action.next === "A") payload.delivery_date = deliveryDate;
+    if (action.next === "D") payload.batch_alloc = batchState.alloc;
     if (indent.status !== "C") {
       payload.indent_details = rows.map((r) => ({
         ...r,
@@ -132,7 +141,7 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
 
       <IndentHeaderCard indent={indent} itemCount={rows.length} />
 
-      {user?.user_type === "A" && ["A", "F"].includes(indent?.status) && (
+      {canUse(user, "INVOICE_SETUP") && ["A", "O"].includes(user?.user_type) && ["A", "F"].includes(indent?.status) && (
         <InvoiceSetup indentNumber={indent.indent_number} onDone={(message) => sendToParent?.({ message: `${indent.indent_number}: ${message}` })} />
       )}
       {user?.user_type === "K" && indent?.status === "A" && (
@@ -170,6 +179,15 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
       </Stack>
       <IndentItems items={rows} mode={mode} onChange={patchRow} />
 
+      {mode === "kitchen" && (
+        <Box sx={{ mt: 2 }}>
+          <BatchPicker indentNumber={indent.indent_number} qtyByItem={qtyByItem} onChange={setBatchState} />
+        </Box>
+      )}
+      {["D", "R"].includes(indent?.status) && (
+        <Box sx={{ mt: 2 }}><DispatchedBatches indentNumber={indent.indent_number} items={rows.map((r) => ({ item_code: r.item_code, product_name: r.item_name }))} /></Box>
+      )}
+
       {canAct && (
         <Box
           sx={{
@@ -180,7 +198,9 @@ const IndentDetail = ({ indentNumber, sendToParent }) => {
           }}
         >
           <Typography variant="body2" color={invalidCount ? "warning.dark" : "text.secondary"} sx={{ flexGrow: 1 }}>
-            {invalidCount ? `${invalidCount} item(s) need attention` : "Ready"}
+            {mode === "kitchen" && batchState.problems.some((p) => p.short)
+              ? "Not enough batch stock - enter the batch first"
+              : invalidCount ? `${invalidCount} item(s) need attention` : "Ready"}
           </Typography>
           <Button variant="outlined" color="secondary" onClick={() => sendToParent?.()}>
             Back

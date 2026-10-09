@@ -184,6 +184,46 @@ export const saveInvoiceSetup = async (payload) => {
   }
 };
 
+// ---- Roles ----
+const get = async (path, fallback) => {
+  try {
+    return (await axios.get(`${API_URL}${path}`)).data;
+  } catch (err) {
+    throw apiError(err, fallback);
+  }
+};
+const post = async (path, body, fallback) => {
+  try {
+    return (await axios.post(`${API_URL}${path}`, body)).data;
+  } catch (err) {
+    const e = apiError(err, fallback);
+    e.data = err.response?.data;
+    throw e;
+  }
+};
+export const getRoles = () => get(`/roles/${orgId()}`, "Could not load roles");
+export const saveRole = (role) => post("/role", role, "Could not save the role");
+export const deleteRole = (role_id) => post("/role/delete", { role_id }, "Could not delete the role");
+
+// ---- Batches & inventory ----
+const qs = (o) => new URLSearchParams(Object.entries(o || {}).filter(([, v]) => v !== undefined && v !== null && v !== "")).toString();
+export const getBatches = (f) => get(`/batches/${orgId()}?${qs(f)}`, "Could not load batches");
+export const getBatchTrace = (batch_no) => get(`/batch-trace/${orgId()}/${encodeURIComponent(batch_no)}`, "Could not load the batch");
+export const createBatch = (b) => post("/batch", b, "Could not create the batch");
+export const updateBatch = (b) => post("/batch/update", b, "Could not update the batch");
+export const closeBatch = (b) => post("/batch/close", b, "Could not close the batch");
+export const importOpeningStock = (rows) => post("/stock-import", { rows }, "Could not load the file");
+export const getProductSettings = () => get(`/product-settings/${orgId()}`, "Could not load products");
+export const saveProductSettings = (p) => post("/product-settings", p, "Could not save the product settings");
+export const getBatchSuggest = (indent_number, qty) =>
+  get(`/batch-suggest/${orgId()}/${encodeURIComponent(indent_number)}?${qs({ qty: Object.entries(qty || {}).map(([k, v]) => `${k}:${v}`).join(",") })}`,
+    "Could not load batches");
+export const getIndentBatches = (indent_number) => get(`/indent-batches/${orgId()}/${encodeURIComponent(indent_number)}`, "Could not load batches");
+export const getStock = (f) => get(`/stock/${orgId()}?${qs(f)}`, "Could not load stock");
+export const getStockDaily = (f) => get(`/stock-daily/${orgId()}?${qs(f)}`, "Could not load inventory");
+export const getStockAlerts = () => get(`/stock-alerts/${orgId()}`, "Could not load stock alerts");
+export const getWastage = (f) => get(`/wastage/${orgId()}?${qs(f)}`, "Could not load wastage");
+
 export const getCategoriesList = async () => {
   try {
     const response = await axios.get(`${API_URL}/categories`);

@@ -11,12 +11,13 @@ import {
   Typography,
   Box,
   Container,
+  Alert,
 } from "@mui/material";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 import {API_URL} from '../utilities/service'
 import { useUser } from "../utilities/UserContext";
-import { getBu, referenceRecord, getCategoryList } from "../utilities/service";
+import { getBu, referenceRecord, getCategoryList, getAllBranches, getProductSettings, saveProductSettings } from "../utilities/service";
 
 function ProductForm() {
   const location = useLocation(); // Access the location object
@@ -47,6 +48,20 @@ function ProductForm() {
     org_id: org_id,
     branch_id: branch_id,
   });
+  // Batch & stock settings (saved separately after the product)
+  const [batch, setBatch] = useState({ short_code: "", producing_branch_id: "", shelf_life_days: "", default_taxable: "Y" });
+  const [kitchens, setKitchens] = useState([]);
+  const [saveError, setSaveError] = useState("");
+  useEffect(() => {
+    getAllBranches().then((b) => setKitchens(b.filter((x) => x.branch_type === "K"))).catch(() => {});
+    if (selectedRow?.product_id) {
+      getProductSettings().then((r) => {
+        const p = (r.products || []).find((x) => x.product_id === selectedRow.product_id);
+        if (p) setBatch({ short_code: p.short_code || "", producing_branch_id: p.producing_branch_id || "",
+          shelf_life_days: p.shelf_life_days ?? "", default_taxable: p.default_taxable || "Y" });
+      }).catch(() => {});
+    }
+  }, [selectedRow]);
   const [errors, setErrors] = useState({ min_stock: "", max_stock: "",product_price: "",gst_value: "",stock_in_hand: "",reorder_level: "" });
 
   
@@ -102,7 +117,7 @@ function ProductForm() {
         prod_name_invoice: selectedRow.prod_name_invoice,
         account_code: selectedRow.account_code,
         org_id: org_id,
-        branch_id: branch_id,
+        branch_id: selectedRow.branch_id || branch_id,
       });
     }    
   // eslint-disable-next-line react-hooks/exhaustive-deps -- intended to run once on open
@@ -151,14 +166,20 @@ function ProductForm() {
       }
     });
     setLoading(true);
-    const response = await axios.post(`${API_URL}/product`, {
-      product: updatedFormData,
-    });
-    if (response.data && response.data) {
+    setSaveError("");
+    // a new product belongs to its producing kitchen
+    if (!updatedFormData.product_id && batch.producing_branch_id) updatedFormData.branch_id = batch.producing_branch_id;
+    try {
+      const response = await axios.post(`${API_URL}/product`, { product: updatedFormData });
+      const pid = updatedFormData.product_id || response.data?.product?.product_id;
+      if (pid) {
+        await saveProductSettings({ product_id: pid, ...batch, reorder_level: updatedFormData.reorder_level });
+      }
       setLoading(false);
       navigate("/product-master");
-    } else {
-      throw new Error("Product Creation failed");
+    } catch (e) {
+      setLoading(false);
+      setSaveError(e.message || "Could not save the product");
     }
   };
 
@@ -335,6 +356,36 @@ function ProductForm() {
                   fullWidth
                 />
               </Grid2>
+              <Grid2 item size={12}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 1 }}>Batch & stock</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Products with a short code are batch-tracked: batches are entered for them and dispatch picks from those batches.
+                </Typography>
+              </Grid2>
+              <Grid2 item size={{ xs: 12, sm: 4 }}>
+                <TextField label="Short code" value={batch.short_code} fullWidth helperText="2-3 characters, e.g. VD"
+                  onChange={(e) => setBatch({ ...batch, short_code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) })} />
+              </Grid2>
+              <Grid2 item size={{ xs: 12, sm: 8 }}>
+                <TextField select label="Producing branch" value={batch.producing_branch_id} fullWidth
+                  onChange={(e) => setBatch({ ...batch, producing_branch_id: e.target.value })}
+                  helperText="Kitchen that makes it; its short code starts the batch number">
+                  <MenuItem value="">Not set</MenuItem>
+                  {kitchens.map((k) => <MenuItem key={k.branch_id} value={k.branch_id}>{k.branch_name}{k.short_code ? ` (${k.short_code})` : ""}</MenuItem>)}
+                </TextField>
+              </Grid2>
+              <Grid2 item size={{ xs: 12, sm: 6 }}>
+                <TextField label="Shelf life (days)" value={batch.shelf_life_days} fullWidth helperText="Best-before = made date + days"
+                  onChange={(e) => setBatch({ ...batch, shelf_life_days: e.target.value.replace(/\D/g, "").slice(0, 4) })} inputProps={{ inputMode: "numeric" }} />
+              </Grid2>
+              <Grid2 item size={{ xs: 12, sm: 6 }}>
+                <TextField select label="Default tax on invoices" value={batch.default_taxable} fullWidth
+                  onChange={(e) => setBatch({ ...batch, default_taxable: e.target.value })} helperText="Admin can still change it per invoice">
+                  <MenuItem value="Y">Taxable (GST/QST)</MenuItem>
+                  <MenuItem value="N">Non-taxable</MenuItem>
+                </TextField>
+              </Grid2>
+              {saveError && <Grid2 item size={12}><Alert severity="error">{saveError}</Alert></Grid2>}
             </Grid2>
             <div style={{ marginTop: 20 }}>
               <Button

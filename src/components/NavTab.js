@@ -12,6 +12,7 @@ import IndentListing from "../pages/IndentListing";
 import { useLocation } from "react-router-dom";
 import { useUser } from "../utilities/UserContext";
 import { fetchIndents, getAllBranches } from "../utilities/service";
+import StockAlerts from "./StockAlerts";
 
 /*
  * Tabs by role (BRD "Indent Management"):
@@ -36,6 +37,7 @@ const ROLE_TABS = {
   B: ["receive", "create", "progress", "done"],
   K: ["accept", "dispatchK", "done"],
   A: ["accept", "finalize", "dispatch", "receive", "done"],
+  O: ["accept", "finalize", "dispatch", "receive", "done"],
   X: ["receive", "create", "progress", "done"],
 };
 
@@ -116,6 +118,7 @@ export default function NavTab() {
       </Box>
 
       <Box sx={{ pt: 2 }}>
+        {role === "K" && <StockAlerts compact />}
         {!scope ? null : tab === "create" ? (
           <CreateIndent
             onCreated={() => {

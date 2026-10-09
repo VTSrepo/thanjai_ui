@@ -65,6 +65,7 @@ export default function ProductTable({ list }) {
   const columns = [
     { field: "product_id", headerName: "Product Id", width: 200 },
     { field: "product_name", headerName: "Product Name", width: 200 },
+    { field: "short_code", headerName: "Code", width: 80, valueGetter: (v) => v || "-" },
     { field: "uom", headerName: "UOM", width: 130 },
     { field: "bu_name", headerName: "BU", width: 130 },
     { field: "category_name", headerName: "Category", width: 130 },

@@ -34,6 +34,8 @@ const User = ({ dashboard }) => {
           user_type:
             item.user_type === "A"
               ? "Admin"
+              : item.user_type === "O"
+              ? "Operations Manager"
               : item.user_type === "K"
               ? "Kitchen"
               : item.user_type === "B"

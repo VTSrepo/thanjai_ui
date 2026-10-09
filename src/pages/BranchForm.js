@@ -42,6 +42,7 @@ const EMPTY = {
   branch_cont_pers_phone: "",
   branch_Cont_pers_email: "",
   legal_name: "",
+  short_code: "",
   gst_hst_reg_no: "",
   qst_reg_no: "",
   gst_hst_rate: "",
@@ -154,7 +155,10 @@ const BranchForm = () => {
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <Section title="Basic details">
-          <Field md={12} label="Branch name" name="branch_name" value={form.branch_name} onChange={onChange} required />
+          <Field md={9} label="Branch name" name="branch_name" value={form.branch_name} onChange={onChange} required />
+          <Field md={3} label="Short code" name="short_code" value={form.short_code || ""}
+            onChange={(e) => set("short_code", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 2))}
+            helperText="2 characters; starts batch numbers" />
           <Grid2 size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>Type</Typography>
             <ToggleButtonGroup exclusive fullWidth color="primary" value={form.branch_type}

@@ -32,34 +32,44 @@ const InvoiceReport = lazy(() => import("./pages/InvoiceReport"));
 const Payments = lazy(() => import("./pages/Payments"));
 const MyInvoices = lazy(() => import("./pages/MyInvoices"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword"));
+const RoleMaster = lazy(() => import("./pages/RoleMaster"));
+const Batches = lazy(() => import("./pages/Batches"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const StockImport = lazy(() => import("./pages/StockImport"));
+const BatchReports = lazy(() => import("./pages/BatchReports"));
 
-const { ADMIN: A, BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
+const { BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
 
-// path, component, allowed roles (null = any logged-in user)
+// path, component, user types allowed, screens allowed (Role Master). Both empty = any logged-in user.
 const ROUTES = [
-  ["/home", Home, [B, X]],
-  ["/admin", Admin, [A]],
-  ["/indents", IndentMaster, null],
-  ["/change-password", ChangePassword, null],
-  ["/production-monitor", ProductionMonitor, [A, K]],
-  ["/job-create", ProductionMonitorForm, [A, K]],
-  ["/ts", TimesheetListing, [A, K]],
-  ["/ts-create", TimesheetForm, [A, K]],
-  ["/employee", Employee, [A]],
-  ["/employee-create", CreateEmployeeForm, [A]],
-  ["/product-master", ProductMaster, [A]],
-  ["/product-create", ProductForm, [A]],
-  ["/user", User, [A]],
-  ["/create-user", CreateUserForm, [A]],
-  ["/category", Category, [A]],
-  ["/create-category", CreateCategoryForm, [A]],
-  ["/branch", Branch, [A]],
-  ["/branch-form", BranchForm, [A]],
-  ["/reports", Reports, [A]],
-  ["/indent", IndentReports, [A]],
-  ["/invoices", InvoiceReport, [A]],
-  ["/payments", Payments, [A]],
-  ["/my-invoices", MyInvoices, [B, X]],
+  ["/home", Home, [B, X], ["HOME"]],
+  ["/admin", Admin, [], ["DASHBOARD"]],
+  ["/indents", IndentMaster, null, null],
+  ["/change-password", ChangePassword, null, null],
+  ["/production-monitor", ProductionMonitor, [K], []],
+  ["/job-create", ProductionMonitorForm, [K], []],
+  ["/ts", TimesheetListing, [K], ["TIMESHEET"]],
+  ["/ts-create", TimesheetForm, [K], ["TIMESHEET"]],
+  ["/employee", Employee, [], ["M_EMPLOYEE"]],
+  ["/employee-create", CreateEmployeeForm, [], ["M_EMPLOYEE"]],
+  ["/product-master", ProductMaster, [], ["M_PRODUCT"]],
+  ["/product-create", ProductForm, [], ["M_PRODUCT"]],
+  ["/user", User, [], ["M_USER"]],
+  ["/create-user", CreateUserForm, [], ["M_USER"]],
+  ["/category", Category, [], ["M_CATEGORY"]],
+  ["/create-category", CreateCategoryForm, [], ["M_CATEGORY"]],
+  ["/branch", Branch, [], ["M_BRANCH"]],
+  ["/branch-form", BranchForm, [], ["M_BRANCH"]],
+  ["/roles", RoleMaster, [], ["M_ROLE"]],
+  ["/reports", Reports, [], ["R_PRODUCTION"]],
+  ["/indent", IndentReports, [], ["R_INDENT"]],
+  ["/invoices", InvoiceReport, [], ["R_INVOICES"]],
+  ["/payments", Payments, [], ["PAYMENTS"]],
+  ["/my-invoices", MyInvoices, [B, X], ["MY_INVOICES"]],
+  ["/batches", Batches, [], ["BATCHES"]],
+  ["/inventory", Inventory, [K], ["INVENTORY"]],
+  ["/stock-import", StockImport, [], ["STOCK_IMPORT"]],
+  ["/batch-reports", BatchReports, [], ["R_BATCH"]],
 ];
 
 const Start = () => {
@@ -77,8 +87,8 @@ function App() {
             <Suspense fallback={<Loader />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
-                {ROUTES.map(([path, Page, roles]) => (
-                  <Route key={path} path={path} element={<Guard roles={roles}><Page /></Guard>} />
+                {ROUTES.map(([path, Page, roles, screens]) => (
+                  <Route key={path} path={path} element={<Guard roles={roles} screens={screens}><Page /></Guard>} />
                 ))}
                 <Route path="*" element={<Start />} />
               </Routes>

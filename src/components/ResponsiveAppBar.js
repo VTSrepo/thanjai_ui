@@ -22,47 +22,50 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useUser, ROLE } from "../utilities/UserContext";
+import { useUser, ROLE, canUse } from "../utilities/UserContext";
 import { getReceivablesSummary } from "../utilities/service";
 
-// One menu definition per role. Items with `children` render as a dropdown.
-export const MENUS = {
-  [ROLE.ADMIN]: [
-    { label: "Admin Home", to: "/admin" },
-    { label: "Indents", to: "/indents" },
-    { label: "Payments", to: "/payments", badge: "overdue" },
-    {
-      label: "Reports",
-      children: [
-        { label: "Invoices", to: "/invoices" },
-        { label: "Production", to: "/reports" },
-        { label: "Indent", to: "/indent" },
-      ],
-    },
-    { label: "Production Monitor", to: "/production-monitor" },
-    { label: "Timesheet", to: "/ts" },
-    {
-      label: "Master",
-      children: [
-        { label: "Product", to: "/product-master" },
-        { label: "Employee", to: "/employee" },
-        { label: "User", to: "/user" },
-        { label: "Category", to: "/category" },
-        { label: "Branch", to: "/branch" },
-      ],
-    },
-  ],
-  [ROLE.BRANCH]: [
-    { label: "Home", to: "/home" },
-    { label: "Indents", to: "/indents" },
-    { label: "My invoices", to: "/my-invoices", badge: "overdue" },
-  ],
-  [ROLE.KITCHEN]: [{ label: "Indents", to: "/indents" }],
-  [ROLE.EXTERNAL]: [
-    { label: "Home", to: "/home" },
-    { label: "Orders", to: "/indents" },
-    { label: "My invoices", to: "/my-invoices", badge: "overdue" },
-  ],
+// One menu; each item shows only when the user's role can open its screen (Role Master).
+const MENU = [
+  { label: "Admin Home", to: "/admin", screen: "DASHBOARD" },
+  { label: "Home", to: "/home", screen: "HOME" },
+  { label: "Indents", to: "/indents", screen: "INDENTS", labelFor: { X: "Orders" } },
+  { label: "Batches", to: "/batches", screen: "BATCHES" },
+  { label: "Inventory", to: "/inventory", screen: "INVENTORY" },
+  { label: "Payments", to: "/payments", screen: "PAYMENTS", badge: "overdue" },
+  { label: "My invoices", to: "/my-invoices", screen: "MY_INVOICES", badge: "overdue" },
+  {
+    label: "Reports",
+    children: [
+      { label: "Invoices", to: "/invoices", screen: "R_INVOICES" },
+      { label: "Batches & wastage", to: "/batch-reports", screen: "R_BATCH" },
+      { label: "Production", to: "/reports", screen: "R_PRODUCTION" },
+      { label: "Indent", to: "/indent", screen: "R_INDENT" },
+    ],
+  },
+  { label: "Timesheet", to: "/ts", screen: "TIMESHEET" },
+  {
+    label: "Master",
+    children: [
+      { label: "Product", to: "/product-master", screen: "M_PRODUCT" },
+      { label: "Employee", to: "/employee", screen: "M_EMPLOYEE" },
+      { label: "User", to: "/user", screen: "M_USER" },
+      { label: "Role", to: "/roles", screen: "M_ROLE" },
+      { label: "Category", to: "/category", screen: "M_CATEGORY" },
+      { label: "Branch", to: "/branch", screen: "M_BRANCH" },
+      { label: "Opening stock import", to: "/stock-import", screen: "STOCK_IMPORT" },
+    ],
+  },
+  // Production Monitor is hidden for now - Batch entry replaces it.
+];
+
+export const menuFor = (user) => {
+  // Home / My invoices are the branch & customer views; head-office users have their own screens
+  const headOffice = ["A", "O"].includes(user?.user_type);
+  const ok = (i) => canUse(user, i.screen) && !(headOffice && ["HOME", "MY_INVOICES"].includes(i.screen));
+  return MENU.map((i) => (i.children ? { ...i, children: i.children.filter(ok) } : i))
+    .filter((i) => (i.children ? i.children.length : ok(i)))
+    .map((i) => ({ ...i, label: i.labelFor?.[user?.user_type] || i.label }));
 };
 
 // Overdue count for the badge, cached for a minute across page changes
@@ -70,7 +73,7 @@ let badgeCache = { at: 0, value: 0, user: null };
 const useOverdueBadge = (user) => {
   const [count, setCount] = useState(badgeCache.user === user?.user_id ? badgeCache.value : 0);
   useEffect(() => {
-    if (!user || user.user_type === ROLE.KITCHEN) return;
+    if (!user || user.user_type === ROLE.KITCHEN || !(canUse(user, "PAYMENTS") || canUse(user, "MY_INVOICES"))) return;
     if (badgeCache.user === user.user_id && Date.now() - badgeCache.at < 60000) return;
     getReceivablesSummary()
       .then((s) => {
@@ -91,7 +94,7 @@ const ResponsiveAppBar = ({ onLogout }) => {
   const [openGroup, setOpenGroup] = useState(null);
   const [anchor, setAnchor] = useState({ el: null, key: null });
   const overdue = useOverdueBadge(user);
-  const items = MENUS[user?.user_type] || [];
+  const items = menuFor(user);
 
   const logout = () => {
     badgeCache = { at: 0, value: 0, user: null };

@@ -82,7 +82,7 @@ const InvoiceDialog = ({ open, indentNumber, invoiceNumber, title = "Invoice", i
             </Typography>
             <Divider sx={{ mb: 1 }} />
             {invoice.lines.map((l) => (
-              <Row key={l.line_no} label={`${l.item_name} × ${Number(l.qty)} @ ${Number(l.rate).toFixed(2)}${l.taxable === false ? " · non-taxable" : ""}`} value={money(l.amount)} />
+              <Row key={l.line_no} label={`${l.item_name} × ${Number(l.qty)} @ ${Number(l.rate).toFixed(2)}${l.taxable === false ? " · non-taxable" : ""}${l.batch_nos ? ` · batch ${l.batch_nos}` : ""}`} value={money(l.amount)} />
             ))}
             <Divider sx={{ my: 1 }} />
             <Row label="Sub total" value={money(invoice.sub_total)} />

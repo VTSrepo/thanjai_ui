@@ -13,7 +13,8 @@ import {
   FormControlLabel,
   RadioGroup,
   Radio,
-  Autocomplete } from "@mui/material";
+  Autocomplete,
+  MenuItem } from "@mui/material";
 import { parseISO, format } from "date-fns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -23,9 +24,12 @@ import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useUser } from "../utilities/UserContext";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
 
-import { createNewUser, getBranchLists, updateUser } from "../utilities/service";
+import { createNewUser, getBranchLists, getRoles, updateUser } from "../utilities/service";
 import { useToast } from "../components/ToastProvider";
 import ResetPasswordDialog from "../components/ResetPasswordDialog";
+
+// Radio label -> user type code (the user list shows these labels)
+const TYPE_CODE = { Admin: "A", "Operations Manager": "O", Kitchen: "K", Branch: "B", External: "X" };
 
 const USER_ID_OK = /^[A-Za-z0-9._@-]{3,50}$/;
 
@@ -42,6 +46,8 @@ function CreateUserForm() {
   const [branchList, setBranchList] = useState([]);
   const [userStatus, setUserStatus] = useState(null);
   const [userType, setUserType] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [roleId, setRoleId] = useState("");
   const [mobileError, setMobileError] = useState(false);
   const [contactError, setContactError] = useState(false);
   const [emailError, setEmailError] = useState(false);
@@ -56,6 +62,21 @@ function CreateUserForm() {
     email_id: null,
     pwd: null,
   });
+
+  useEffect(() => {
+    getRoles().then((r) => setRoles(r.roles || [])).catch(() => {});
+  }, []);
+  // roles available for the chosen type; pick the built-in one when the current choice does not fit
+  const typeCode = TYPE_CODE[userType] || "";
+  const roleOptions = roles.filter((r) => r.scope === typeCode && r.status === "A");
+  useEffect(() => {
+    if (!typeCode || !roles.length) return;
+    if (!roleOptions.some((r) => r.role_id === roleId)) {
+      const own = selectedRow && selectedRow.role_id && roleOptions.find((r) => r.role_id === selectedRow.role_id);
+      setRoleId(own ? own.role_id : (roleOptions.find((r) => r.is_system === "Y") || roleOptions[0] || {}).role_id || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeCode, roles]);
 
   useEffect(() => {
     const getBranchList = async () => {
@@ -98,7 +119,7 @@ function CreateUserForm() {
     setLoading(true);
                     const org_id = JSON.parse(localStorage.getItem("user"))?.org_id;
                     const user_status = userStatus === "Active" ? "A" : "I";
-                    const user_type = userType === "Admin" ? "A" : userType === "Kitchen" ? "K" : userType === "Branch" ? "B" : userType === "External" ? "X" : "";
+                    const user_type = TYPE_CODE[userType] || "";
     
           if(selectedRow){
             try {
@@ -116,6 +137,7 @@ function CreateUserForm() {
                         residence_address: formData.residence_address,
                         email_id: formData.email_id,
                         user_type: user_type,
+                        role_id: roleId || undefined,
                         user_status: user_status,
                         // password is not changed here; use Reset password
                       },
@@ -147,6 +169,7 @@ function CreateUserForm() {
                       residence_address: formData.residence_address,
                       email_id: formData.email_id,
                       user_type: user_type,
+                      role_id: roleId || undefined,
                       user_status: user_status,
                       pwd: formData.pwd,
                     },
@@ -463,6 +486,11 @@ function CreateUserForm() {
                       label="Admin"
                     />
                     <FormControlLabel
+                      value="Operations Manager"
+                      control={<Radio />}
+                      label="Operations Manager"
+                    />
+                    <FormControlLabel
                       value="Kitchen"
                       control={<Radio />}
                       label="Kitchen"
@@ -480,6 +508,13 @@ function CreateUserForm() {
                   </RadioGroup>
                 </FormControl>
               </Grid2>
+
+              {typeCode && typeCode !== "A" && (
+                <TextField select fullWidth label="Role" value={roleId} onChange={(e) => setRoleId(e.target.value)}
+                  helperText="Decides which screens this user can open (Master > Role)">
+                  {roleOptions.map((r) => <MenuItem key={r.role_id} value={r.role_id}>{r.role_name}</MenuItem>)}
+                </TextField>
+              )}
 
               <FormControl>
                 <FormLabel id="demo-row-radio-buttons-group-label">

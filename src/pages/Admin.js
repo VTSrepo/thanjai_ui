@@ -3,6 +3,7 @@ import { Alert, Box, Button, Card, CardContent, CircularProgress, Grid2, Stack, 
 import { CONFIG } from "../config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import InvoiceAlerts from "../components/InvoiceAlerts";
+import StockAlerts from "../components/StockAlerts";
 import ProductionDataChart from "../components/ProductionDataChart";
 import { FormattedDate } from "../utilities/helpers";
 import { fetchIndents, getProductSummary } from "../utilities/service";
@@ -28,7 +29,7 @@ const ChartCard = ({ title, loading, children }) => (
 
 const Admin = () => {
   document.title = `Admin | ${CONFIG.title.name}`;
-  const { user } = useUser();
+  const { user, can } = useUser();
   const [quick, setQuick] = useState("today");
   const [range, setRange] = useState(rangeFor("today"));
   const [loading, setLoading] = useState(false);
@@ -79,6 +80,7 @@ const Admin = () => {
             {toFinalize} accepted indent(s) waiting for you to finalize the invoice before the kitchen can dispatch.
           </Alert>
         )}
+        {can("INVENTORY") && <StockAlerts />}
         <InvoiceAlerts />
 
         <Card sx={{ mb: 2 }}>

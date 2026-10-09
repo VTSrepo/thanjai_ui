@@ -13,10 +13,10 @@ import { useUser, ROLE } from "../utilities/UserContext";
 const InvoiceAlerts = ({ compact = false }) => {
   const { user } = useUser();
   const [t, setT] = useState(null);
-  const isAdmin = user?.user_type === ROLE.ADMIN;
+  const isAdmin = user?.user_type === ROLE.ADMIN || user?.user_type === ROLE.OPS;
 
   useEffect(() => {
-    if (!user || user.user_type === ROLE.KITCHEN) return;
+    if (!user || user.user_type === ROLE.KITCHEN || (user.user_type === ROLE.OPS && !user.screens?.PAYMENTS)) return;
     getReceivablesSummary().then((s) => setT(s?.totals || null)).catch(() => {});
   }, [user]);
 

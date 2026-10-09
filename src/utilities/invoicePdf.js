@@ -98,7 +98,7 @@ export const buildInvoicePdf = async (inv) => {
     head: [["#", "Item & Description", "Qty", "Rate", "Tax", "Amount"]],
     body: inv.lines.map((l, i) => [
       i + 1,
-      l.uom ? `${l.item_name}\n${l.uom}` : l.item_name,
+      [l.item_name, l.uom, l.batch_nos ? `Batch: ${l.batch_nos}` : null].filter(Boolean).join("\n"),
       qtyFmt(l.qty),
       money(l.rate),
       l.taxable === false ? "Exempt" : taxName,
@@ -160,9 +160,7 @@ export const buildInvoicePdf = async (inv) => {
 };
 
 // In the future Android/iOS app (Capacitor) save to the device and open the share sheet; in a browser, download.
-export const downloadInvoicePdf = async (inv) => {
-  const doc = await buildInvoicePdf(inv);
-  const fileName = `${inv.invoice_number}.pdf`;
+export const savePdf = async (doc, fileName) => {
   const cap = window.Capacitor;
   const plugins = cap?.Plugins || {};
   if (cap?.isNativePlatform?.() && plugins.Filesystem && plugins.Share) {
@@ -177,3 +175,5 @@ export const downloadInvoicePdf = async (inv) => {
   }
   doc.save(fileName);
 };
+
+export const downloadInvoicePdf = async (inv) => savePdf(await buildInvoicePdf(inv), `${inv.invoice_number}.pdf`);
