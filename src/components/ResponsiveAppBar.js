@@ -48,6 +48,7 @@ const MENU = [
     label: "Master",
     children: [
       { label: "Product", to: "/product-master", screen: "M_PRODUCT" },
+      { label: "Product list import", to: "/product-import", screen: "M_PRODUCT", edit: true },
       { label: "Employee", to: "/employee", screen: "M_EMPLOYEE" },
       { label: "User", to: "/user", screen: "M_USER" },
       { label: "Role", to: "/roles", screen: "M_ROLE" },
@@ -62,7 +63,7 @@ const MENU = [
 export const menuFor = (user) => {
   // Home / My invoices are the branch & customer views; head-office users have their own screens
   const headOffice = ["A", "O"].includes(user?.user_type);
-  const ok = (i) => canUse(user, i.screen) && !(headOffice && ["HOME", "MY_INVOICES"].includes(i.screen));
+  const ok = (i) => canUse(user, i.screen, !!i.edit) && !(headOffice && ["HOME", "MY_INVOICES"].includes(i.screen));
   return MENU.map((i) => (i.children ? { ...i, children: i.children.filter(ok) } : i))
     .filter((i) => (i.children ? i.children.length : ok(i)))
     .map((i) => ({ ...i, label: i.labelFor?.[user?.user_type] || i.label }));

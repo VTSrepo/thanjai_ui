@@ -215,6 +215,7 @@ export const closeBatch = (b) => post("/batch/close", b, "Could not close the ba
 export const importOpeningStock = (rows) => post("/stock-import", { rows }, "Could not load the file");
 export const getProductSettings = () => get(`/product-settings/${orgId()}`, "Could not load products");
 export const saveProductSettings = (p) => post("/product-settings", p, "Could not save the product settings");
+export const importProducts = (body) => post("/product-import", body, "Could not update the products");
 export const getBatchSuggest = (indent_number, qty) =>
   get(`/batch-suggest/${orgId()}/${encodeURIComponent(indent_number)}?${qs({ qty: Object.entries(qty || {}).map(([k, v]) => `${k}:${v}`).join(",") })}`,
     "Could not load batches");

@@ -36,6 +36,7 @@ const RoleMaster = lazy(() => import("./pages/RoleMaster"));
 const Batches = lazy(() => import("./pages/Batches"));
 const Inventory = lazy(() => import("./pages/Inventory"));
 const StockImport = lazy(() => import("./pages/StockImport"));
+const ProductImport = lazy(() => import("./pages/ProductImport"));
 const BatchReports = lazy(() => import("./pages/BatchReports"));
 
 const { BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
@@ -69,6 +70,7 @@ const ROUTES = [
   ["/batches", Batches, [], ["BATCHES"]],
   ["/inventory", Inventory, [K], ["INVENTORY"]],
   ["/stock-import", StockImport, [], ["STOCK_IMPORT"]],
+  ["/product-import", ProductImport, [], ["M_PRODUCT"]],
   ["/batch-reports", BatchReports, [], ["R_BATCH"]],
 ];
 
