@@ -12,6 +12,8 @@ import {
   Box,
   Container,
   Alert,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useNavigate, useLocation } from "react-router-dom"; // Import useNavigate
@@ -49,7 +51,8 @@ function ProductForm() {
     branch_id: branch_id,
   });
   // Batch & stock settings (saved separately after the product)
-  const [batch, setBatch] = useState({ short_code: "", producing_branch_id: "", shelf_life_days: "", default_taxable: "Y" });
+  const [batch, setBatch] = useState({ short_code: "", producing_branch_id: "", shelf_life_days: "", default_taxable: "Y",
+    sub_diet: "", sub_enabled: "N", sub_description: "", sub_allergens: "", sub_image_url: "" });
   const [kitchens, setKitchens] = useState([]);
   const [saveError, setSaveError] = useState("");
   useEffect(() => {
@@ -58,7 +61,9 @@ function ProductForm() {
       getProductSettings().then((r) => {
         const p = (r.products || []).find((x) => x.product_id === selectedRow.product_id);
         if (p) setBatch({ short_code: p.short_code || "", producing_branch_id: p.producing_branch_id || "",
-          shelf_life_days: p.shelf_life_days ?? "", default_taxable: p.default_taxable || "Y" });
+          shelf_life_days: p.shelf_life_days ?? "", default_taxable: p.default_taxable || "Y",
+          sub_diet: p.sub_diet || "", sub_enabled: p.sub_enabled || "N", sub_description: p.sub_description || "",
+          sub_allergens: p.sub_allergens || "", sub_image_url: p.sub_image_url || "" });
       }).catch(() => {});
     }
   }, [selectedRow]);
@@ -385,6 +390,39 @@ function ProductForm() {
                   <MenuItem value="N">Non-taxable</MenuItem>
                 </TextField>
               </Grid2>
+              <Grid2 item size={12}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mt: 1 }}>Diet & online weekly meals</Typography>
+              </Grid2>
+              <Grid2 item size={{ xs: 12, sm: 4 }}>
+                <TextField select label="Diet" value={batch.sub_diet} fullWidth onChange={(e) => setBatch({ ...batch, sub_diet: e.target.value })}>
+                  <MenuItem value="">Not set</MenuItem>
+                  <MenuItem value="V">Veg</MenuItem>
+                  <MenuItem value="N">Non-veg</MenuItem>
+                  <MenuItem value="E">Egg</MenuItem>
+                </TextField>
+              </Grid2>
+              <Grid2 item size={{ xs: 12, sm: 8 }}>
+                <FormControlLabel
+                  control={<Switch checked={batch.sub_enabled === "Y"} onChange={(e) => setBatch({ ...batch, sub_enabled: e.target.checked ? "Y" : "N" })} />}
+                  label="Available on the online weekly menu (subscriber plans)" />
+              </Grid2>
+              {batch.sub_enabled === "Y" && (
+                <>
+                  <Grid2 item size={12}>
+                    <TextField label="Description shown to customers" value={batch.sub_description} fullWidth multiline minRows={2}
+                      inputProps={{ maxLength: 500 }} onChange={(e) => setBatch({ ...batch, sub_description: e.target.value })} />
+                  </Grid2>
+                  <Grid2 item size={{ xs: 12, sm: 6 }}>
+                    <TextField label="Allergens (comma separated)" placeholder="Milk, Nuts, Gluten" value={batch.sub_allergens} fullWidth
+                      onChange={(e) => setBatch({ ...batch, sub_allergens: e.target.value })} />
+                  </Grid2>
+                  <Grid2 item size={{ xs: 12, sm: 6 }}>
+                    <TextField label="Photo link (https://…, optional)" value={batch.sub_image_url} fullWidth
+                      onChange={(e) => setBatch({ ...batch, sub_image_url: e.target.value })} />
+                  </Grid2>
+                  {!batch.sub_diet && <Grid2 item size={12}><Alert severity="warning">Set the diet so customers see Veg / Non-veg on the menu.</Alert></Grid2>}
+                </>
+              )}
               {saveError && <Grid2 item size={12}><Alert severity="error">{saveError}</Alert></Grid2>}
             </Grid2>
             <div style={{ marginTop: 20 }}>

@@ -66,6 +66,8 @@ export default function ProductTable({ list }) {
     { field: "product_id", headerName: "Product Id", width: 200 },
     { field: "product_name", headerName: "Product Name", width: 200 },
     { field: "short_code", headerName: "Code", width: 80, valueGetter: (v) => v || "-" },
+    { field: "sub_diet", headerName: "Diet", width: 90, valueGetter: (v) => ({ V: "Veg", N: "Non-veg", E: "Egg" }[v] || "-") },
+    { field: "sub_enabled", headerName: "Online menu", width: 110, valueGetter: (v) => (v === "Y" ? "Yes" : "-") },
     { field: "uom", headerName: "UOM", width: 130 },
     { field: "bu_name", headerName: "BU", width: 130 },
     { field: "category_name", headerName: "Category", width: 130 },

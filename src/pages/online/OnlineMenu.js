@@ -141,10 +141,11 @@ const OnlineMenu = () => {
                 </Grid>
                 {canEdit && !locked && (
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mb: 2 }}>
-                    <Autocomplete sx={{ flexGrow: 1 }} size="small" options={dishes.filter((d) => !cur.items.some((i) => i.product_id === d.product_id))}
+                    <Autocomplete sx={{ flexGrow: 1 }} size="small" options={dishes.filter((d) => d.sub_enabled === "Y" && !cur.items.some((i) => i.product_id === d.product_id))}
+                      noOptionsText='No more dishes. Tick "Available on the online weekly menu" in Product Master to add more.'
                       getOptionLabel={(d) => d.product_name} value={null} blurOnSelect
                       onChange={(e, d) => d && setCur({ ...cur, items: [...cur.items, { product_id: d.product_id, chef_pick: "N", max_qty: "" }] })}
-                      renderInput={(p) => <TextField {...p} label="Add a dish" />} />
+                      renderInput={(p) => <TextField {...p} label="Add a dish" helperText={`${dishes.filter((d) => d.sub_enabled === "Y").length} products are marked for the online menu in Product Master`} />} />
                     {!cur.items.length && weeks.length > 0 && (
                       <FormControl size="small" sx={{ minWidth: 200 }}>
                         <InputLabel>Copy dishes from</InputLabel>
@@ -164,8 +165,8 @@ const OnlineMenu = () => {
                           <Typography fontWeight={600} noWrap>{d.product_name}</Typography>
                           {DIET[d.diet] && <Chip size="small" variant="outlined" color={DIET[d.diet].color} label={DIET[d.diet].label} />}
                         </Stack>
-                        <Typography variant="caption" color={d.description ? "text.secondary" : "warning.dark"} noWrap display="block">
-                          {d.description || "No description yet – add one so customers know what it is"}
+                        <Typography variant="caption" color={d.description && d.diet ? "text.secondary" : "warning.dark"} noWrap display="block">
+                          {!d.diet ? "Diet (Veg / Non-veg) not set – " : ""}{d.description || "No description yet – add one so customers know what it is"}
                         </Typography>
                       </Box>
                       <Tooltip title="Used for customers who don't choose"><Stack alignItems="center">
