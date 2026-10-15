@@ -38,8 +38,12 @@ const ALIASES = {
   kitchen: ["kitchen", "producing kitchen", "producing branch"],
   shelf_life_days: ["shelf life", "shelf life (days)", "shelf life days"],
   taxable: ["taxable", "tax"],
+  diet: ["diet", "veg / non-veg", "veg/non-veg", "veg or non-veg"],
+  online: ["online menu", "online", "online weekly menu", "subscriber menu"],
+  description: ["description", "menu description"],
+  allergens: ["allergens", "allergen"],
 };
-const TEMPLATE_COLS = ["Item Name", "Unit Size", "COST", "CODE", "Kitchen", "Shelf life (days)", "Taxable"];
+const TEMPLATE_COLS = ["Item Name", "Unit Size", "COST", "CODE", "Kitchen", "Shelf life (days)", "Taxable", "Diet", "Online menu", "Description", "Allergens"];
 const norm = (v) => String(v ?? "").trim().toLowerCase();
 
 // Finds the header row (the business file has a title row above it) and maps the columns
@@ -59,6 +63,10 @@ const parseSheet = (sheet) => {
       kitchen: val(r, "kitchen") ? String(val(r, "kitchen")).trim() : null,
       shelf_life_days: val(r, "shelf_life_days") ?? null,
       taxable: val(r, "taxable") ? String(val(r, "taxable")).trim() : null,
+      diet: val(r, "diet") ? String(val(r, "diet")).trim() : null,
+      online: val(r, "online") ? String(val(r, "online")).trim() : null,
+      description: val(r, "description") ? String(val(r, "description")).trim() : null,
+      allergens: val(r, "allergens") ? String(val(r, "allergens")).trim() : null,
     }))
     .filter((r) => r.name || r.code);
 };
@@ -158,8 +166,12 @@ const ProductImport = () => {
       { value: p.short_code || "", type: String }, { value: kCode(p.producing_branch_id), type: String },
       p.shelf_life_days ? { value: Number(p.shelf_life_days), type: Number } : null,
       { value: p.default_taxable === "N" ? "N" : "Y", type: String },
+      { value: { V: "Veg", N: "Non-veg", E: "Egg" }[p.sub_diet] || "", type: String },
+      { value: p.sub_enabled === "Y" ? "Y" : "N", type: String },
+      { value: p.sub_description || "", type: String },
+      { value: p.sub_allergens || "", type: String },
     ])];
-    await writeXlsxFile(data, { sheet: "Products", columns: [{ width: 32 }, { width: 12 }, { width: 10 }, { width: 8 }, { width: 10 }, { width: 16 }, { width: 10 }] })
+    await writeXlsxFile(data, { sheet: "Products", columns: [{ width: 32 }, { width: 12 }, { width: 10 }, { width: 8 }, { width: 10 }, { width: 16 }, { width: 10 }, { width: 10 }, { width: 12 }, { width: 40 }, { width: 20 }] })
       .toFile(`product-list-${FormattedDate(new Date())}.xlsx`);
   };
 
@@ -177,7 +189,8 @@ const ProductImport = () => {
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              Accepted columns: <b>Item Name</b>, <b>CODE</b> (2-3 characters), Unit Size, COST (selling price), and optionally Kitchen, Shelf life (days), Taxable.
+              Accepted columns: <b>Item Name</b>, <b>CODE</b> (2-3 characters), Unit Size, COST (selling price), and optionally Kitchen, Shelf life (days), Taxable,
+              Diet (Veg / Non-veg / Egg), Online menu (Y / N), Description, Allergens. A blank cell leaves that value unchanged.
               Products are matched by code, then by name. Nothing is deleted. A price change starts a new price from today, so older indents keep their price.
             </Typography>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
