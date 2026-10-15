@@ -21,7 +21,8 @@ import { getBu, referenceRecord, getCategoryList, getAllBranches, getProductSett
 
 function ProductForm() {
   const location = useLocation(); // Access the location object
-   const { user } = useUser();
+   const { user, can } = useUser();
+  const canEdit = can("M_PRODUCT", true);
   const { selectedRow } = location.state || {}; // Extract the selected row from location state
   const [, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -179,7 +180,8 @@ function ProductForm() {
       navigate("/product-master");
     } catch (e) {
       setLoading(false);
-      setSaveError(e.message || "Could not save the product");
+      const d = e.response?.data;
+      setSaveError(e.response?.status === 403 ? "Your role can view products but not change them. Ask an admin to give your role \"Product master – Edit\" in Master → Role." : d?.message || e.message || "Could not save the product");
     }
   };
 
@@ -191,8 +193,13 @@ function ProductForm() {
       <ResponsiveAppBar onLogout={handleLogout} user={user} />
       <Container maxWidth="sm">
         <Box mt={4}>
+          {!canEdit && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              View only – your role can see products but not change them. An admin can give your role "Product master – Edit" in Master → Role.
+            </Alert>
+          )}
           <Typography variant="h5" gutterBottom>
-            Product Create
+            {!canEdit ? "Product" : selectedRow ? "Edit product" : "New product"}
           </Typography>
           <form className="example-form" noValidate>
             <Grid2 container spacing={2}>
@@ -391,7 +398,7 @@ function ProductForm() {
               <Button
                 variant="contained"
                 color="success"
-                disabled={!formData.product_name || !formData.category_code || !formData.uom|| !formData.bu_id || Number(formData.min_stock) < 0 ||
+                disabled={!canEdit || !formData.product_name || !formData.category_code || !formData.uom|| !formData.bu_id || Number(formData.min_stock) < 0 ||
                   Number(formData.max_stock) < 0 || Number(formData.gst_value) < 0 || Number(formData.product_price) < 0 || Number(formData.stock_in_hand) < 0 || Number(formData.reorder_level) < 0 }
                 onClick={handleSave}
               >
