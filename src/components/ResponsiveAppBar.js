@@ -45,6 +45,15 @@ const MENU = [
   },
   { label: "Timesheet", to: "/ts", screen: "TIMESHEET" },
   {
+    label: "Online",
+    children: [
+      { label: "Online orders", to: "/online/orders", screen: "SUB_ORDERS" },
+      { label: "Weekly menu", to: "/online/menu", screen: "SUB_SETUP" },
+      { label: "Subscribers", to: "/online/customers", screen: "SUB_CUSTOMERS" },
+      { label: "Shop setup", to: "/online/setup", screen: "SUB_SETUP" },
+    ],
+  },
+  {
     label: "Master",
     children: [
       { label: "Product", to: "/product-master", screen: "M_PRODUCT" },

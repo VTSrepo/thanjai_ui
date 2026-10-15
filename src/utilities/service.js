@@ -216,6 +216,26 @@ export const importOpeningStock = (rows) => post("/stock-import", { rows }, "Cou
 export const getProductSettings = () => get(`/product-settings/${orgId()}`, "Could not load products");
 export const saveProductSettings = (p) => post("/product-settings", p, "Could not save the product settings");
 export const importProducts = (body) => post("/product-import", body, "Could not update the products");
+
+// ---- Online subscriptions (staff) ----
+export const getSubSettings = () => get(`/sub/settings/${orgId()}`, "Could not load shop settings");
+export const saveSubSettings = (b) => post("/sub/settings", b, "Could not save shop settings");
+export const getSubPlans = () => get(`/sub/plans/${orgId()}`, "Could not load plans");
+export const saveSubPlan = (b) => post("/sub/plan", b, "Could not save the plan");
+export const getSubZones = () => get(`/sub/zones/${orgId()}`, "Could not load delivery zones");
+export const saveSubZone = (b) => post("/sub/zone", b, "Could not save the zone");
+export const getSubDishes = () => get(`/sub/dishes/${orgId()}`, "Could not load dishes");
+export const saveSubDish = (b) => post("/sub/dish", b, "Could not save the dish");
+export const getSubWeeks = () => get(`/sub/weeks/${orgId()}`, "Could not load menu weeks");
+export const getSubWeek = (date) => get(`/sub/week/${orgId()}/${date}`, "Could not load the menu");
+export const saveSubWeek = (b) => post("/sub/week", b, "Could not save the menu");
+export const getSubOrders = (date) => get(`/sub/orders/${orgId()}/${date}`, "Could not load orders");
+export const runSubCutoff = (delivery_date) => post("/sub/cutoff", { delivery_date }, "Cutoff failed");
+export const sendSubKitchen = (delivery_date) => post("/sub/kitchen", { delivery_date }, "Could not send to the kitchen");
+export const chargeSubOrder = (b) => post("/sub/order/charge", b, "Could not record the payment");
+export const setSubOrderStatus = (b) => post("/sub/order/status", b, "Could not update the orders");
+export const getSubCustomers = (q) => get(`/sub/customers/${orgId()}${q ? `?q=${encodeURIComponent(q)}` : ""}`, "Could not load subscribers");
+export const getSubCustomer = (id) => get(`/sub/customer/${orgId()}/${id}`, "Could not load the subscriber");
 export const getBatchSuggest = (indent_number, qty) =>
   get(`/batch-suggest/${orgId()}/${encodeURIComponent(indent_number)}?${qs({ qty: Object.entries(qty || {}).map(([k, v]) => `${k}:${v}`).join(",") })}`,
     "Could not load batches");

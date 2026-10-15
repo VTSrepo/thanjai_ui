@@ -38,6 +38,16 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const StockImport = lazy(() => import("./pages/StockImport"));
 const ProductImport = lazy(() => import("./pages/ProductImport"));
 const BatchReports = lazy(() => import("./pages/BatchReports"));
+const OnlineOrders = lazy(() => import("./pages/online/OnlineOrders"));
+const OnlineMenu = lazy(() => import("./pages/online/OnlineMenu"));
+const OnlineSetup = lazy(() => import("./pages/online/OnlineSetup"));
+const OnlineCustomers = lazy(() => import("./pages/online/OnlineCustomers"));
+// public online shop (weekly meals) - its own login, no staff guard
+const ShopHome = lazy(() => import("./pages/shop/ShopHome"));
+const ShopOrder = lazy(() => import("./pages/shop/ShopOrder"));
+const ShopDone = lazy(() => import("./pages/shop/ShopDone"));
+const ShopLogin = lazy(() => import("./pages/shop/ShopLogin"));
+const ShopAccount = lazy(() => import("./pages/shop/ShopAccount"));
 
 const { BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
 
@@ -72,6 +82,14 @@ const ROUTES = [
   ["/stock-import", StockImport, [], ["STOCK_IMPORT"]],
   ["/product-import", ProductImport, [], ["M_PRODUCT"]],
   ["/batch-reports", BatchReports, [], ["R_BATCH"]],
+  ["/online/orders", OnlineOrders, [], ["SUB_ORDERS"]],
+  ["/online/menu", OnlineMenu, [], ["SUB_SETUP"]],
+  ["/online/setup", OnlineSetup, [], ["SUB_SETUP"]],
+  ["/online/customers", OnlineCustomers, [], ["SUB_CUSTOMERS"]],
+];
+
+const SHOP_ROUTES = [
+  ["/meals", ShopHome], ["/meals/order", ShopOrder], ["/meals/done", ShopDone], ["/meals/login", ShopLogin], ["/meals/account", ShopAccount],
 ];
 
 const Start = () => {
@@ -89,6 +107,7 @@ function App() {
             <Suspense fallback={<Loader />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                {SHOP_ROUTES.map(([path, Page]) => <Route key={path} path={path} element={<Page />} />)}
                 {ROUTES.map(([path, Page, roles, screens]) => (
                   <Route key={path} path={path} element={<Guard roles={roles} screens={screens}><Page /></Guard>} />
                 ))}
