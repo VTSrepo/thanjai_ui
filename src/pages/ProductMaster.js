@@ -10,7 +10,7 @@ import axios from "axios";
 
 const ProductMaster = () => {
   const navigate = useNavigate();  
-  const { user } = useUser();
+  const { user, can } = useUser();
   const [loading, setLoading] = useState(true);
   const [productList, setProductList] = useState([]);
 
@@ -50,9 +50,11 @@ const ProductMaster = () => {
       <ResponsiveAppBar onLogout={handleLogout} user={user} />{" "}
       {/* Show AdminAppBar */}
       <Box sx={{ mt: 4, padding: 2 }}>
-        <Button variant="contained" color="secondary" onClick={createIndent}>
-          Add Product
-        </Button>
+        {can("M_PRODUCT", true) && (
+          <Button variant="contained" color="secondary" onClick={createIndent}>
+            Add Product
+          </Button>
+        )}
         <Box sx={{ mt: 2, padding: 2 }}>
           {" "}
           <ProductTable list={productList} />
