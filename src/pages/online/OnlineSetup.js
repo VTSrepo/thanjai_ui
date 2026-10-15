@@ -15,7 +15,7 @@ import { cad, WEEKDAY } from "../../utilities/shopApi";
 const EditDialog = ({ title, fields, value, onClose, onSave }) => {
   const [v, setV] = useState(value);
   useEffect(() => setV(value), [value]);
-  if (!value) return null;
+  if (!value || !v) return null;
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{title}</DialogTitle>
