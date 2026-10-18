@@ -165,6 +165,9 @@ const ResponsiveAppBar = ({ onLogout }) => {
                 <ListItemText primary={user.user_name} secondary={user.user_id} />
               </MenuItem>
               <Divider />
+              <MenuItem component={Link} to="/help" onClick={() => setAnchor({ el: null, key: null })}>
+                How to use this app
+              </MenuItem>
               <MenuItem component={Link} to="/change-password" onClick={() => setAnchor({ el: null, key: null })}>
                 Change password
               </MenuItem>
@@ -205,6 +208,9 @@ const ResponsiveAppBar = ({ onLogout }) => {
               )
             )}
             <Divider sx={{ my: 1 }} />
+            <ListItemButton component={Link} to="/help" onClick={() => setDrawer(false)}>
+              <ListItemText primary="How to use this app" />
+            </ListItemButton>
             <ListItemButton component={Link} to="/change-password" onClick={() => setDrawer(false)}>
               <ListItemText primary="Change password" />
             </ListItemButton>

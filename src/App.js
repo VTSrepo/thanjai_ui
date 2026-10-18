@@ -38,6 +38,7 @@ const Inventory = lazy(() => import("./pages/Inventory"));
 const StockImport = lazy(() => import("./pages/StockImport"));
 const ProductImport = lazy(() => import("./pages/ProductImport"));
 const BatchReports = lazy(() => import("./pages/BatchReports"));
+const Help = lazy(() => import("./pages/Help"));
 
 const { BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
 
@@ -89,6 +90,7 @@ function App() {
             <Suspense fallback={<Loader />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/help" element={<Help />} />
                 {ROUTES.map(([path, Page, roles, screens]) => (
                   <Route key={path} path={path} element={<Guard roles={roles} screens={screens}><Page /></Guard>} />
                 ))}
