@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Alert, Box, Button, Container, TextField } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Alert, Box, Button, Container, Link, TextField, Typography } from "@mui/material";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useUser } from "../utilities/UserContext";
 import { API_URL } from "../utilities/service";
@@ -50,6 +50,12 @@ const Login = () => {
         <Button variant="contained" fullWidth sx={{ mt: 2 }} type="submit" disabled={busy}>
           {busy ? "Signing in..." : "Login"}
         </Button>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: "center" }}>
+          Forgot your password? Ask your admin to reset it.
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
+          <Link component={RouterLink} to="/help">How does this app work?</Link>
+        </Typography>
       </Box>
     </Container>
   );

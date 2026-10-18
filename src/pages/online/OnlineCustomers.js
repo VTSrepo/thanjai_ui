@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
-  Box, Card, Chip, Dialog, DialogContent, DialogTitle, Divider, Grid, Stack, Table, TableBody, TableCell, TableContainer,
+  Box, Button, Card, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Grid, Stack, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TextField, Typography,
 } from "@mui/material";
 import { CONFIG } from "../../config-global";
@@ -8,15 +8,55 @@ import ResponsiveAppBar from "../../components/ResponsiveAppBar";
 import PageHeader from "../../components/PageHeader";
 import Loader from "../../components/Loader";
 import { useToast } from "../../components/ToastProvider";
-import { getSubCustomer, getSubCustomers } from "../../utilities/service";
+import { getSubCustomer, getSubCustomers, resetSubCustomerPassword } from "../../utilities/service";
+import { useUser } from "../../utilities/UserContext";
 import { cad, niceDate } from "../../utilities/shopApi";
 
 const SUB = { A: ["Active", "success"], P: ["Paused", "warning"], N: ["Unpaid start", "default"], C: ["Cancelled", "default"] };
 const ORDER = { O: "Choosing", P: "Awaiting payment", C: "Paid", F: "Payment failed", K: "In kitchen", D: "Delivered", S: "Skipped", X: "Cancelled" };
 
+const tempPassword = () => `Meals-${Math.floor(1000 + Math.random() * 9000)}`;
+
+/** Staff sets a temporary password for a subscriber who forgot theirs. */
+const ResetCustomerPassword = ({ customer, onClose }) => {
+  const toast = useToast();
+  const [pwd, setPwd] = useState(tempPassword());
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    try {
+      const r = await resetSubCustomerPassword(customer.customer_id, pwd);
+      toast.success(r.message || "Password reset");
+      onClose();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>Reset password</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          {customer.full_name} ({customer.email}) will log in to the meals page with this password. Ask them to change it under My details.
+        </Typography>
+        <TextField fullWidth label="Temporary password" value={pwd} onChange={(e) => setPwd(e.target.value)}
+          helperText="At least 8 characters. Share it with the customer directly (phone or in person)." />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={save} disabled={busy || pwd.length < 8}>Reset</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const Detail = ({ id, onClose }) => {
   const toast = useToast();
+  const { can } = useUser();
   const [d, setD] = useState(null);
+  const [reset, setReset] = useState(false);
   useEffect(() => { setD(null); if (id) getSubCustomer(id).then(setD).catch((e) => toast.error(e.message)); }, [id, toast]);
   if (!id) return null;
   return (
@@ -66,6 +106,11 @@ const Detail = ({ id, onClose }) => {
           </>
         )}
       </DialogContent>
+      <DialogActions>
+        {d && can("SUB_CUSTOMERS", true) && <Button onClick={() => setReset(true)}>Reset password</Button>}
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+      {reset && d && <ResetCustomerPassword customer={d.customer} onClose={() => setReset(false)} />}
     </Dialog>
   );
 };

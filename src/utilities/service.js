@@ -236,6 +236,8 @@ export const chargeSubOrder = (b) => post("/sub/order/charge", b, "Could not rec
 export const setSubOrderStatus = (b) => post("/sub/order/status", b, "Could not update the orders");
 export const getSubCustomers = (q) => get(`/sub/customers/${orgId()}${q ? `?q=${encodeURIComponent(q)}` : ""}`, "Could not load subscribers");
 export const getSubCustomer = (id) => get(`/sub/customer/${orgId()}/${id}`, "Could not load the subscriber");
+export const resetSubCustomerPassword = (id, new_password) =>
+  post(`/sub/customer/${orgId()}/${id}/reset-password`, { new_password }, "Could not reset the password");
 export const getBatchSuggest = (indent_number, qty) =>
   get(`/batch-suggest/${orgId()}/${encodeURIComponent(indent_number)}?${qs({ qty: Object.entries(qty || {}).map(([k, v]) => `${k}:${v}`).join(",") })}`,
     "Could not load batches");

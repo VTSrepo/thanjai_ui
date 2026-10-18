@@ -48,6 +48,7 @@ const ShopOrder = lazy(() => import("./pages/shop/ShopOrder"));
 const ShopDone = lazy(() => import("./pages/shop/ShopDone"));
 const ShopLogin = lazy(() => import("./pages/shop/ShopLogin"));
 const ShopAccount = lazy(() => import("./pages/shop/ShopAccount"));
+const Help = lazy(() => import("./pages/Help"));
 
 const { BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
 
@@ -108,6 +109,7 @@ function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 {SHOP_ROUTES.map(([path, Page]) => <Route key={path} path={path} element={<Page />} />)}
+                <Route path="/help" element={<Help />} />
                 {ROUTES.map(([path, Page, roles, screens]) => (
                   <Route key={path} path={path} element={<Guard roles={roles} screens={screens}><Page /></Guard>} />
                 ))}

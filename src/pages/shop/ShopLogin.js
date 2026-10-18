@@ -24,6 +24,7 @@ const ShopLogin = () => {
             onChange={(e) => setV({ ...v, password: e.target.value })} onKeyDown={(e) => e.key === "Enter" && submit()} />
           <Button variant="contained" size="large" disabled={busy || !v.email || !v.password} onClick={submit}>Log in</Button>
           <Typography variant="body2" color="text.secondary">New here? <Link to="/meals/order">Start a plan</Link></Typography>
+          <Typography variant="body2" color="text.secondary">Forgot your password? Contact us and we will set a temporary one for you.</Typography>
         </Stack>
       </CardContent></Card>
     </ShopLayout>
