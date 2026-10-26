@@ -20,14 +20,19 @@ import { formatDate } from "../utilities/helpers";
 const q3 = (n) => Math.round((Number(n) + Number.EPSILON) * 1000) / 1000;
 const sum = (a) => q3((a || []).reduce((s, x) => s + (Number(x.qty) || 0), 0));
 
-// Problems per item: split must equal the dispatch qty and stay within each batch
+// Problems per item. Stock is not enforced: quantity without batch stock is a warning (it is dispatched as
+// "NO BATCH"); picking more than the dispatch qty or more than a batch holds is an error.
 export const allocationProblems = (items, alloc) =>
   items.filter((i) => i.qty > 0).map((i) => {
     const a = alloc[i.item_code] || [];
-    if (i.available < i.qty) return { item: i, message: `only ${i.available} in stock (short ${q3(i.qty - i.available)})`, short: true };
     const over = a.find((x) => Number(x.qty) > (i.batches.find((b) => b.batch_no === x.batch_no)?.qty_remaining || 0));
     if (over) return { item: i, message: `batch ${over.batch_no} does not have ${over.qty}` };
-    if (sum(a) !== q3(i.qty)) return { item: i, message: `batches add up to ${sum(a)}, dispatch qty is ${i.qty}` };
+    const picked = sum(a);
+    if (picked > q3(i.qty)) return { item: i, message: `batches add up to ${picked}, dispatch qty is ${i.qty}` };
+    if (picked < q3(i.qty)) {
+      return { item: i, warning: true, short: q3(i.qty - picked),
+        message: `${q3(i.qty - picked)} ${i.uom || ""} without batch stock${i.available < i.qty ? ` (only ${i.available} in stock)` : ""}` };
+    }
     return null;
   }).filter(Boolean);
 
@@ -116,7 +121,7 @@ const BatchPicker = ({ indentNumber, qtyByItem, onChange }) => {
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Typography variant="subtitle1" fontWeight={700}>Pick from batches</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Oldest batches first. Use Change to pick differently.</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Oldest batches first. Use Change to pick differently. Items without enough batch stock can still be dispatched.</Typography>
         <Stack spacing={1}>
           {items.filter((i) => i.qty > 0).map((i) => {
             const p = problems.find((x) => x.item.item_code === i.item_code);
@@ -124,14 +129,16 @@ const BatchPicker = ({ indentNumber, qtyByItem, onChange }) => {
               <Box key={i.item_code} sx={{ py: 0.75, borderBottom: 1, borderColor: "divider" }}>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <Typography variant="body2" fontWeight={600} sx={{ flexGrow: 1 }}>{i.product_name} · {i.qty} {i.uom || ""}</Typography>
-                  {!p?.short && <Button size="small" onClick={() => setEditItem(i)}>Change</Button>}
+                  {i.batches.length > 0 && <Button size="small" onClick={() => setEditItem(i)}>Change</Button>}
                 </Stack>
                 <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", rowGap: 0.5, mt: 0.5 }}>
                   {(alloc[i.item_code] || []).map((a) => (
                     <Chip key={a.batch_no} size="small" variant="outlined" label={`${a.batch_no} × ${a.qty}`} sx={{ fontFamily: "monospace" }} />
                   ))}
                 </Stack>
-                {p && <Typography variant="caption" color="error.main">{p.short ? `Not enough stock: ${p.message}. Enter a batch first.` : p.message}</Typography>}
+                {p && <Typography variant="caption" color={p.warning ? "warning.dark" : "error.main"}>
+                  {p.warning ? `Warning: ${p.message}. You can still dispatch; it is recorded as NO BATCH.` : p.message}
+                </Typography>}
               </Box>
             );
           })}

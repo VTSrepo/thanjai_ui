@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Box, Button, Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
+import {
+  Alert, Box, Button, Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
 import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import { useNavigate } from "react-router-dom";
@@ -19,15 +20,16 @@ const Home = () => {
 
   useEffect(() => {
     const scope = { branch_id: user?.branch_id };
-    Promise.all([fetchIndents(["D"], scope), fetchIndents(["C", "A", "F"], scope)])
-      .then(([toReceive, open]) =>
+    Promise.all([fetchIndents(["D"], scope), fetchIndents(["C", "A", "F"], scope), fetchIndents(["Q"], scope)])
+      .then(([toReceive, open, changes]) =>
         setCounts({
           toReceive: toReceive.length,
           open: open.length,
+          changes: changes.length,
           priority: [...toReceive, ...open].filter((i) => i.priority_flag === "Y").length,
         })
       )
-      .catch(() => setCounts({ toReceive: 0, open: 0, priority: 0 }));
+      .catch(() => setCounts({ toReceive: 0, open: 0, changes: 0, priority: 0 }));
   }, [user]);
 
   const tiles = [
@@ -44,6 +46,12 @@ const Home = () => {
           Welcome, {user?.user_name}
         </Typography>
         <InvoiceAlerts />
+        {counts?.changes > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}
+            action={<Button color="inherit" size="small" onClick={() => navigate("/indents", { state: { tab: "changes" } })}>Open</Button>}>
+            The kitchen sent back {counts.changes} indent(s): some items are short. Change them and send again.
+          </Alert>
+        )}
         <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3, 1fr)" }, mb: 2 }}>
           {tiles.map((t) => (
             <Card key={t.label}>

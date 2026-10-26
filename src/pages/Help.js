@@ -25,7 +25,7 @@ const ROLES = {
   admin: {
     name: "Admin", color: "#6a1b9a", Icon: AdminPanelSettingsIcon,
     short: "Owner / head office. Sets everything up and can do every task.",
-    screens: ["Master → Branch, User, Role, Product", "Indents → To finalize", "Payments", "Reports", "Admin Home (alerts)"],
+    screens: ["Master → Branch, User, Role, Product", "Indents → To invoice", "Payments", "Reports", "Admin Home (alerts)"],
     tips: [
       "Set up kitchens first and give each a 2-letter short code (e.g. CK, TS) – batch numbers start with it.",
       "Give every person their own login. Their role decides which screens they see.",
@@ -35,12 +35,12 @@ const ROLES = {
   },
   ops: {
     name: "Operations Manager", chip: "Ops Manager", color: "#1565c0", Icon: ManageAccountsIcon,
-    short: "Runs the day: finalizes invoices, watches stock and batches, follows up payments.",
-    screens: ["Indents → To finalize", "Batches", "Inventory", "Payments", "Reports"],
+    short: "Runs the day: issues invoices after receipt, watches stock and batches, follows up payments.",
+    screens: ["Indents → To invoice", "Batches", "Inventory", "Payments", "Reports"],
     tips: [
-      "Finalize accepted indents quickly – the kitchen cannot dispatch until you do.",
+      "After a branch or customer confirms receipt, the indent appears under To invoice – finalize it to issue the invoice.",
       "Taxable or not is decided per item when you finalize, not on the final total.",
-      "A red stock alert means the kitchen cannot dispatch: make sure today's batch is entered.",
+      "Items dispatched as NO BATCH mean the batch was not entered: ask the kitchen to enter it so stock stays right.",
       "Record part payments as they come in; the overdue badge shows who to call.",
     ],
   },
@@ -50,17 +50,19 @@ const ROLES = {
     screens: ["Indents (accept, dispatch)", "Batches (enter what you cooked)", "Inventory"],
     tips: [
       "Accept new indents as soon as they arrive and set the delivery date.",
+      "Short of something? Use Send back: note what you have, and the branch changes or replaces the item.",
       "Enter each batch when it is cooked and stick the printed label on the tray.",
-      "At dispatch the app picks the oldest batch first – you can change the split if needed.",
-      "If the app says 'not enough stock', enter the batch first, then dispatch.",
+      "At dispatch the app picks the oldest batch first. Without enough batch stock you get a warning but can still dispatch.",
+      "Print the packing slip at dispatch and send it with the delivery.",
     ],
   },
   branch: {
     name: "Branch / Restaurant", chip: "Branch", color: "#2e7d32", Icon: StorefrontIcon,
     short: "Orders food from the kitchen and confirms what arrived.",
-    screens: ["Home", "Indents → New indent", "Indents → Receive", "My invoices"],
+    screens: ["Home", "Indents → New indent", "Indents → Needs change", "Indents → Receive", "My invoices"],
     tips: [
-      "Order before the kitchen's cut-off so it can plan the cooking.",
+      "Order before the kitchen's cut-off so it can plan the cooking. Pick the kitchen first – you see only its items.",
+      "If the kitchen sends an indent back, open Needs change: change the quantity, remove or add an item, and send again.",
       "When food arrives, enter the quantity you actually received – the invoice uses it.",
       "Note any damage or shortage while receiving; it stays on the record.",
       "Your invoices and what is still due are under My invoices.",
@@ -71,7 +73,7 @@ const ROLES = {
     short: "Outside customer who buys from the kitchen, receives and pays invoices.",
     screens: ["Home", "Indents → New indent", "Indents → Receive", "My invoices"],
     tips: [
-      "Works exactly like a branch: order, receive, then the invoice appears.",
+      "Works exactly like a branch: order, check the packing slip and confirm receipt, then head office issues the invoice.",
       "Payment terms (e.g. Net 30) are set by head office and shown on each invoice.",
       "Download any invoice as PDF from My invoices.",
     ],
@@ -98,10 +100,10 @@ const SETUP = [
 
 const ORDER_DAY = [
   { role: "branch", title: "Branch orders food", where: "Indents → New indent", alt: "franchise" },
-  { role: "kitchen", title: "Kitchen accepts and sets the delivery date", where: "Indents" },
-  { role: "ops", title: "Head office finalizes the invoice", where: "Indents → To finalize", hint: "Tax per item, payment terms, extra charges" },
-  { role: "kitchen", title: "Kitchen cooks, enters the batch and dispatches", where: "Batches, then Indents → Dispatch" },
-  { role: "branch", title: "Branch receives – invoice is created", where: "Indents → Receive", alt: "franchise" },
+  { role: "kitchen", title: "Kitchen accepts (or sends back if short) and sets the delivery date", where: "Indents", hint: "Sent back: branch changes items and sends again" },
+  { role: "kitchen", title: "Kitchen cooks, enters the batch and dispatches with a packing slip", where: "Batches, then Indents → Dispatch" },
+  { role: "branch", title: "Branch receives and confirms what arrived", where: "Indents → Receive", alt: "franchise" },
+  { role: "ops", title: "Head office finalizes – invoice is issued", where: "Indents → To invoice", hint: "Tax per item, payment terms, extra charges" },
   { role: "ops", title: "Payment is recorded", where: "Payments" },
 ];
 
@@ -272,7 +274,7 @@ const Help = () => {
             ["Forgot your password?", "Ask your admin. They open Master → User and use the key icon to give you a temporary password."],
             ["Not seeing a screen?", "Your role decides what you see. An admin can change it in Master → Role."],
             ["Works on your phone", "Every screen works on a phone. Tap the menu icon at the top left."],
-            ["Batch numbers", "Kitchen code + product code + date + number, e.g. CKSAM1018260004. It shows where every tray went."],
+            ["Batch numbers", "Kitchen code + product code + day of the year + year + number, e.g. CKC6529926001 (26 Oct 2026). It shows where every tray went."],
           ].map(([t, d]) => (
             <Grid item xs={12} sm={6} md={3} key={t}>
               <Card sx={{ height: "100%" }}><CardContent>

@@ -44,9 +44,11 @@ const IndentReports = () => {
 
   const statusOptions = [
     { value: "C", label: "Created" },
+    { value: "Q", label: "Changes requested" },
     { value: "A", label: "Accepted" },
     { value: "D", label: "Dispatched" },
     { value: "R", label: "Received" },
+    { value: "I", label: "Invoiced" },
   ];
   
   const retrieveReport = () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Autocomplete,
   Button,
@@ -19,6 +19,14 @@ const ItemPickerDialog = ({ open, products, initial, existingCodes = [], onClose
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState("");
   const [fullQty, setFullQty] = useState(false);
+  // A-Z; typing matches any part of the name or the product code
+  const options = useMemo(() => [...(products || [])].sort((a, b) =>
+    String(a.product_name || "").localeCompare(String(b.product_name || ""), undefined, { sensitivity: "base" })), [products]);
+  const filterOptions = (opts, { inputValue }) => {
+    const q = inputValue.trim().toLowerCase();
+    if (!q) return opts;
+    return opts.filter((p) => String(p.product_name || "").toLowerCase().includes(q) || String(p.short_code || "").toLowerCase() === q);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +55,11 @@ const ItemPickerDialog = ({ open, products, initial, existingCodes = [], onClose
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Autocomplete
-            options={products}
+            options={options}
+            filterOptions={filterOptions}
+            autoHighlight
+            openOnFocus
+            noOptionsText={products?.length ? "No item matches" : "This kitchen has no items set up"}
             value={product}
             onChange={(e, v) => setProduct(v)}
             disabled={!!initial}
@@ -56,6 +68,7 @@ const ItemPickerDialog = ({ open, products, initial, existingCodes = [], onClose
             renderOption={(props, p) => (
               <li {...props} key={p.product_id}>
                 {p.product_name}
+                {p.short_code ? <span style={{ color: "#888", marginLeft: 8, fontFamily: "monospace" }}>{p.short_code}</span> : null}
                 {p.uom ? <span style={{ color: "#888", marginLeft: 8 }}>{p.uom}</span> : null}
               </li>
             )}
@@ -63,7 +76,7 @@ const ItemPickerDialog = ({ open, products, initial, existingCodes = [], onClose
               <TextField
                 {...params}
                 label="Item"
-                placeholder="Type to search"
+                placeholder="Type part of the name or the code"
                 error={!!duplicate}
                 helperText={duplicate ? "Already in this indent - edit that line instead" : " "}
               />

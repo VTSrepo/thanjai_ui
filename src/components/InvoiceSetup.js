@@ -30,8 +30,8 @@ import { money, termLabel } from "../utilities/helpers";
 const r2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 /**
- * Admin step between kitchen accept and dispatch: per-item tax, payment terms and extra charges.
- * The invoice itself is still issued when the branch confirms receipt (on received qty) using these settings.
+ * Head-office step after the branch / customer confirms receipt: per-item tax, payment terms and extra charges.
+ * Finalizing issues the invoice on the received quantities (status R -> I).
  */
 const InvoiceSetup = ({ indentNumber, onDone }) => {
   const toast = useToast();
@@ -107,7 +107,7 @@ const InvoiceSetup = ({ indentNumber, onDone }) => {
   if (loading) return <Loader inline />;
   if (!setup) return error ? <Alert severity="error">{error}</Alert> : null;
 
-  const finalized = setup.status === "F";
+  const finalized = setup.status === "I";
   const taxName = `${setup.gst_label || "GST"}${Number(setup.qst_rate) > 0 ? "/QST" : ""}`;
 
   return (
@@ -118,8 +118,8 @@ const InvoiceSetup = ({ indentNumber, onDone }) => {
           {finalized && <Chip size="small" color="success" label="Finalized" />}
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Bill to <b>{setup.bill_to_name}</b>. Decide tax per item, payment terms and any extra charges. The kitchen can
-          dispatch only after you finalize. The invoice is issued when the branch confirms receipt.
+          Bill to <b>{setup.bill_to_name}</b>. Receipt is confirmed; quantities below are what was received. Decide tax per
+          item, payment terms and any extra charges, then finalize to issue the invoice.
         </Typography>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -201,11 +201,11 @@ const InvoiceSetup = ({ indentNumber, onDone }) => {
               </Stack>
             ))}
             <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
-              <Typography fontWeight={700}>Estimated total</Typography>
+              <Typography fontWeight={700}>Invoice total</Typography>
               <Typography fontWeight={700}>{money(totals.total, true)}</Typography>
             </Stack>
             <Typography variant="caption" color="text.secondary">
-              On ordered quantities. The final invoice uses the quantities the branch receives.
+              On the quantities received.
             </Typography>
           </Box>
         )}
@@ -217,7 +217,7 @@ const InvoiceSetup = ({ indentNumber, onDone }) => {
             )}
             <Button variant="contained" disabled={invalid || saving}
               onClick={() => (finalized ? save(true) : setConfirm(true))}>
-              {saving ? "Saving..." : finalized ? "Save changes" : "Finalize invoice"}
+              {saving ? "Saving..." : "Finalize and issue invoice"}
             </Button>
           </Stack>
         )}
@@ -228,12 +228,12 @@ const InvoiceSetup = ({ indentNumber, onDone }) => {
         <DialogContent>
           <Typography>
             Terms: <b>{termLabel(term)}</b>. {items.filter((i) => !i.taxable).length} non-taxable item(s), {charges.length} extra charge(s).
-            The kitchen will then be able to dispatch. You can still change these until dispatch.
+            The invoice is issued now and the branch / customer can see it. It cannot be changed afterwards.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button color="secondary" onClick={() => setConfirm(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => save(true)}>Finalize</Button>
+          <Button variant="contained" onClick={() => save(true)}>Issue invoice</Button>
         </DialogActions>
       </Dialog>
     </Card>

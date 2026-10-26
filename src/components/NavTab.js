@@ -7,6 +7,7 @@ import ChecklistRtlIcon from "@mui/icons-material/ChecklistRtl";
 import CallReceivedIcon from "@mui/icons-material/CallReceived";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import EditNoteIcon from "@mui/icons-material/EditNote";
 import CreateIndent from "../pages/CreateIndent";
 import IndentListing from "../pages/IndentListing";
 import { useLocation } from "react-router-dom";
@@ -15,30 +16,32 @@ import { fetchIndents, getAllBranches } from "../utilities/service";
 import StockAlerts from "./StockAlerts";
 
 /*
- * Tabs by role (BRD "Indent Management"):
- *   Branch  (B): New indent · In progress (C + A + F, view only) · To receive (D)
- *   Kitchen (K): To accept (C) · To dispatch (F = admin finalized the invoice)
- *   Admin   (A): all queues; finalizes the invoice for accepted indents (A -> F)
+ * Tabs by role:
+ *   Branch  (B): To receive (D) · Needs change (Q, kitchen sent it back) · New indent · In progress (C, A) · Received (R, I)
+ *   Kitchen (K): To accept (C; Q shown, waiting for the branch) · To dispatch (A) · Dispatched (D, R, I)
+ *   Admin / Ops: To accept · To dispatch · To receive · To invoice (R: finalize the invoice after receipt) · Invoiced (I)
  *   External customer (X): same as branch, limited to their own orders
+ * F = finalized under the old flow (before dispatch); listed with A.
  */
 const TABS = {
   create: { label: "New indent", icon: <AddShoppingCartIcon /> },
+  changes: { label: "Needs change", icon: <EditNoteIcon />, statuses: ["Q"], empty: "Nothing sent back by the kitchen." },
   progress: { label: "In progress", icon: <HourglassTopIcon />, statuses: ["C", "A", "F"], empty: "No open requests." },
-  finalize: { label: "To finalize", icon: <ReceiptLongIcon />, statuses: ["A"], empty: "No accepted indents waiting for an invoice decision." },
-  accept: { label: "To accept", icon: <ChecklistRtlIcon />, statuses: ["C"], empty: "No new requests to accept." },
-  dispatch: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["F"], empty: "Nothing waiting for dispatch." },
-  // kitchen also sees accepted indents still waiting for the admin's invoice step (badge counts only ready ones)
-  dispatchK: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["F", "A"], badgeStatuses: ["F"], empty: "Nothing waiting for dispatch." },
+  accept: { label: "To accept", icon: <ChecklistRtlIcon />, statuses: ["C", "Q"], badgeStatuses: ["C"], empty: "No new requests to accept." },
+  dispatch: { label: "To dispatch", icon: <LocalShippingIcon />, statuses: ["A", "F"], empty: "Nothing waiting for dispatch." },
   receive: { label: "To receive", icon: <CallReceivedIcon />, statuses: ["D"], empty: "Nothing on the way." },
-  done: { label: "Received", icon: <TaskAltIcon />, statuses: ["R"], empty: "No completed indents yet.", noBadge: true },
+  invoice: { label: "To invoice", icon: <ReceiptLongIcon />, statuses: ["R"], empty: "No received indents waiting for an invoice." },
+  done: { label: "Received", icon: <TaskAltIcon />, statuses: ["R", "I"], empty: "No completed indents yet.", noBadge: true },
+  doneK: { label: "Dispatched", icon: <TaskAltIcon />, statuses: ["D", "R", "I"], empty: "Nothing dispatched yet.", noBadge: true },
+  doneA: { label: "Invoiced", icon: <TaskAltIcon />, statuses: ["I"], empty: "No invoiced indents yet.", noBadge: true },
 };
 
 const ROLE_TABS = {
-  B: ["receive", "create", "progress", "done"],
-  K: ["accept", "dispatchK", "done"],
-  A: ["accept", "finalize", "dispatch", "receive", "done"],
-  O: ["accept", "finalize", "dispatch", "receive", "done"],
-  X: ["receive", "create", "progress", "done"],
+  B: ["receive", "changes", "create", "progress", "done"],
+  K: ["accept", "dispatch", "doneK"],
+  A: ["accept", "dispatch", "receive", "invoice", "doneA"],
+  O: ["accept", "dispatch", "receive", "invoice", "doneA"],
+  X: ["receive", "changes", "create", "progress", "done"],
 };
 
 export default function NavTab() {

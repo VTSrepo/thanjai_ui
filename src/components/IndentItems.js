@@ -98,6 +98,12 @@ const IndentItems = ({ items, mode = "view", onChange, onEdit, onDelete }) => {
                 {showReceived && mode !== "receive" && <Qty label="Received" value={it.qty_received} />}
               </Stack>
 
+              {mode === "create" && it.kitchen_remarks && (
+                <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+                  Kitchen: {it.kitchen_remarks}{num(it.qty_agreed_kitchen) !== null ? ` (available ${it.qty_agreed_kitchen})` : ""}
+                </Typography>
+              )}
+
               {mode === "view" && (it.kitchen_remarks || it.discrepancy_notes || it.damage_notes) && (
                 <Box sx={{ mt: 1 }}>
                   {it.kitchen_remarks && <Typography variant="body2">Kitchen: {it.kitchen_remarks}</Typography>}

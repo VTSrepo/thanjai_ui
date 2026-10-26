@@ -193,6 +193,12 @@ function ProductForm() {
   const handleCancel = () => {
     navigate("/product-master");
   };
+  // UOM list match ignores capitals and spaces (e.g. product "PORTION" vs list "portion"); an unknown unit is still shown
+  const norm = (v) => String(v || "").trim().toLowerCase();
+  const uomMatch = (uom || []).find((o) => norm(o.ref_code) === norm(formData.uom));
+  const uomValue = uomMatch ? uomMatch.ref_code : formData.uom || "";
+  const uomOptions = uomMatch || !formData.uom ? uom || [] : [...(uom || []), { ref_code: formData.uom, ref_desc: formData.uom }];
+
   return (
     <>
       <ResponsiveAppBar onLogout={handleLogout} user={user} />
@@ -224,10 +230,10 @@ function ProductForm() {
                   <Select
                     label="UOM"
                     name="uom"
-                    value={formData.uom  || ''}
+                    value={uomValue}
                     onChange={handleChange}
                   >
-                    {uom?.map((mode) => (
+                    {uomOptions.map((mode) => (
                       <MenuItem key={mode.ref_code} value={mode.ref_code}>
                         {mode.ref_desc}
                       </MenuItem>

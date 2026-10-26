@@ -241,6 +241,13 @@ export const resetSubCustomerPassword = (id, new_password) =>
 export const getBatchSuggest = (indent_number, qty) =>
   get(`/batch-suggest/${orgId()}/${encodeURIComponent(indent_number)}?${qs({ qty: Object.entries(qty || {}).map(([k, v]) => `${k}:${v}`).join(",") })}`,
     "Could not load batches");
+export const requestIndentChange = (b) => post("/indent/request-change", b, "Could not send the indent back");
+export const resubmitIndent = (b) => post("/indent/resubmit", b, "Could not resubmit the indent");
+// products a kitchen makes (its own producing kitchen; older products without one fall back to their branch), A-Z
+export const productsForKitchen = (products, kitchenId) =>
+  (products || [])
+    .filter((p) => (p.producing_branch_id || p.branch_id) === kitchenId)
+    .sort((a, b) => String(a.product_name || "").localeCompare(String(b.product_name || ""), undefined, { sensitivity: "base" }));
 export const getIndentBatches = (indent_number) => get(`/indent-batches/${orgId()}/${encodeURIComponent(indent_number)}`, "Could not load batches");
 export const getStock = (f) => get(`/stock/${orgId()}?${qs(f)}`, "Could not load stock");
 export const getStockDaily = (f) => get(`/stock-daily/${orgId()}?${qs(f)}`, "Could not load inventory");

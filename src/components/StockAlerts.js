@@ -23,8 +23,8 @@ const StockAlerts = ({ compact = false, link = "/inventory", batchLink = "/batch
   const items = [];
   if (a.shortfall.length) {
     items.push(
-      <Alert key="s" severity="error" action={can("BATCHES", true) ? btn("BATCHES", batchLink, "Add batch") : btn("INVENTORY", link, "Stock")}>
-        <AlertTitle sx={{ mb: 0.5 }}>Not enough stock for accepted indents</AlertTitle>
+      <Alert key="s" severity="warning" action={can("BATCHES", true) ? btn("BATCHES", batchLink, "Add batch") : btn("INVENTORY", link, "Stock")}>
+        <AlertTitle sx={{ mb: 0.5 }}>Not enough batch stock for accepted indents (dispatch is still allowed)</AlertTitle>
         {a.shortfall.map((s) => (
           <Typography key={s.product_id} variant="body2">
             {s.product_name}: need {s.reserved}, have {s.on_hand} — short <b>{s.short} {s.uom || ""}</b>

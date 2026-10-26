@@ -40,7 +40,7 @@ const Admin = () => {
 
   // Accepted indents waiting for the admin's invoice decision (kitchen cannot dispatch until then)
   useEffect(() => {
-    fetchIndents(["A"], {}).then((l) => setToFinalize(l.length)).catch(() => {});
+    fetchIndents(["R"], {}).then((l) => setToFinalize(l.length)).catch(() => {});
   }, []);
 
   const load = useCallback(async (r) => {
@@ -76,8 +76,8 @@ const Admin = () => {
         <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Welcome, {user?.user_name}</Typography>
         {toFinalize > 0 && (
           <Alert severity="warning" sx={{ mb: 2 }}
-            action={<Button color="inherit" size="small" onClick={() => navigate("/indents", { state: { tab: "finalize" } })}>Open</Button>}>
-            {toFinalize} accepted indent(s) waiting for you to finalize the invoice before the kitchen can dispatch.
+            action={<Button color="inherit" size="small" onClick={() => navigate("/indents", { state: { tab: "invoice" } })}>Open</Button>}>
+            {toFinalize} received indent(s) waiting for you to finalize and issue the invoice.
           </Alert>
         )}
         {can("INVENTORY") && <StockAlerts />}

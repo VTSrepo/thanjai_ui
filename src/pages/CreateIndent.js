@@ -5,6 +5,10 @@ import {
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   MenuItem,
   Snackbar,
   Stack,
@@ -20,7 +24,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import IndentItems from "../components/IndentItems";
 import ItemPickerDialog from "../components/ItemPickerDialog";
 import Loader from "../components/Loader";
-import { createNewIndent, getAllBranches, getProducts } from "../utilities/service";
+import { createNewIndent, getAllBranches, getProducts, productsForKitchen } from "../utilities/service";
 import { useUser, ROLE } from "../utilities/UserContext";
 import { money } from "../utilities/helpers";
 
@@ -75,6 +79,14 @@ const CreateIndent = ({ onCreated }) => {
   }, []);
 
   const set = (name, value) => setForm((f) => ({ ...f, [name]: value }));
+  // only the selected kitchen's products, A-Z
+  const kitchenProducts = productsForKitchen(products, form.kitchen_id);
+  const [kitchenSwitch, setKitchenSwitch] = useState(null);
+  const chooseKitchen = (id) => {
+    if (id === form.kitchen_id) return;
+    if (rows.length) return setKitchenSwitch(id); // items belong to the old kitchen: confirm clearing them
+    set("kitchen_id", id);
+  };
   const isExternal = user?.user_type === ROLE.EXTERNAL;
   // External customers see an estimate from current prices and the kitchen's tax rates (final amounts are on the invoice)
   const estimate = (() => {
@@ -141,7 +153,8 @@ const CreateIndent = ({ onCreated }) => {
         <CardContent>
           <Typography fontWeight={700} sx={{ mb: 1.5 }}>Request details</Typography>
           <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(4, 1fr)" } }}>
-            <TextField select label="Kitchen" value={form.kitchen_id} onChange={(e) => set("kitchen_id", e.target.value)} required>
+            <TextField select label="Kitchen" value={form.kitchen_id} onChange={(e) => chooseKitchen(e.target.value)} required
+              helperText={`${kitchenProducts.length} item(s) made here`}>
               {kitchens.map((k) => (
                 <MenuItem key={k.branch_id} value={k.branch_id}>{k.branch_name}</MenuItem>
               ))}
@@ -221,11 +234,21 @@ const CreateIndent = ({ onCreated }) => {
       <ItemPickerDialog
         open={picker.open}
         initial={picker.item}
-        products={products}
+        products={kitchenProducts}
         existingCodes={rows.map((r) => r.item_code)}
         onClose={() => setPicker({ open: false, item: null })}
         onSave={saveItem}
       />
+      <Dialog open={!!kitchenSwitch} onClose={() => setKitchenSwitch(null)}>
+        <DialogTitle>Change kitchen?</DialogTitle>
+        <DialogContent>
+          <Typography>Each kitchen has its own items. Changing the kitchen removes the {rows.length} item(s) already added.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button color="secondary" onClick={() => setKitchenSwitch(null)}>Keep kitchen</Button>
+          <Button variant="contained" onClick={() => { setRows([]); set("kitchen_id", kitchenSwitch); setKitchenSwitch(null); }}>Change and clear items</Button>
+        </DialogActions>
+      </Dialog>
       <Snackbar open={!!toast} autoHideDuration={3000} onClose={() => setToast("")} message={toast} />
     </Box>
   );

@@ -74,7 +74,8 @@ const Action = ({ row, onOpen }) => {
       </Button>
     );
   }
-  if (row.status !== "R") return <Typography variant="caption" color="text.secondary">After receipt</Typography>;
+  if (row.status === "R") return <Typography variant="caption" color="warning.dark">To finalize (Indents → To invoice)</Typography>;
+  if (row.status !== "I") return <Typography variant="caption" color="text.secondary">After receipt</Typography>;
   const blocked = row.price_missing?.length > 0;
   return (
     <Tooltip title={blocked ? `Price missing: ${row.price_missing.join(", ")}` : ""}>
@@ -125,7 +126,7 @@ const InvoiceReport = () => {
 
   const summary = useMemo(() => {
     const inv = rows.filter((r) => r.invoice_number);
-    const pending = rows.filter((r) => !r.invoice_number && r.status === "R");
+    const pending = rows.filter((r) => !r.invoice_number && ["R", "I"].includes(r.status));
     const sum = (list, k = "total_amount") => list.reduce((s, r) => s + Number(r[k] || 0), 0);
     return {
       count: rows.length, invoiced: inv.length, invoicedTotal: sum(inv),
