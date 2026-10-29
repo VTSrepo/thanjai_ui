@@ -48,6 +48,8 @@ const Chairs = ({ n, side, color }) => {
 const FloorMap = ({ tables, decor = [], stateOf, onTableClick, tipOf, captionOf, dark = false, minWidth = { xs: 560, sm: 680 } }) => {
   const L = dark ? LOOK.dark : LOOK.light;
   const scroller = useRef(null);
+  // phones / tablets (no mouse): no tooltips - on iPhone a tooltip can swallow the first tap
+  const hoverable = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(hover: hover)").matches : true;
   const selectedKey = tables.filter((t) => stateOf(t) === "selected").map((t) => t.table_id).join(",");
   // phones: the plan scrolls sideways - bring the chosen tables into view
   useEffect(() => {
@@ -97,7 +99,8 @@ const FloorMap = ({ tables, decor = [], stateOf, onTableClick, tipOf, captionOf,
                 borderRadius: t.seats <= 2 ? "999px" : "10px", boxShadow: s.glow || "none", opacity: s.opacity || 1,
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", lineHeight: 1.1,
                 cursor: clickable ? "pointer" : onTableClick ? "not-allowed" : "default", transition: "transform .15s, box-shadow .2s",
-                "&:hover": clickable ? { transform: "translate(-50%, -50%) scale(1.06)" } : {},
+                "@media (hover: hover)": { "&:hover": clickable ? { transform: "translate(-50%, -50%) scale(1.06)" } : {} },
+                touchAction: "manipulation", WebkitTapHighlightColor: "transparent",
                 "&:focus-visible": { outline: "2px solid #FCB12A", outlineOffset: 3 },
               }}
             >
@@ -110,7 +113,7 @@ const FloorMap = ({ tables, decor = [], stateOf, onTableClick, tipOf, captionOf,
             </Box>
           );
           const tip = tipOf ? tipOf(t, st) : null;
-          return tip ? <Tooltip key={t.table_id} title={tip} arrow placement="top">{box}</Tooltip> : <React.Fragment key={t.table_id}>{box}</React.Fragment>;
+          return tip && hoverable ? <Tooltip key={t.table_id} title={tip} arrow placement="top">{box}</Tooltip> : <React.Fragment key={t.table_id}>{box}</React.Fragment>;
         })}
       </Box>
     </Box>

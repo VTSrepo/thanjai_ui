@@ -60,6 +60,10 @@ const ReserveHome = () => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const tablesRef = useRef(null);
+  const timeRef = useRef(null);
+  // phones: after each choice, glide to the next step so nobody has to hunt for it
+  const isPhone = () => window.innerWidth < 900;
+  const glide = (ref) => { if (isPhone()) setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); };
   const detailsRef = useRef(null);
 
   useEffect(() => {
@@ -116,13 +120,13 @@ const ReserveHome = () => {
   const pickSlot = (s) => {
     setSeatingId(s.seating_id); setNotice(""); setError("");
     suggest(s, guests);
-    if (window.innerWidth < 900) setTimeout(() => tablesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    glide(tablesRef);
   };
 
   const pickGuests = (g) => {
     setGuests(g); setNotice(""); setError("");
     if (slot && g <= maxParty && fits(slot, g)) suggest(slot, g);
-    else { setSeatingId(null); setChosen([]); setPickNote(""); }
+    else { setSeatingId(null); setChosen([]); setPickNote(""); if (g <= maxParty) glide(timeRef); }
   };
 
   const chosenTables = chosen.map((id) => byId[id]).filter(Boolean);
@@ -249,7 +253,7 @@ const ReserveHome = () => {
               )}
             </Step>
 
-            <Step n={2} title="Pick a time" hint={avail && !bigParty ? `${openCount} time${openCount === 1 ? "" : "s"} open for ${guests} guest${guests === 1 ? "" : "s"} on ${longDate(date).split(",")[0]}` : ""}>
+            <Step n={2} title="Pick a time" innerRef={timeRef} hint={avail && !bigParty ? `${openCount} time${openCount === 1 ? "" : "s"} open for ${guests} guest${guests === 1 ? "" : "s"} on ${longDate(date).split(",")[0]}` : ""}>
               <Legend items={[["Available", LG.free], ["Few seats left", LG.few], ["Fully booked / closed", LG.full], ["Your choice", LG.sel]]} />
               {!avail ? <CircularProgress size={24} /> : !avail.seatings.length ? (
                 <Typography color="text.secondary">We are closed on this day. Please choose another date.</Typography>
@@ -300,6 +304,10 @@ const ReserveHome = () => {
                 </Button>
               </Stack>
               {pickNote && <Typography variant="body2" sx={{ mt: 1, color: "text.secondary", fontStyle: "italic" }}>{pickNote}</Typography>}
+              {slot && status.ok && (
+                <Button fullWidth variant="outlined" color="secondary" onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  sx={{ display: { xs: "flex", md: "none" }, mt: 2, borderRadius: "10px" }}>Next: your details ↓</Button>
+              )}
               {notice && <Alert severity="warning" sx={{ mt: 1.5 }} onClose={() => setNotice("")}>{notice}</Alert>}
             </Step>
 
@@ -312,7 +320,7 @@ const ReserveHome = () => {
               </Grid>
               {/* hidden from people; bots fill it in */}
               <Box component="input" tabIndex={-1} autoComplete="off" aria-hidden="true" name="website" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })}
-                sx={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }} />
+                sx={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0, fontSize: 16 }} />
             </Step>
           </Card>
         </Grid>
@@ -354,7 +362,7 @@ const ReserveHome = () => {
       {/* phones: summary + Reserve always in reach */}
       {slot && (
         <Box sx={{ display: { xs: "flex", md: "none" }, position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 20, gap: 1.5, alignItems: "center",
-          px: 2, py: 1.25, bgcolor: "rgba(20,20,20,.96)", borderTop: `1px solid ${ORANGE}`, backdropFilter: "blur(6px)" }}>
+          px: 2, pt: 1.25, pb: "calc(10px + env(safe-area-inset-bottom))", bgcolor: "rgba(20,20,20,.96)", borderTop: `1px solid ${ORANGE}`, backdropFilter: "blur(6px)" }}>
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography noWrap sx={{ fontWeight: 700, fontSize: 14 }}>{new Date(`${date}T12:00:00`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })} · {time12(slot.start_time)} · {guests} guests</Typography>
             <Typography noWrap sx={{ fontSize: 12, color: status.ok ? "#3BB273" : GOLD }}>{chosen.length ? `Table ${chosen.join(" + ")}` : "Choose a table"}</Typography>
