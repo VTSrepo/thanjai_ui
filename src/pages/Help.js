@@ -116,6 +116,14 @@ const ONLINE_WEEK = [
 ];
 
 // ---------------------------------------------------------------- pieces
+const RESERVATION = [
+  { role: "ops", title: "Set the limits, seatings and tables once", where: "Reservations → Reservation setup", hint: "By default 40 chairs per seating can be reserved; the rest are for walk-ins" },
+  { role: "customer", title: "Guest picks date, time and table(s) on the floor plan", where: "Website /reserve", hint: "Confirmed at once; e-mail to the guest and the restaurant" },
+  { role: "branch", title: "Phone booking or staff block", where: "Reservations → Floor plan & bookings", hint: "Click free tables, then Book or Block - counts toward the limit" },
+  { role: "branch", title: "Print the board for each seating", where: "Reservations → Reports & print", hint: "Floor plan with names, table list, bookings by customer" },
+  { role: "branch", title: "Push tables together for big groups; mark arrived or no-show", where: "Reservations → Floor plan & bookings" },
+];
+
 const RoleChip = ({ id, onOpen, size = "small" }) => {
   const r = ROLES[id];
   return (
@@ -253,17 +261,18 @@ const Help = () => {
         </CardContent></Card>
 
         <Typography variant="h6" fontWeight={800} sx={{ mb: 1 }}>How an order moves</Typography>
-        {online && (
-          <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2 }}>
-            <Tab value="daily" label="Branch & franchise orders (every day)" />
-            <Tab value="online" label="Online weekly meals (every week)" />
-          </Tabs>
-        )}
+        <Tabs value={tab} onChange={(e, v) => setTab(v)} variant="scrollable" sx={{ mb: 2 }}>
+          <Tab value="daily" label="Branch & franchise orders (every day)" />
+          {online && <Tab value="online" label="Online weekly meals (every week)" />}
+          <Tab value="reserve" label="Table reservations" />
+        </Tabs>
         <Box sx={{ mb: 2 }}>
-          <Journey steps={tab === "online" && online ? ONLINE_WEEK : ORDER_DAY} onOpen={setOpen} />
+          <Journey steps={tab === "reserve" ? RESERVATION : tab === "online" && online ? ONLINE_WEEK : ORDER_DAY} onOpen={setOpen} />
         </Box>
         <Alert severity="info" icon={<LightbulbIcon />} sx={{ mb: 4 }}>
-          {tab === "online" && online
+          {tab === "reserve"
+            ? "The limit counts the chairs of every booked table (3 guests on a 4-table use 4) and staff blocks too. When a seating reaches it, online booking for that time stops by itself."
+            : tab === "online" && online
             ? "Online orders reach the kitchen as one normal indent per kitchen, so cooking, batches and dispatch work exactly like branch orders."
             : "The invoice is made from what the branch actually received, so shortages are never charged."}
         </Alert>

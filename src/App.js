@@ -49,6 +49,13 @@ const ShopDone = lazy(() => import("./pages/shop/ShopDone"));
 const ShopLogin = lazy(() => import("./pages/shop/ShopLogin"));
 const ShopAccount = lazy(() => import("./pages/shop/ShopAccount"));
 const Help = lazy(() => import("./pages/Help"));
+// public table reservations - no login
+const ReserveHome = lazy(() => import("./pages/reserve/ReserveHome"));
+const ReserveBooking = lazy(() => import("./pages/reserve/ReserveBooking"));
+// staff reservations
+const Reservations = lazy(() => import("./pages/reservations/Reservations"));
+const ReservationReports = lazy(() => import("./pages/reservations/ReservationReports"));
+const ReservationSetup = lazy(() => import("./pages/reservations/ReservationSetup"));
 
 const { BRANCH: B, KITCHEN: K, EXTERNAL: X } = ROLE;
 
@@ -87,10 +94,14 @@ const ROUTES = [
   ["/online/menu", OnlineMenu, [], ["SUB_SETUP"]],
   ["/online/setup", OnlineSetup, [], ["SUB_SETUP"]],
   ["/online/customers", OnlineCustomers, [], ["SUB_CUSTOMERS"]],
+  ["/reservations", Reservations, [], ["RES_BOOKINGS"]],
+  ["/reservations/reports", ReservationReports, [], ["RES_REPORTS", "RES_BOOKINGS"]],
+  ["/reservations/setup", ReservationSetup, [], ["RES_SETUP"]],
 ];
 
 const SHOP_ROUTES = [
   ["/meals", ShopHome], ["/meals/order", ShopOrder], ["/meals/done", ShopDone], ["/meals/login", ShopLogin], ["/meals/account", ShopAccount],
+  ["/reserve", ReserveHome], ["/reserve/booking/:token", ReserveBooking],
 ];
 
 const Start = () => {

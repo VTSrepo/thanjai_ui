@@ -54,6 +54,14 @@ const MENU = [
     ],
   },
   {
+    label: "Reservations",
+    children: [
+      { label: "Floor plan & bookings", to: "/reservations", screen: "RES_BOOKINGS" },
+      { label: "Reports & print", to: "/reservations/reports", screen: "RES_REPORTS" },
+      { label: "Reservation setup", to: "/reservations/setup", screen: "RES_SETUP" },
+    ],
+  },
+  {
     label: "Master",
     children: [
       { label: "Product", to: "/product-master", screen: "M_PRODUCT" },

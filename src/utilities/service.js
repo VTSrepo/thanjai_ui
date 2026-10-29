@@ -2,7 +2,13 @@ import axios from "axios";
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 
-export const API_URL = process.env.REACT_APP_MODE  === "development" ?process.env.REACT_APP_API_URL_DEV:process.env.REACT_APP_API_URL_PROD;
+// development: the dev API; mobile app (served from "/"): the production API;
+// web build: the server the page came from, so the same build works on pm.thanjaicaterers.com and in a local test.
+export const API_URL = process.env.REACT_APP_MODE === "development"
+  ? process.env.REACT_APP_API_URL_DEV
+  : process.env.REACT_APP_ROUTER_BASENAME === "/" || typeof window === "undefined" || !/^https?:$/.test(window.location.protocol)
+    ? process.env.REACT_APP_API_URL_PROD
+    : `${window.location.origin}${process.env.PUBLIC_URL || "/v1"}`;
 
 export const getBranchLists = async () => {
   try {
@@ -550,3 +556,16 @@ export const getTSListing = async () => {
     throw error; // Rethrow error to be handled by calling components
   }
 };
+
+// ---- Table reservations (staff) ----
+export const getResDay = (date) => get(`/res/day/${orgId()}?date=${encodeURIComponent(date)}`, "Could not load reservations");
+export const searchRes = (q) => get(`/res/search/${orgId()}?q=${encodeURIComponent(q)}`, "Could not search bookings");
+export const createRes = (b) => post("/res/booking", b, "Could not save the booking");
+export const updateRes = (b) => post("/res/booking/update", b, "Could not change the booking");
+export const setResStatus = (b) => post("/res/booking/status", b, "Could not update the booking");
+export const getResSetup = () => get(`/res/setup/${orgId()}`, "Could not load reservation setup");
+export const saveResSettings = (b) => post("/res/settings", b, "Could not save the settings");
+export const saveResSeating = (b) => post("/res/seating", b, "Could not save the seating");
+export const saveResTable = (b) => post("/res/table", b, "Could not save the table");
+export const saveResClosure = (b) => post("/res/closure", b, "Could not close the date");
+export const deleteResClosure = (b) => post("/res/closure/delete", b, "Could not open the date again");
