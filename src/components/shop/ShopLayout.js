@@ -19,9 +19,12 @@ const ShopLayout = ({ shop: given, children, maxWidth = "lg" }) => {
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "#fffaf3" }}>
       <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Toolbar sx={{ gap: 1 }}>
-          <Typography component={Link} to="/meals" variant="h6" fontWeight={800} sx={{ flexGrow: 1, color: "primary.dark", textDecoration: "none" }}>
-            {shop?.name || "Weekly Meals"}
-          </Typography>
+          <Box component={Link} to="/meals" sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1.25, textDecoration: "none", minWidth: 0 }}>
+            <Box component="img" src={`${process.env.PUBLIC_URL || ""}/logo.png`} alt="" sx={{ height: { xs: 34, sm: 40 } }} />
+            <Typography variant="h6" fontWeight={800} noWrap sx={{ color: "primary.dark", fontSize: { xs: 16, sm: 20 }, display: { xs: "none", sm: "block" } }}>
+              {shop?.name || "Weekly Meals"}
+            </Typography>
+          </Box>
           <Button component={Link} to="/meals#menu" color="inherit" sx={{ display: { xs: "none", sm: "inline-flex" } }}>This week's menu</Button>
           {customer ? (
             <>
@@ -31,7 +34,7 @@ const ShopLayout = ({ shop: given, children, maxWidth = "lg" }) => {
           ) : (
             <>
               <Button component={Link} to="/meals/login" color="inherit">Log in</Button>
-              <Button component={Link} to="/meals/order" variant="contained">Start now</Button>
+              <Button component={Link} to="/meals/order" variant="contained">Build your plan</Button>
             </>
           )}
         </Toolbar>

@@ -57,7 +57,7 @@ const ReserveBooking = () => {
             {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}
             <Card>
               {[["Booking no.", b.booking_id], ["Date", longDate(b.booking_date)], ["Time", `${time12(b.start_time)} · ${b.seating_label}`],
-                ["Guests", `${b.guests}`], ["Table", `${b.tables.join(" + ")}${b.tables.length > 1 ? " (placed together for you)" : ""}`],
+                ["Guests", `${b.guests}`], ["Table", b.tables.length ? `${b.tables.join(" + ")}${b.tables.length > 1 ? " (placed together for you)" : ""}` : "Our staff will choose your table(s) and e-mail you the numbers"],
                 ["Name", b.customer_name], ["Phone", b.phone], ["E-mail", b.email], ["Request", b.notes]].filter(([, v]) => v).map(([k, v]) => (
                 <Stack key={k} direction="row" spacing={2} sx={{ py: 1.1, borderBottom: "1px dashed", borderColor: "divider" }}>
                   <Typography sx={{ width: 110, flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: ".25em", textTransform: "uppercase", color: GOLD, pt: 0.4 }}>{k}</Typography>

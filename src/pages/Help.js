@@ -117,7 +117,7 @@ const ONLINE_WEEK = [
 
 // ---------------------------------------------------------------- pieces
 const RESERVATION = [
-  { role: "ops", title: "Set the limits, seatings and tables once", where: "Reservations → Reservation setup", hint: "By default 40 chairs per seating can be reserved; the rest are for walk-ins" },
+  { role: "ops", title: "Set the limits, seatings and tables once", where: "Reservations → Reservation setup", hint: "Lunch and dinner every 30 minutes; at most 40 chairs reserved at any time, the rest for walk-ins" },
   { role: "customer", title: "Guest picks date, time and table(s) on the floor plan", where: "Website /reserve", hint: "Confirmed at once; e-mail to the guest and the restaurant" },
   { role: "branch", title: "Phone booking or staff block", where: "Reservations → Floor plan & bookings", hint: "Click free tables, then Book or Block - counts toward the limit" },
   { role: "branch", title: "Print the board for each seating", where: "Reservations → Reports & print", hint: "Floor plan with names, table list, bookings by customer" },
@@ -271,7 +271,7 @@ const Help = () => {
         </Box>
         <Alert severity="info" icon={<LightbulbIcon />} sx={{ mb: 4 }}>
           {tab === "reserve"
-            ? "The limit counts the chairs of every booked table (3 guests on a 4-table use 4) and staff blocks too. When a seating reaches it, online booking for that time stops by itself."
+            ? "The limit counts the chairs of every booked table (3 guests on a 4-table use 4) and staff blocks too. A booking holds its tables for the table time (90 min), so each half hour it covers counts. Booths A1-A6 are never joined; if no tables fit a group, the guest books the time and staff allocate tables (the guest gets an e-mail)."
             : tab === "online" && online
             ? "Online orders reach the kitchen as one normal indent per kitchen, so cooking, batches and dispatch work exactly like branch orders."
             : "The invoice is made from what the branch actually received, so shortages are never charged."}

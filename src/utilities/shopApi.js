@@ -59,11 +59,46 @@ export const niceDateTime = (d) => {
   const t = new Date(`${day}T${time || "00:00"}:00`);
   return t.toLocaleString("en-CA", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 };
-/** Price for a plan + delivery fee with GST/QST (same formula as the server). */
-export const priceFor = (plan, fee, tax) => {
-  const r = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
-  const base = Number(plan?.price || 0) + Number(fee || 0);
-  const gst = tax?.taxable === "Y" ? r((base * Number(tax.gst_rate)) / 100) : 0;
-  const qst = tax?.taxable === "Y" ? r((base * Number(tax.qst_rate)) / 100) : 0;
-  return { subtotal: Number(plan?.price || 0), fee: Number(fee || 0), gst, qst, total: r(base + gst + qst) };
+const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/** Price for the week: dishes subtotal + delivery fee with GST/QST (same formula as the server). */
+export const priceFor = (subtotal, fee, tax) => {
+  const base = Number(subtotal || 0) + Number(fee || 0);
+  const gst = tax?.taxable === "Y" ? r2((base * Number(tax.gst_rate)) / 100) : 0;
+  const qst = tax?.taxable === "Y" ? r2((base * Number(tax.qst_rate)) / 100) : 0;
+  return { subtotal: r2(Number(subtotal || 0)), fee: Number(fee || 0), gst, qst, total: r2(base + gst + qst) };
+};
+
+export const PLAN_TYPE = {
+  V: { label: "Veg", long: "Veg curries", color: "#2e7d32", tint: "#edf7ee", blurb: "Paneer, dals, sambar and seasonal vegetable curries." },
+  N: { label: "Non-Veg", long: "Non-veg curries", color: "#c62828", tint: "#fdecec", blurb: "Chicken, mutton, fish and egg curries, South Indian style." },
+  C: { label: "Combo", long: "Combo meals", color: "#e07800", tint: "#fff3e0", blurb: "Complete meals - biryanis, curry with naan, rice or parotta." },
+};
+/** Can this dish be chosen in this plan? (same rule as the server) */
+export const allowedIn = (plan, m) => {
+  if (!plan) return true;
+  const kind = m.kind || "C";
+  if (plan.plan_type === "C") return kind === "M";
+  if (kind !== "C") return false;
+  return plan.plan_type === "V" ? m.diet === "V" : ["N", "E"].includes(m.diet);
+};
+/** One meal of this dish in this plan, after the plan's (or the dish's own) discount. */
+export const unitPrice = (plan, m) => {
+  if (m.price === null || m.price === undefined) return null;
+  if (!plan) return Number(m.price);
+  const ov = plan.overrides && plan.overrides[m.product_id];
+  const pct = ov !== undefined ? Number(ov) : Number(plan.discount_pct || 0);
+  return r2(Number(m.price) * (1 - pct / 100));
+};
+/** Subtotal, meals and premium meals chosen. counts = { product_id: qty } */
+export const quote = (plan, menu, counts) => {
+  let subtotal = 0; let meals = 0; let costly = 0;
+  menu.forEach((m) => {
+    const q = counts?.[m.product_id] || 0;
+    if (!q) return;
+    meals += q;
+    if (m.costly === "Y") costly += q;
+    subtotal += q * (unitPrice(plan, m) || 0);
+  });
+  return { subtotal: r2(subtotal), meals, costly };
 };

@@ -56,7 +56,7 @@ export const bestTables = (free, guests, seatsLeft, maxTables = 4) => {
   const better = (a, b) => { for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) return a[i] < b[i]; } return false; };
   const walk = (start, combo, chairs) => {
     if (chairs >= guests) {
-      if (chairs <= seatsLeft && isMinimal(combo, guests)) {
+      if (chairs <= seatsLeft && isMinimal(combo, guests) && (combo.length === 1 || combo.every((t) => t.joinable !== "N"))) {
         let spread = 0;
         for (let i = 0; i < combo.length; i++) for (let j = i + 1; j < combo.length; j++) spread += dist(combo[i], combo[j]);
         const rows = new Set(combo.map((t) => t.table_row)).size;
@@ -68,6 +68,8 @@ export const bestTables = (free, guests, seatsLeft, maxTables = 4) => {
     if (combo.length >= maxTables) return;
     for (let i = start; i < list.length; i++) {
       if (chairs + list[i].seats > seatsLeft) continue;
+      // tables that cannot be joined (A booths) only on their own
+      if (combo.length && (list[i].joinable === "N" || combo.some((t) => t.joinable === "N"))) continue;
       combo.push(list[i]);
       walk(i + 1, combo, chairs + list[i].seats);
       combo.pop();
@@ -91,6 +93,8 @@ export const selectionStatus = (chosen, guests) => {
   }
   return { ok: true, chairs, message: `${chosen.length > 1 ? `${chosen.length} tables, ` : ""}${chairs} chairs for ${guests} guest${guests === 1 ? "" : "s"}` };
 };
+
+export const slotKey = (s) => (s ? `${s.seating_id}|${s.start_time}` : null);
 
 export const STATUS = {
   C: { label: "Confirmed", color: "warning" },

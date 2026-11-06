@@ -30,11 +30,20 @@ const SeatingDialog = ({ value, onClose, onSave }) => {
   const toggleDay = (d) => setV({ ...v, weekdays: v.weekdays.includes(d) ? v.weekdays.replace(d, "") : `${v.weekdays}${d}` });
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>{v.seating_id ? `Seating ${v.label} ${v.start_time}` : "New seating"}</DialogTitle>
+      <DialogTitle>{v.seating_id ? `Session: ${v.label}` : "New session"}</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField label="Name (e.g. Lunch, Dinner, Brunch)" value={v.label} onChange={(e) => setV({ ...v, label: e.target.value })} />
-          <TextField label="Start time" type="time" value={v.start_time} onChange={(e) => setV({ ...v, start_time: e.target.value })} InputLabelProps={{ shrink: true }} />
+          <Stack direction="row" spacing={1.5}>
+            <TextField label="First start" type="time" value={v.start_time} onChange={(e) => setV({ ...v, start_time: e.target.value })} InputLabelProps={{ shrink: true }} inputProps={{ step: 900 }} fullWidth />
+            <TextField label="Last start" type="time" value={v.end_time || v.start_time} onChange={(e) => setV({ ...v, end_time: e.target.value })} InputLabelProps={{ shrink: true }} inputProps={{ step: 900 }} fullWidth />
+          </Stack>
+          <FormControl fullWidth><InputLabel>Start times every</InputLabel>
+            <Select label="Start times every" value={v.interval_min || 30} onChange={(e) => setV({ ...v, interval_min: e.target.value })}>
+              {[15, 30, 45, 60, 90, 120].map((m) => <MenuItem key={m} value={m}>{m} minutes</MenuItem>)}
+            </Select>
+          </FormControl>
+          <Typography variant="caption" color="text.secondary">Customers can book every start time from the first to the last (e.g. Lunch 11:00 to 14:30 = 8 times). Closing time = last start + table time.</Typography>
           <Box>
             <Typography variant="caption" color="text.secondary">Days it runs</Typography>
             <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.5}>
@@ -76,6 +85,7 @@ const TableDialog = ({ value, all, decor, onClose, onSave }) => {
               <Stack direction="row" spacing={1}><Num label="Width %" value={v.width} onChange={set("width")} /><Num label="Height %" value={v.height} onChange={set("height")} /></Stack>
               <Num label="Order in lists" value={v.sort_order} onChange={set("sort_order")} />
               <FormControlLabel control={<Switch checked={v.online !== "N"} onChange={(e) => setV({ ...v, online: e.target.checked ? "Y" : "N" })} />} label="Customers can book it online" />
+              <FormControlLabel control={<Switch checked={v.joinable !== "N"} onChange={(e) => setV({ ...v, joinable: e.target.checked ? "Y" : "N" })} />} label="Can be joined with other tables" />
               <FormControlLabel control={<Switch checked={v.status !== "I"} onChange={(e) => setV({ ...v, status: e.target.checked ? "A" : "I" })} />} label="In use" />
             </Stack>
           </Grid>
@@ -135,7 +145,7 @@ const ReservationSetup = () => {
           <Alert severity="warning" sx={{ mb: 2 }}>E-mail is not set up on the server yet: bookings work, but no confirmations are sent. Add the SMTP settings to the server's .env file (see RESERVATIONS.md).</Alert>
         )}
         <Tabs value={tab} onChange={(e, v) => setTab(v)} variant="scrollable" sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}>
-          <Tab value="settings" label="Limits & contact" /><Tab value="seatings" label={`Seatings (${data.seatings.filter((x) => x.status === "A").length})`} />
+          <Tab value="settings" label="Limits & contact" /><Tab value="seatings" label={`Sessions & times (${data.seatings.filter((x) => x.status === "A").length})`} />
           <Tab value="tables" label={`Tables (${data.tables.filter((t) => t.status === "A").length} · ${chairs} chairs)`} /><Tab value="closed" label={`Closed dates (${data.closures.length})`} />
         </Tabs>
 
@@ -143,12 +153,12 @@ const ReservationSetup = () => {
           <Card><CardContent>
             <Grid container spacing={2}>
               <Grid item xs={12}><FormControlLabel control={<Switch checked={s.booking_open === "Y"} onChange={(e) => set("booking_open")(e.target.checked ? "Y" : "N")} disabled={!canEdit} />} label={s.booking_open === "Y" ? "Online booking is ON" : "Online booking is PAUSED (staff can still book)"} /></Grid>
-              <Grid item xs={12} sm={6} md={4}><Num label="Reservable chairs per seating" value={s.max_reserved_seats} onChange={set("max_reserved_seats")} disabled={!canEdit} helper={`The rest of the ${chairs} chairs are kept for walk-ins (${Math.max(chairs - (Number(s.max_reserved_seats) || 0), 0)} now)`} /></Grid>
+              <Grid item xs={12} sm={6} md={4}><Num label="Reservable chairs at any time" value={s.max_reserved_seats} onChange={set("max_reserved_seats")} disabled={!canEdit} helper={`The rest of the ${chairs} chairs are kept for walk-ins (${Math.max(chairs - (Number(s.max_reserved_seats) || 0), 0)} now)`} /></Grid>
               <Grid item xs={12} sm={6} md={4}><Num label="Biggest group online" value={s.max_party_online} onChange={set("max_party_online")} disabled={!canEdit} helper="Bigger groups are asked to call" /></Grid>
               <Grid item xs={12} sm={6} md={4}><Num label="Book up to (days ahead)" value={s.days_ahead} onChange={set("days_ahead")} disabled={!canEdit} /></Grid>
               <Grid item xs={12} sm={6} md={4}><Num label="Online booking closes (minutes before)" value={s.min_notice_minutes} onChange={set("min_notice_minutes")} disabled={!canEdit} /></Grid>
               <Grid item xs={12} sm={6} md={4}><Num label="Customer can cancel online until (minutes before)" value={s.cancel_notice_minutes} onChange={set("cancel_notice_minutes")} disabled={!canEdit} /></Grid>
-              <Grid item xs={12} sm={6} md={4}><Num label="Table held for (minutes)" value={s.seating_minutes} onChange={set("seating_minutes")} disabled={!canEdit} helper="Shown to customers" /></Grid>
+              <Grid item xs={12} sm={6} md={4}><Num label="Table time - tables held for (minutes)" value={s.seating_minutes} onChange={set("seating_minutes")} disabled={!canEdit} helper="A 19:00 booking blocks its tables until 19:00 + this. Applies to new bookings." /></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth label="Restaurant name" value={s.restaurant_name || ""} onChange={(e) => set("restaurant_name")(e.target.value)} disabled={!canEdit} /></Grid>
               <Grid item xs={12} sm={6}><TextField fullWidth label="Phone" value={s.phone || ""} onChange={(e) => set("phone")(e.target.value)} disabled={!canEdit} /></Grid>
               <Grid item xs={12}><TextField fullWidth label="Address" value={s.address || ""} onChange={(e) => set("address")(e.target.value)} disabled={!canEdit} /></Grid>
@@ -161,13 +171,13 @@ const ReservationSetup = () => {
 
         {tab === "seatings" && (
           <Card><CardContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Each seating is booked separately and has its own limit of {s.max_reserved_seats} reservable chairs.</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Customers book a start time; the tables are held for the table time ({s.seating_minutes} minutes). At any moment at most {s.max_reserved_seats} chairs can be reserved.</Typography>
             <Table size="small">
-              <TableHead><TableRow>{["Name", "Start", "Days", "Status", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
+              <TableHead><TableRow>{["Session", "Start times", "Days", "Status", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
               <TableBody>
                 {data.seatings.map((x) => (
                   <TableRow key={x.seating_id} sx={{ opacity: x.status === "I" ? 0.5 : 1 }}>
-                    <TableCell>{x.label}</TableCell><TableCell>{time12(x.start_time)}</TableCell>
+                    <TableCell>{x.label}</TableCell><TableCell>{time12(x.start_time)}{x.end_time && x.end_time !== x.start_time ? ` - ${time12(x.end_time)}, every ${x.interval_min} min (${x.slots.length} times)` : ""}</TableCell>
                     <TableCell>{x.weekdays.length === 7 ? "Every day" : x.weekdays.split("").map((d) => DAYS[d]).join(", ")}</TableCell>
                     <TableCell>{x.status === "I" ? "Not in use" : "In use"}</TableCell>
                     <TableCell align="right">{canEdit && <IconButton size="small" onClick={() => setSeating({ ...x })}><EditIcon fontSize="small" /></IconButton>}</TableCell>
@@ -175,7 +185,7 @@ const ReservationSetup = () => {
                 ))}
               </TableBody>
             </Table>
-            {canEdit && <Button sx={{ mt: 2 }} variant="outlined" onClick={() => setSeating({ seating_id: "", label: "Dinner", start_time: "18:00", weekdays: "0123456", status: "A" })}>Add seating</Button>}
+            {canEdit && <Button sx={{ mt: 2 }} variant="outlined" onClick={() => setSeating({ seating_id: "", label: "Brunch", start_time: "10:00", end_time: "10:30", interval_min: 30, weekdays: "06", status: "A" })}>Add session</Button>}
           </CardContent></Card>
         )}
 
@@ -183,24 +193,24 @@ const ReservationSetup = () => {
           <Grid container spacing={2}>
             <Grid item xs={12} lg={7}>
               <FloorMap tables={data.tables} decor={data.decor} stateOf={(t) => (t.status === "I" ? "disabled" : t.online === "N" ? "blocked" : "free")}
-                onTableClick={canEdit ? (t) => setTable({ ...t }) : undefined} tipOf={(t) => `${t.table_id} · ${t.seats} chairs${t.online === "N" ? " · staff only" : ""}${t.status === "I" ? " · not in use" : ""}${canEdit ? " - click to edit" : ""}`} />
+                onTableClick={canEdit ? (t) => setTable({ ...t }) : undefined} tipOf={(t) => `${t.table_id} · ${t.seats} chairs${t.joinable === "N" ? " · cannot be joined" : ""}${t.online === "N" ? " · staff only" : ""}${t.status === "I" ? " · not in use" : ""}${canEdit ? " - click to edit" : ""}`} />
               <Typography variant="caption" color="text.secondary">Green: bookable online · purple: staff only · faded: not in use. Click a table to edit it.</Typography>
             </Grid>
             <Grid item xs={12} lg={5}>
               <Card><CardContent>
                 <Table size="small">
-                  <TableHead><TableRow>{["Table", "Chairs", "Online", "In use", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
+                  <TableHead><TableRow>{["Table", "Chairs", "Online", "Join", "In use", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
                   <TableBody>
                     {data.tables.map((t) => (
                       <TableRow key={t.table_id} hover sx={{ opacity: t.status === "I" ? 0.5 : 1 }}>
                         <TableCell sx={{ fontWeight: 700 }}>{t.table_id}</TableCell><TableCell>{t.seats}</TableCell>
-                        <TableCell>{t.online === "N" ? "Staff only" : "Yes"}</TableCell><TableCell>{t.status === "I" ? "No" : "Yes"}</TableCell>
+                        <TableCell>{t.online === "N" ? "Staff only" : "Yes"}</TableCell><TableCell>{t.joinable === "N" ? "No" : "Yes"}</TableCell><TableCell>{t.status === "I" ? "No" : "Yes"}</TableCell>
                         <TableCell align="right">{canEdit && <IconButton size="small" onClick={() => setTable({ ...t })}><EditIcon fontSize="small" /></IconButton>}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-                {canEdit && <Button sx={{ mt: 2 }} variant="outlined" onClick={() => setTable({ isNew: true, table_id: "", seats: 4, orient: "H", pos_x: 50, pos_y: 60, width: 7, height: 6.5, online: "Y", status: "A", sort_order: 99 })}>Add table</Button>}
+                {canEdit && <Button sx={{ mt: 2 }} variant="outlined" onClick={() => setTable({ isNew: true, table_id: "", seats: 4, orient: "H", pos_x: 50, pos_y: 60, width: 7, height: 6.5, online: "Y", joinable: "Y", status: "A", sort_order: 99 })}>Add table</Button>}
               </CardContent></Card>
             </Grid>
           </Grid>

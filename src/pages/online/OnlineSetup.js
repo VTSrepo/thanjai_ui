@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, Grid,
-  InputLabel, MenuItem, Select, Stack, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography,
+  Alert, Autocomplete, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, Grid,
+  InputAdornment, InputLabel, MenuItem, Select, Stack, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography,
 } from "@mui/material";
 import { CONFIG } from "../../config-global";
 import ResponsiveAppBar from "../../components/ResponsiveAppBar";
@@ -9,7 +9,8 @@ import PageHeader from "../../components/PageHeader";
 import Loader from "../../components/Loader";
 import { useToast } from "../../components/ToastProvider";
 import { useUser } from "../../utilities/UserContext";
-import { getSubPlans, getSubSettings, getSubZones, saveSubPlan, saveSubSettings, saveSubZone } from "../../utilities/service";
+import { getSubDishes, getSubPlans, getSubSettings, getSubZones, saveSubPlan, saveSubSettings, saveSubZone } from "../../utilities/service";
+import DishPrices from "./DishPrices";
 import { cad, WEEKDAY } from "../../utilities/shopApi";
 
 const EditDialog = ({ title, fields, value, onClose, onSave }) => {
@@ -40,35 +41,107 @@ const EditDialog = ({ title, fields, value, onClose, onSave }) => {
 
 const STATUS_OPTS = [["A", "Active"], ["I", "Inactive (hidden)"]];
 
+const TYPE = { V: ["Veg", "success"], N: ["Non-Veg", "error"], C: ["Combo", "warning"] };
+const allowedIn = (type, d) => (type === "C" ? d.kind === "M" : d.kind === "C" && (type === "V" ? d.diet === "V" : ["N", "E"].includes(d.diet)));
+
+const PlanDialog = ({ value, dishes, onClose, onSave }) => {
+  const [v, setV] = useState(null);
+  useEffect(() => setV(value ? { ...value, max_costly: value.max_costly ?? "", rows: Object.entries(value.overrides || {}).map(([product_id, discount_pct]) => ({ product_id, discount_pct })) } : null), [value]);
+  if (!value || !v) return null;
+  const set = (k) => (e) => setV({ ...v, [k]: e.target.value });
+  const own = dishes.filter((d) => allowedIn(v.plan_type, d) && d.price !== null);
+  const pct = Number(v.discount_pct || 0);
+  const ex = own.slice(0, 3);
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle>{value.isNew ? "New plan" : `Edit ${value.plan_name}`}</DialogTitle>
+      <DialogContent>
+        <Grid container spacing={2} sx={{ pt: 1 }}>
+          <Grid item xs={12} sm={4}><TextField fullWidth label="Code (e.g. VEG5)" value={v.plan_id || ""} disabled={!value.isNew} onChange={set("plan_id")} /></Grid>
+          <Grid item xs={12} sm={8}><TextField fullWidth label="Name shown to customers" value={v.plan_name || ""} onChange={set("plan_name")} /></Grid>
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth><InputLabel>Type</InputLabel>
+              <Select label="Type" value={v.plan_type || "V"} onChange={set("plan_type")}>
+                <MenuItem value="V">Veg - veg curries</MenuItem><MenuItem value="N">Non-Veg - non-veg and egg curries</MenuItem><MenuItem value="C">Combo - combo meals</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6} sm={4}><TextField fullWidth label="Meals per week" type="number" value={v.meals_per_week || ""} onChange={set("meals_per_week")} /></Grid>
+          <Grid item xs={6} sm={4}><TextField fullWidth label="Discount off regular prices" type="number" value={v.discount_pct ?? 0} onChange={set("discount_pct")} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} /></Grid>
+          <Grid item xs={12} sm={6}><TextField fullWidth label="Costly dishes allowed per week" type="number" value={v.max_costly} onChange={set("max_costly")} helperText={`Leave empty for no limit. e.g. 2 = at most 2 of the ${v.meals_per_week || "N"} meals can be costly dishes.`} /></Grid>
+          <Grid item xs={6} sm={3}><TextField fullWidth label="Order on the page" type="number" value={v.sort_order ?? 0} onChange={set("sort_order")} /></Grid>
+          <Grid item xs={6} sm={3}>
+            <FormControl fullWidth><InputLabel>Status</InputLabel>
+              <Select label="Status" value={v.status || "A"} onChange={set("status")}>{STATUS_OPTS.map(([k, l]) => <MenuItem key={k} value={k}>{l}</MenuItem>)}</Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12}><TextField fullWidth label="Short description" multiline value={v.description || ""} onChange={set("description")} /></Grid>
+          <Grid item xs={12}>
+            <Alert severity="info" sx={{ py: 0.5 }}>
+              Customers pay the sum of the dishes they choose{pct ? `, each ${pct}% off its regular price` : " at regular prices"}.
+              {ex.length > 0 && <> e.g. {ex.map((d) => `${d.product_name.toLowerCase()} ${cad(d.price)} → ${cad(d.price * (1 - (Number(v.rows.find((r) => r.product_id === d.product_id)?.discount_pct ?? pct)) / 100))}`).join(" · ")}</>}
+              {!own.length && " No priced dishes of this type yet (Dish prices tab)."}
+            </Alert>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography fontWeight={700} sx={{ mb: 0.5 }}>Different discount for particular dishes (optional)</Typography>
+            {v.rows.map((r, i) => (
+              <Stack key={i} direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <Autocomplete sx={{ flexGrow: 1 }} size="small" options={own} value={own.find((d) => d.product_id === r.product_id) || null}
+                  getOptionLabel={(d) => `${d.product_name} (${cad(d.price)})`} isOptionEqualToValue={(a, b) => a.product_id === b.product_id}
+                  onChange={(e, d) => setV({ ...v, rows: v.rows.map((x, j) => (j === i ? { ...x, product_id: d?.product_id } : x)) })}
+                  renderInput={(p) => <TextField {...p} placeholder="Dish" />} />
+                <TextField size="small" type="number" sx={{ width: 120 }} value={r.discount_pct} onChange={(e) => setV({ ...v, rows: v.rows.map((x, j) => (j === i ? { ...x, discount_pct: e.target.value } : x)) })} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
+                <Button size="small" color="error" onClick={() => setV({ ...v, rows: v.rows.filter((x, j) => j !== i) })}>Remove</Button>
+              </Stack>
+            ))}
+            <Button size="small" onClick={() => setV({ ...v, rows: [...v.rows, { product_id: null, discount_pct: "" }] })}>Add dish discount</Button>
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions><Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={() => onSave({ ...v, overrides: v.rows.filter((r) => r.product_id && r.discount_pct !== "") })}>Save</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const Plans = ({ canEdit }) => {
   const toast = useToast();
   const [rows, setRows] = useState(null);
+  const [dishes, setDishes] = useState([]);
   const [edit, setEdit] = useState(null);
-  const load = useCallback(() => getSubPlans().then((r) => setRows(r.plans)).catch((e) => toast.error(e.message)), [toast]);
+  const load = useCallback(() => {
+    getSubPlans().then((r) => setRows(r.plans)).catch((e) => toast.error(e.message));
+    getSubDishes().then((r) => setDishes(r.dishes)).catch(() => {});
+  }, [toast]);
   useEffect(() => { load(); }, [load]);
   const save = async (v) => { try { const r = await saveSubPlan(v); toast.success(r.message); setEdit(null); load(); } catch (e) { toast.error(e.message); } };
   if (!rows) return <Loader inline />;
   return (
     <>
-      {canEdit && <Button variant="contained" sx={{ mb: 2 }} onClick={() => setEdit({ isNew: true, status: "A", sort_order: rows.length + 1 })}>Add plan</Button>}
+      {canEdit && <Button variant="contained" sx={{ mb: 2 }} onClick={() => setEdit({ isNew: true, plan_type: "V", status: "A", discount_pct: 0, sort_order: rows.length + 1 })}>Add plan</Button>}
       <Card sx={{ overflowX: "auto" }}><Table size="small">
-        <TableHead><TableRow>{["Code", "Plan", "Meals / week", "Price", "Per meal", "Status", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
+        <TableHead><TableRow>{["Plan", "Type", "Meals / week", "Discount", "Costly allowed", "From (customers see)", "Status", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
         <TableBody>
           {rows.map((p) => (
             <TableRow key={p.plan_id}>
-              <TableCell>{p.plan_id}</TableCell><TableCell>{p.plan_name}</TableCell><TableCell>{p.meals_per_week}</TableCell>
-              <TableCell>{cad(p.price)}</TableCell><TableCell>{cad(p.price / p.meals_per_week)}</TableCell>
+              <TableCell><b>{p.plan_name}</b> <Typography component="span" variant="caption" color="text.secondary">{p.plan_id}</Typography></TableCell>
+              <TableCell><Chip size="small" variant="outlined" color={TYPE[p.plan_type]?.[1]} label={TYPE[p.plan_type]?.[0] || p.plan_type} /></TableCell>
+              <TableCell>{p.meals_per_week}</TableCell>
+              <TableCell>{(() => { const n = Object.keys(p.overrides || {}).length; const base = p.discount_pct ? `${p.discount_pct}%` : n ? "None" : "-"; return n ? `${base} + ${n} dish discount${n === 1 ? "" : "s"}` : base; })()}</TableCell>
+              <TableCell>{p.max_costly === null ? "No limit" : `${p.max_costly} of ${p.meals_per_week}`}</TableCell>
+              <TableCell>{p.from_price === null ? <Typography variant="caption" color="warning.dark">no priced dishes</Typography> : `from ${cad(p.from_price)} (${cad(p.from_per_meal)} / meal)`}</TableCell>
               <TableCell><Chip size="small" label={p.status === "A" ? "Active" : "Inactive"} color={p.status === "A" ? "success" : "default"} /></TableCell>
               <TableCell>{canEdit && <Button size="small" onClick={() => setEdit(p)}>Edit</Button>}</TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table></Card>
-      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>Prices are before delivery and tax. A price change applies to orders created after it.</Typography>
-      <EditDialog title={edit?.isNew ? "New plan" : `Edit ${edit?.plan_name}`} value={edit} onClose={() => setEdit(null)} onSave={save}
-        fields={[["plan_id", "Code (e.g. STARTER)", { lockOnEdit: true }], ["plan_name", "Name"], ["meals_per_week", "Meals per week", { type: "number" }],
-          ["price", "Price per week (CAD, before tax)", { type: "number" }], ["description", "Short description", { multiline: true }],
-          ["sort_order", "Order on the page", { type: "number" }], ["status", "Status", { select: STATUS_OPTS }]]} />
+      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+        Customers pay the sum of the dishes they choose after the plan's discount (before delivery and tax). Price or discount changes apply to orders not yet charged.
+      </Typography>
+      <PlanDialog value={edit} dishes={dishes} onClose={() => setEdit(null)} onSave={save} />
     </>
   );
 };
@@ -173,11 +246,12 @@ const OnlineSetup = () => {
     <>
       <ResponsiveAppBar />
       <Box sx={{ p: 2, maxWidth: 1100, mx: "auto" }}>
-        <PageHeader title="Shop setup" subtitle="Plans, delivery zones and settings for the online weekly meals" />
+        <PageHeader title="Shop setup" subtitle="Plans, dish prices, delivery zones and settings for the online weekly meals" />
         <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 2 }}>
-          <Tab value="plans" label="Plans" /><Tab value="zones" label="Delivery zones" /><Tab value="settings" label="Settings" />
+          <Tab value="plans" label="Plans" /><Tab value="prices" label="Dish prices" /><Tab value="zones" label="Delivery zones" /><Tab value="settings" label="Settings" />
         </Tabs>
         {tab === "plans" && <Plans canEdit={canEdit} />}
+        {tab === "prices" && <DishPrices canEdit={canEdit} />}
         {tab === "zones" && <Zones canEdit={canEdit} />}
         {tab === "settings" && <Settings canEdit={canEdit} />}
       </Box>

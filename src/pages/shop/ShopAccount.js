@@ -11,8 +11,7 @@ import AddressFields, { emptyAddress } from "../../components/shop/AddressFields
 import Loader from "../../components/Loader";
 import { useToast } from "../../components/ToastProvider";
 import {
-  cad, changeShopPassword, confirmCard, manageSubscription, niceDate, niceDateTime, saveMeals, saveProfile, shopMe,
-  shopSession, skipWeek, updateCard,
+  cad, changeShopPassword, confirmCard, manageSubscription, niceDate, niceDateTime, saveMeals, saveProfile, shopMe, shopSession, skipWeek, updateCard, PLAN_TYPE, quote,
 } from "../../utilities/shopApi";
 import { TestModeNote } from "./ShopOrder";
 
@@ -42,6 +41,11 @@ const ThisWeek = ({ me, reload }) => {
   const [busy, setBusy] = useState(false);
   useEffect(() => setCounts(initial), [initial]);
   const total = Object.values(counts).reduce((s, n) => s + n, 0);
+  const plan = subscription?.plan || null;
+  const q = quote(plan, menu || [], counts);
+  const paid = order && ["C", "K", "D"].includes(order.status) ? Number(order.subtotal) : null;
+  const tooMuch = paid !== null && q.subtotal > paid + 0.001;
+  const costlyOver = plan && plan.max_costly !== null && plan.max_costly !== undefined && q.costly > plan.max_costly;
   const run = async (fn) => { setBusy(true); try { const r = await fn(); toast.success(r.message); setEditing(false); await reload(); } catch (e) { toast.error(e.message); } finally { setBusy(false); } };
 
   if (!subscription || subscription.status === "C") return (
@@ -88,15 +92,19 @@ const ThisWeek = ({ me, reload }) => {
             <>
               <Card sx={{ position: "sticky", top: 64, zIndex: 2, mb: 2 }}><CardContent sx={{ py: 1, "&:last-child": { pb: 1 } }}>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Typography sx={{ flexGrow: 1 }}>Chosen <b>{total} of {meals}</b></Typography>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography>Chosen <b>{total} of {meals}</b> · <b style={{ color: tooMuch ? "#c62828" : undefined }}>{cad(q.subtotal)}</b>{paid !== null ? ` (paid ${cad(paid)})` : ""}</Typography>
+                    {plan?.max_costly !== null && plan?.max_costly !== undefined && <Typography variant="caption" sx={{ color: costlyOver ? "error.main" : "text.secondary" }}>Premium: {q.costly} of {plan.max_costly}</Typography>}
+                    {tooMuch && <Typography variant="caption" color="error" display="block">This week is paid - choose dishes that total {cad(paid)} or less.</Typography>}
+                  </Box>
                   <Button onClick={() => { setCounts(initial); setEditing(false); }}>Cancel</Button>
-                  <Button variant="contained" disabled={busy || total !== meals}
+                  <Button variant="contained" disabled={busy || total !== meals || tooMuch || costlyOver}
                     onClick={() => run(() => saveMeals(week.delivery_date, Object.entries(counts).filter(([, n]) => n).map(([product_id, qty]) => ({ product_id, qty }))))}>
                     Save meals
                   </Button>
                 </Stack>
               </CardContent></Card>
-              <MealPicker menu={menu} counts={counts} onChange={setCounts} meals={meals} />
+              <MealPicker menu={menu} counts={counts} onChange={setCounts} meals={meals} plan={plan} />
             </>
           ) : (
             <>
@@ -190,7 +198,8 @@ const Plan = ({ me, reload }) => {
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Box>
             <Typography fontWeight={700}>{s.plan_name}</Typography>
-            <Typography color="text.secondary">{s.meals_per_week} meals a week · {cad(s.price)} + delivery and tax</Typography>
+            <Typography color="text.secondary">{s.plan ? `${PLAN_TYPE[s.plan.plan_type]?.long || ""} · ` : ""}{s.meals_per_week} meals a week{s.plan?.discount_pct ? ` · ${s.plan.discount_pct}% off regular prices` : ""}{s.plan?.max_costly !== null && s.plan?.max_costly !== undefined ? ` · up to ${s.plan.max_costly} premium` : ""}</Typography>
+            <Typography variant="caption" color="text.secondary">You pay for the dishes you choose each week, plus delivery and tax.</Typography>
           </Box>
           <Chip label={SUB_LABEL[s.status] || s.status} color={s.status === "A" ? "success" : "default"} />
         </Stack>
@@ -202,7 +211,7 @@ const Plan = ({ me, reload }) => {
             <FormControl size="small" sx={{ minWidth: 240 }}>
               <InputLabel>Plan</InputLabel>
               <Select label="Plan" value={planId} onChange={(e) => setPlanId(e.target.value)}>
-                {me.plans.map((p) => <MenuItem key={p.plan_id} value={p.plan_id}>{p.plan_name} – {p.meals_per_week} meals, {cad(p.price)}</MenuItem>)}
+                {me.plans.map((p) => <MenuItem key={p.plan_id} value={p.plan_id}>{p.plan_name} – {p.meals_per_week} meals{p.from_price !== null ? `, from ${cad(p.from_price)}` : ""}</MenuItem>)}
               </Select>
             </FormControl>
             <Button variant="outlined" disabled={busy || planId === s.plan_id} onClick={() => run({ action: "change_plan", plan_id: planId })}>Change plan</Button>

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import ReserveLayout, { Card, Eyebrow, GOLD, GRAD, ORANGE, SERIF } from "../../components/reserve/ReserveLayout";
 import FloorMap from "../../components/reserve/FloorMap";
 import {
-  addDays, bestTables, dayOfWeek, longDate, reserveAvailability, reserveBook, reserveInfo, selectionStatus, time12,
+  addDays, bestTables, dayOfWeek, longDate, reserveAvailability, reserveBook, reserveInfo, selectionStatus, slotKey, time12,
 } from "../../utilities/reserveApi";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -94,12 +94,14 @@ const ReserveHome = () => {
 
   const tables = useMemo(() => info?.tables || [], [info]);
   const byId = useMemo(() => Object.fromEntries(tables.map((t) => [t.table_id, t])), [tables]);
-  const slot = avail?.seatings.find((s) => s.seating_id === seatingId) || null;
+  const slot = avail?.seatings.find((s) => slotKey(s) === seatingId) || null;
   const maxParty = info?.restaurant.max_party_online || 12;
   const bigParty = guests > maxParty;
 
   const freeFor = useCallback((s) => tables.filter((t) => !s.taken.includes(t.table_id)), [tables]);
-  const fits = useCallback((s, g) => s.state === "open" && !!bestTables(freeFor(s), g, s.seats_left), [freeFor]);
+  const combo = useCallback((s, g) => (s.state === "open" ? bestTables(freeFor(s), g, s.seats_left) : null), [freeFor]);
+  // a time works if tables fit the group - or, when no tables can be joined for it, if seats are left (staff then seat them)
+  const fits = useCallback((s, g) => s.state === "open" && (!!combo(s, g) || s.seats_left >= g), [combo]);
 
   useEffect(() => {
     if (!slot) return;
@@ -115,10 +117,11 @@ const ReserveHome = () => {
     const best = bestTables(freeFor(s), g, s.seats_left);
     setChosen(best ? best.map((t) => t.table_id) : []);
     setPickNote(best ? `We picked ${best.map((t) => t.table_id).join(" + ")} for you${best.length > 1 ? " - our staff will put them together" : ""}. Tap the floor plan to change.` : "");
+    if (!best) setChosen([]);
   };
 
   const pickSlot = (s) => {
-    setSeatingId(s.seating_id); setNotice(""); setError("");
+    setSeatingId(slotKey(s)); setNotice(""); setError("");
     suggest(s, guests);
     glide(tablesRef);
   };
@@ -129,6 +132,7 @@ const ReserveHome = () => {
     else { setSeatingId(null); setChosen([]); setPickNote(""); if (g <= maxParty) glide(timeRef); }
   };
 
+  const requestOnly = !!slot && slot.state === "open" && !bigParty && !combo(slot, guests) && slot.seats_left >= guests;
   const chosenTables = chosen.map((id) => byId[id]).filter(Boolean);
   const chairs = chosenTables.reduce((n, t) => n + t.seats, 0);
   const status = selectionStatus(chosenTables, guests);
@@ -138,18 +142,26 @@ const ReserveHome = () => {
     if (slot.taken.includes(t.table_id)) return "taken";
     if (chosen.includes(t.table_id)) return "selected";
     if (t.seats > slot.seats_left) return "disabled";
+    if (t.joinable === "N" && t.seats < guests) return "disabled"; // booths cannot be joined for bigger groups
+    if (requestOnly) return "disabled";
     return "free";
   };
   const tipOf = (t, st) => ({
     taken: `${t.table_id} - already booked`,
     selected: `${t.table_id} · ${t.seats} chairs - your table (tap to remove)`,
-    disabled: slot ? `${t.table_id} - not enough reservable seats left at this time` : "Choose a time first",
+    disabled: !slot ? "Choose a time first" : t.joinable === "N" && t.seats < guests ? `${t.table_id} seats ${t.seats} and cannot be joined with other tables` : `${t.table_id} - not enough reservable seats left at this time`,
     free: `${t.table_id} · ${t.seats} chairs - tap to choose`,
   }[st]);
 
   const toggle = (t) => {
     setNotice(""); setPickNote("");
     if (chosen.includes(t.table_id)) { setChosen(chosen.filter((id) => id !== t.table_id)); return; }
+    // a booth (cannot be joined) replaces the choice, and replaces a booth already chosen
+    if (t.joinable === "N" || chosenTables.some((x) => x.joinable === "N")) {
+      if (t.seats >= guests) { setChosen([t.table_id]); return; }
+      setNotice(`${chosenTables.find((x) => x.joinable === "N")?.table_id || t.table_id} cannot be joined with other tables. Tap it to remove it first.`);
+      return;
+    }
     if (chairs >= guests) {
       if (t.seats >= guests && t.seats <= slot.seats_left) { setChosen([t.table_id]); return; } // swap to this table
       setNotice("You already have enough chairs. Tap one of your tables to remove it first.");
@@ -164,7 +176,7 @@ const ReserveHome = () => {
     phone: digits(form.phone).length < 10 && "Enter a phone number we can reach you on",
     email: !EMAIL_RE.test(form.email.trim()) && "Enter a valid e-mail - your confirmation goes there",
   };
-  const ready = !!slot && slot.state === "open" && status.ok && !bigParty;
+  const ready = !!slot && slot.state === "open" && (status.ok || requestOnly) && !bigParty;
 
   const submit = async () => {
     setTried(true); setError("");
@@ -172,7 +184,7 @@ const ReserveHome = () => {
     if (Object.values(fieldErr).some(Boolean)) { detailsRef.current?.scrollIntoView({ behavior: "smooth" }); return; }
     setBusy(true);
     try {
-      const r = await reserveBook({ booking_date: date, seating_id: seatingId, guests, table_ids: chosen, ...form });
+      const r = await reserveBook({ booking_date: date, seating_id: slot.seating_id, start_time: slot.start_time, guests, table_ids: requestOnly ? [] : chosen, ...form });
       navigate(`/reserve/booking/${r.booking.manage_token}?new=1${r.email_sent ? "" : "&nomail=1"}`);
     } catch (e) {
       setError(e.message);
@@ -260,21 +272,22 @@ const ReserveHome = () => {
               ) : groups.map((g) => (
                 <Box key={g.label} sx={{ "& + &": { mt: 2.5 } }}>
                   <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: ".25em", textTransform: "uppercase", color: "text.secondary", mb: 1.25 }}>{g.label}</Typography>
-                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(3, 1fr)", sm: "repeat(5, 1fr)" }, gap: 1 }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(4, 1fr)", sm: "repeat(5, 1fr)" }, gap: 1 }}>
                     {g.items.map((s) => {
                       const ok = !bigParty && fits(s, guests);
                       const few = ok && s.seats_left <= 8;
-                      const sel = s.seating_id === seatingId;
-                      const sub = bigParty ? "Call us" : s.state === "full" ? "Full" : s.state !== "open" ? (s.state === "past" ? "Closed" : (s.reason || "Closed")) : !ok ? `Not for ${guests}` : few ? `${s.seats_left} seats left` : "Available";
+                      const sel = slotKey(s) === seatingId;
+                      const staffSeat = ok && !combo(s, guests);
+                      const sub = bigParty ? "Call us" : s.state === "full" ? "Full" : s.state !== "open" ? (s.state === "past" ? "Closed" : (s.reason || "Closed")) : !ok ? `Not for ${guests}` : staffSeat ? "We seat you" : few ? `${s.seats_left} seats left` : "Available";
                       const color = sel ? "#fff" : ok ? (few ? GOLD : "#3BB273") : "#666";
                       return (
-                        <ButtonBase key={s.seating_id} disabled={!ok} onClick={() => pickSlot(s)} aria-pressed={sel}
+                        <ButtonBase key={slotKey(s)} disabled={!ok} onClick={() => pickSlot(s)} aria-pressed={sel}
                           sx={{ flexDirection: "column", borderRadius: "10px", py: 1.4, px: 0.5, border: "1px solid",
                             borderColor: sel ? "transparent" : ok ? (few ? GOLD : "#3BB273") : "#3a3a3a",
                             background: sel ? GRAD : ok ? (few ? "rgba(252,177,42,.08)" : "rgba(59,178,115,.10)") : "repeating-linear-gradient(45deg,#2b2b2b 0 4px,#252525 4px 8px)",
                             boxShadow: sel ? "0 8px 20px rgba(255,138,0,.35)" : "none", transition: "transform .15s",
                             "&:hover": { transform: ok ? "translateY(-2px)" : "none" } }}>
-                          <Typography sx={{ fontSize: 16, fontWeight: 700, color: ok || sel ? "#fff" : "#6a6a6a", textDecoration: s.state === "full" ? "line-through" : "none" }}>{time12(s.start_time)}</Typography>
+                          <Typography sx={{ fontSize: { xs: 14, sm: 16 }, fontWeight: 700, color: ok || sel ? "#fff" : "#6a6a6a", textDecoration: s.state === "full" ? "line-through" : "none", whiteSpace: "nowrap" }}>{time12(s.start_time)}</Typography>
                           <Typography sx={{ fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color, mt: 0.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{sub}</Typography>
                         </ButtonBase>
                       );
@@ -289,22 +302,25 @@ const ReserveHome = () => {
               <Legend items={[["Free", LG.free], ["Booked", LG.full], ["Selected", LG.sel]]} />
               <Box sx={{ position: "relative" }}>
                 <FloorMap dark tables={tables} decor={info.decor} stateOf={stateOf} onTableClick={slot ? toggle : undefined} tipOf={tipOf} />
-                {!slot && (
-                  <Box sx={{ position: "absolute", inset: 0, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(20,20,20,.72)", backdropFilter: "blur(2px)", color: "text.secondary", fontStyle: "italic", textAlign: "center", p: 2 }}>
-                    Pick a time above to see which tables are free.
+                {(!slot || requestOnly) && (
+                  <Box sx={{ position: "absolute", inset: 0, borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "rgba(20,20,20,.78)", backdropFilter: "blur(2px)", color: requestOnly ? "#fff" : "text.secondary", fontStyle: requestOnly ? "normal" : "italic", textAlign: "center", p: 3 }}>
+                    {requestOnly
+                      ? <Box sx={{ maxWidth: 440 }}><Typography sx={{ fontWeight: 800, color: GOLD, mb: 1 }}>We will seat you</Typography><Typography variant="body2">No free tables can be put together for {guests} guests at {time12(slot.start_time)}, but there is room for you. Book this time and our staff will choose your tables - we will e-mail you the table numbers.</Typography></Box>
+                      : "Pick a time above to see which tables are free."}
                   </Box>
                 )}
               </Box>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} justifyContent="space-between" sx={{ mt: 1.5 }}>
-                <Typography variant="body2" sx={{ color: status.ok ? "#3BB273" : slot ? GOLD : "text.secondary", fontWeight: 600 }}>
-                  {slot ? status.message : "Tip: on a phone, slide the floor plan sideways to see every table."}
+                <Typography variant="body2" sx={{ color: status.ok || requestOnly ? "#3BB273" : slot ? GOLD : "text.secondary", fontWeight: 600 }}>
+                  {requestOnly ? `Time booked for ${guests} guests - our staff choose your tables` : slot ? status.message : "Tip: on a phone, slide the floor plan sideways to see every table."}
                 </Typography>
-                <Button variant="outlined" color="secondary" size="small" startIcon={<AutoFixHighIcon />} disabled={!slot} onClick={() => slot && suggest(slot, guests)} sx={{ borderRadius: 99, flexShrink: 0 }}>
+                <Button variant="outlined" color="secondary" size="small" startIcon={<AutoFixHighIcon />} disabled={!slot || requestOnly} onClick={() => slot && suggest(slot, guests)} sx={{ borderRadius: 99, flexShrink: 0 }}>
                   Choose the best table for me
                 </Button>
               </Stack>
+              {guests > 4 && slot && !requestOnly && <Typography variant="caption" sx={{ display: "block", mt: 1, color: "text.secondary" }}>Booths A1-A6 seat up to 4 and cannot be joined, so bigger groups get B or C tables.</Typography>}
               {pickNote && <Typography variant="body2" sx={{ mt: 1, color: "text.secondary", fontStyle: "italic" }}>{pickNote}</Typography>}
-              {slot && status.ok && (
+              {slot && (status.ok || requestOnly) && (
                 <Button fullWidth variant="outlined" color="secondary" onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
                   sx={{ display: { xs: "flex", md: "none" }, mt: 2, borderRadius: "10px" }}>Next: your details ↓</Button>
               )}
@@ -332,7 +348,7 @@ const ReserveHome = () => {
               {[["Date", date ? longDate(date).replace(/, \d{4}$/, "") : null, "Choose a date"],
                 ["Guests", bigParty ? `${maxParty}+ - please call` : `${guests} guest${guests === 1 ? "" : "s"}`],
                 ["Time", slot ? `${time12(slot.start_time)} · ${slot.label}` : null, "Choose a time"],
-                ["Table", chosen.length ? `${chosen.join(" + ")} · ${chairs} chairs` : null, "Choose a table"]].map(([k, v, ph]) => (
+                ["Table", requestOnly ? "Our staff will choose" : chosen.length ? `${chosen.join(" + ")} · ${chairs} chairs` : null, "Choose a table"]].map(([k, v, ph]) => (
                 <Box key={k} sx={{ py: 1.2, borderBottom: "1px dashed", borderColor: "divider" }}>
                   <Typography sx={{ fontSize: 9, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "text.secondary" }}>{k}</Typography>
                   <Typography sx={{ fontWeight: v ? 600 : 400, fontStyle: v ? "normal" : "italic", color: v ? "text.primary" : "#666" }}>{v || ph}</Typography>
@@ -365,7 +381,7 @@ const ReserveHome = () => {
           px: 2, pt: 1.25, pb: "calc(10px + env(safe-area-inset-bottom))", bgcolor: "rgba(20,20,20,.96)", borderTop: `1px solid ${ORANGE}`, backdropFilter: "blur(6px)" }}>
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography noWrap sx={{ fontWeight: 700, fontSize: 14 }}>{new Date(`${date}T12:00:00`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })} · {time12(slot.start_time)} · {guests} guests</Typography>
-            <Typography noWrap sx={{ fontSize: 12, color: status.ok ? "#3BB273" : GOLD }}>{chosen.length ? `Table ${chosen.join(" + ")}` : "Choose a table"}</Typography>
+            <Typography noWrap sx={{ fontSize: 12, color: status.ok || requestOnly ? "#3BB273" : GOLD }}>{requestOnly ? "Our staff will choose your table" : chosen.length ? `Table ${chosen.join(" + ")}` : "Choose a table"}</Typography>
           </Box>
           <Button onClick={submit} disabled={busy} sx={{ px: 3, borderRadius: "10px", background: GRAD, color: "#fff", fontWeight: 800, "&:hover": { background: GRAD }, opacity: ready ? 1 : 0.6 }}>
             {busy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Reserve"}

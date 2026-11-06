@@ -1,6 +1,6 @@
 // Reservation reports as PDF (A4 landscape - easy to read on the staff board).
-//   statusPdf:   summary of every seating, then one page per seating: floor plan with names + table list
-//   customerPdf: bookings by customer for each seating (who, how many, which tables, request)
+//   statusPdf:   summary per start time, then one page per session: timeline of every table (who holds it when)
+//   customerPdf: bookings by arrival time for each session (who, how many, which tables, request)
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { longDate, time12 } from "./reserveApi";
@@ -8,23 +8,35 @@ import { longDate, time12 } from "./reserveApi";
 const ORANGE = [255, 138, 0];
 const INK = [43, 43, 43];
 const STATUS = { C: "Confirmed", A: "Arrived", N: "No-show", X: "Cancelled" };
-const COLORS = {
-  free: { fill: [236, 248, 241], line: [59, 178, 115], text: [29, 92, 58] },
-  booked: { fill: [255, 241, 222], line: [255, 138, 0], text: [138, 74, 0] },
-  arrived: { fill: [227, 240, 253], line: [25, 118, 210], text: [13, 60, 115] },
-  noshow: { fill: [253, 234, 234], line: [211, 47, 47], text: [142, 28, 28] },
-  blocked: { fill: [239, 227, 245], line: [123, 31, 162], text: [91, 20, 120] },
+const FILL = { booked: [255, 241, 222], arrived: [227, 240, 253], noshow: [253, 234, 234], blocked: [239, 227, 245] };
+const toMin = (t) => { const [h, m] = String(t).split(":").map(Number); return h * 60 + m; };
+const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const live = (b) => b.status !== "X";
+const stateOf = (b) => (b.kind === "B" ? "blocked" : b.status === "A" ? "arrived" : b.status === "N" ? "noshow" : "booked");
+const short = (b) => (b.kind === "B" ? "BLOCK" : `${String(b.customer_name || "").split(" ")[0].slice(0, 10)} ${b.guests}`);
+
+export const sessionBookings = (day, session) => day.bookings.filter((b) => b.seating_id === session.seating_id && live(b)).sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+/** Columns every 30 minutes from the first start time until the last table is free. */
+export const timelineCols = (day, session) => {
+  const end = Math.max(toMin(session.end_time) + (day.settings.seating_minutes || 90), ...sessionBookings(day, session).map((b) => toMin(b.end_time)));
+  const cols = [];
+  for (let m = toMin(session.start_time); m < end; m += 30) cols.push(hhmm(m));
+  return cols;
 };
 
-const live = (b) => b.status !== "X";
-export const seatingRows = (day, seating) => {
-  const bookings = day.bookings.filter((b) => b.seating_id === seating.seating_id && live(b));
-  const byBooking = Object.fromEntries(bookings.map((b) => [b.booking_id, b]));
-  return day.tables.filter((t) => t.status === "A" || seating.taken[t.table_id]).map((t) => {
-    const b = byBooking[seating.taken[t.table_id]];
-    const state = !b ? "free" : b.kind === "B" ? "blocked" : b.status === "A" ? "arrived" : b.status === "N" ? "noshow" : "booked";
-    return { table: t, booking: b || null, state };
-  });
+/** Rows: one per table; cells: { booking, first } for the 30 minutes starting at each column. */
+export const timelineRows = (day, session) => {
+  const cols = timelineCols(day, session);
+  const books = sessionBookings(day, session);
+  return day.tables.filter((t) => t.status === "A" || books.some((b) => b.tables.includes(t.table_id))).map((t) => ({
+    table: t,
+    cells: cols.map((c) => {
+      const from = toMin(c);
+      const b = books.find((x) => x.tables.includes(t.table_id) && toMin(x.start_time) < from + 30 && toMin(x.end_time) > from);
+      return b ? { booking: b, first: toMin(b.start_time) >= from && toMin(b.start_time) < from + 30 } : null;
+    }),
+  }));
 };
 
 const header = (doc, title, day, sub) => {
@@ -53,117 +65,92 @@ const footer = (doc) => {
   doc.setTextColor(...INK);
 };
 
-const summaryRows = (day, seatings) => {
+export const SUMMARY_HEAD = ["Time", "Reserved chairs at this time", "Can still book from this time", "Free for walk-ins", "Arriving bookings", "Guests arriving"];
+export const summaryRows = (day, session) => {
   const total = day.tables.filter((t) => t.status === "A").reduce((n, t) => n + t.seats, 0);
-  return seatings.map((s) => {
-    const rows = seatingRows(day, s);
-    return [
-      `${s.label} ${time12(s.start_time)}${s.closed ? `\n(closed online: ${s.closed})` : ""}`,
-      `${s.reserved_seats} / ${s.max_reserved_seats}`, String(s.seats_left), String(Math.max(total - s.reserved_seats, 0)),
-      String(s.bookings), String(s.guests), String(s.blocked_seats),
-      `${rows.filter((r) => r.booking).length} / ${rows.length}`,
-    ];
-  });
-};
-export const SUMMARY_HEAD = ["Seating", "Reserved seats", "Can still book", "Free for walk-ins", "Bookings", "Guests", "Blocked chairs", "Tables taken"];
-
-/** Floor plan drawing inside the box (x, y, w) - height follows the floor proportions. */
-const drawFloor = (doc, day, seating, x, y, w) => {
-  const h = w * (875 / 1280);
-  doc.setDrawColor(200); doc.setLineWidth(0.3); doc.setFillColor(251, 250, 248); doc.roundedRect(x, y, w, h, 2, 2, "FD");
-  (day.decor || []).forEach((d) => {
-    const dx = x + (d.x / 100) * w; const dy = y + (d.y / 100) * h; const dw = (d.w / 100) * w; const dh = (d.h / 100) * h;
-    if (d.kind === "entrance") { doc.setLineDashPattern([1.5, 1.2], 0); doc.setDrawColor(180); doc.rect(dx, dy, dw, dh); doc.setLineDashPattern([], 0); doc.setTextColor(...ORANGE); }
-    else { doc.setFillColor(236, 236, 236); doc.rect(dx, dy, dw, dh, "F"); doc.setTextColor(150); }
-    doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.text(d.label.toUpperCase(), dx + dw / 2, dy + dh / 2 + 1, { align: "center" });
-  });
-  seatingRows(day, seating).forEach(({ table: t, booking: b, state }) => {
-    const c = COLORS[state];
-    const tw = (t.width / 100) * w; const th = (t.height / 100) * h;
-    const tx = x + (t.pos_x / 100) * w - tw / 2; const ty = y + (t.pos_y / 100) * h - th / 2;
-    doc.setFillColor(...c.fill); doc.setDrawColor(...c.line); doc.setLineWidth(0.5);
-    doc.roundedRect(tx, ty, tw, th, 1.2, 1.2, "FD");
-    doc.setTextColor(...c.text); doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-    doc.text(t.table_id, tx + tw / 2, ty + th / 2 - (b ? 0.6 : -1), { align: "center" });
-    if (b) {
-      doc.setFont("helvetica", "normal"); doc.setFontSize(6);
-      // narrow tables only have room for the guest count; names are in the list beside the plan
-      const name = b.kind === "B" ? "BLOCK" : t.width < 6 ? `${b.guests} ppl` : `${String(b.customer_name || "").split(" ")[0].slice(0, 6)} ${b.guests}`;
-      doc.text(name, tx + tw / 2, ty + th / 2 + 2.6, { align: "center" });
-    }
-  });
-  doc.setTextColor(...INK); doc.setLineWidth(0.2);
-  return h;
+  return session.slots.map((z) => [time12(z.time), `${z.reserved_seats} / ${session.max_reserved_seats}`, String(z.seats_left), String(Math.max(total - z.reserved_seats, 0)), String(z.bookings), String(z.guests)]);
 };
 
-const tableList = (day, seating) => seatingRows(day, seating).map(({ table: t, booking: b, state }) => [
-  t.table_id, String(t.seats),
-  { free: "Free", booked: "Booked", arrived: "Arrived", noshow: "No-show", blocked: "Staff block" }[state],
-  b ? b.booking_id : "",
-  b ? (b.kind === "B" ? b.customer_name : b.customer_name) : "",
-  b && b.kind !== "B" ? `${b.guests}${b.tables.length > 1 ? ` (${b.tables.join("+")})` : ""}` : "",
-  b ? b.phone || "" : "",
-  b ? [b.notes, b.staff_note].filter(Boolean).join(" / ") : "",
-]);
-export const TABLE_HEAD = ["Table", "Chairs", "Status", "Booking", "Name", "Guests (tables together)", "Phone", "Request / note"];
-
-export const statusPdf = (day, seatings) => {
+export const statusPdf = (day, sessions) => {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  header(doc, "Reservation status", day, "Summary - reserved seats count the chairs of booked tables, staff blocks included.");
-  autoTable(doc, {
-    startY: 32, head: [SUMMARY_HEAD], body: summaryRows(day, seatings), theme: "grid",
-    styles: { fontSize: 11, cellPadding: 2.5, valign: "middle" }, headStyles: { fillColor: ORANGE, textColor: 255 },
-    columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 } },
-  });
-  seatings.forEach((s) => {
-    doc.addPage();
-    header(doc, `${s.label} ${time12(s.start_time)}`, day,
-      `Reserved ${s.reserved_seats}/${s.max_reserved_seats} seats · ${s.bookings} bookings · ${s.guests} guests · ${s.blocked_seats} chairs blocked by staff${s.closed ? ` · closed online: ${s.closed}` : ""}`);
-    const fh = drawFloor(doc, day, s, 10, 32, 125);
-    doc.setFontSize(8);
-    [["Free", "free"], ["Booked", "booked"], ["Arrived", "arrived"], ["No-show", "noshow"], ["Staff block", "blocked"]].forEach(([l, k], i) => {
-      const c = COLORS[k]; doc.setFillColor(...c.fill); doc.setDrawColor(...c.line); doc.rect(10 + i * 25, 35 + fh, 4, 4, "FD"); doc.text(l, 15.5 + i * 25, 38.2 + fh);
-    });
+  header(doc, "Reservation status", day, "Reserved chairs count every booked table's chairs (staff blocks too) for the whole table time.");
+  let y = 32;
+  sessions.forEach((s) => {
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.text(`${s.label} ${time12(s.start_time)} - ${time12(s.end_time)}  ·  ${s.bookings} bookings · ${s.guests} guests${s.to_allocate ? ` · ${s.to_allocate} waiting for tables` : ""}${s.closed ? ` · closed online: ${s.closed}` : ""}`, 10, y + 3);
+    doc.setFont("helvetica", "normal");
     autoTable(doc, {
-      startY: 32, margin: { left: 140, right: 10 }, head: [TABLE_HEAD.slice(0, 6)], body: tableList(day, s).map((r) => r.slice(0, 6)), theme: "grid",
-      styles: { fontSize: 8.5, cellPadding: 1.4 }, headStyles: { fillColor: ORANGE, textColor: 255 },
-      columnStyles: { 0: { fontStyle: "bold" } },
-      didParseCell: (d) => { if (d.section === "body" && d.column.index === 2 && d.cell.raw === "Free") d.cell.styles.textColor = [59, 140, 90]; },
+      startY: y + 6, head: [SUMMARY_HEAD], body: summaryRows(day, s), theme: "grid",
+      styles: { fontSize: 9.5, cellPadding: 1.6, halign: "center" }, headStyles: { fillColor: ORANGE, textColor: 255 },
+      columnStyles: { 0: { fontStyle: "bold", halign: "left" } },
+      didParseCell: (d) => { if (d.section === "body" && d.column.index === 2 && d.cell.raw === "0") d.cell.styles.textColor = [200, 40, 40]; },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+    if (y > 170) { doc.addPage(); header(doc, "Reservation status", day); y = 30; }
+  });
+  sessions.forEach((s) => {
+    doc.addPage("a4", "landscape");
+    const books = sessionBookings(day, s);
+    header(doc, `${s.label} - table timeline`, day, `Who holds each table, every 30 minutes. Name and guests where a booking starts; shaded while held.`);
+    const cols = timelineCols(day, s);
+    const rows = timelineRows(day, s);
+    autoTable(doc, {
+      startY: 32, head: [["Table", ...cols.map((c) => time12(c).replace(" ", "\n"))]],
+      body: rows.map((r) => [`${r.table.table_id} (${r.table.seats})`, ...r.cells.map((c) => (c && c.first ? short(c.booking) : ""))]),
+      theme: "grid", styles: { fontSize: cols.length > 14 ? 6.5 : 7.5, cellPadding: 1, halign: "center", valign: "middle", minCellHeight: 6.5 },
+      headStyles: { fillColor: ORANGE, textColor: 255, fontSize: 7 }, columnStyles: { 0: { fontStyle: "bold", halign: "left", cellWidth: 18 } },
+      didParseCell: (d) => {
+        if (d.section !== "body" || d.column.index === 0) return;
+        const c = rows[d.row.index].cells[d.column.index - 1];
+        if (c) { d.cell.styles.fillColor = FILL[stateOf(c.booking)]; if (c.first) d.cell.styles.fontStyle = "bold"; }
+      },
+    });
+    const waiting = books.filter((b) => b.needs_tables);
+    let y2 = doc.lastAutoTable.finalY + 6;
+    if (waiting.length) {
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(178, 94, 0);
+      doc.text("Waiting for tables:", 10, y2);
+      doc.setFont("helvetica", "normal");
+      doc.text(waiting.map((b) => `${time12(b.start_time)} ${b.customer_name} (${b.guests} guests, ${b.phone || "no phone"})`).join("   ·   "), 45, y2, { maxWidth: 240 });
+      doc.setTextColor(...INK); y2 += 8;
+    }
+    doc.setFontSize(8);
+    [["Booked", "booked"], ["Arrived", "arrived"], ["No-show", "noshow"], ["Staff block", "blocked"]].forEach(([l, k], i) => {
+      doc.setFillColor(...FILL[k]); doc.setDrawColor(180); doc.rect(10 + i * 28, y2, 4, 4, "FD"); doc.text(l, 15.5 + i * 28, y2 + 3.2);
     });
   });
   footer(doc);
   return doc;
 };
 
-export const customerRows = (day, seating) => day.bookings
-  .filter((b) => b.seating_id === seating.seating_id && live(b) && b.kind !== "B")
-  .sort((a, b) => String(a.customer_name).localeCompare(String(b.customer_name)))
-  .map((b) => [b.customer_name, String(b.guests), b.tables.join(" + "), b.phone || "", b.email || "", b.notes || "", STATUS[b.status], b.booking_id, b.source === "S" ? "Staff" : "Online"]);
-export const CUSTOMER_HEAD = ["Customer", "Guests", "Table(s)", "Phone", "E-mail", "Request", "Status", "Booking", "By"];
+export const CUSTOMER_HEAD = ["Time", "Customer", "Guests", "Table(s)", "Phone", "E-mail", "Request", "Status", "Booking", "By"];
+export const customerRows = (day, session) => sessionBookings(day, session).filter((b) => b.kind !== "B")
+  .map((b) => [time12(b.start_time), b.customer_name, String(b.guests), b.needs_tables ? "TO ALLOCATE" : b.tables.join(" + "), b.phone || "", b.email || "", b.notes || "", STATUS[b.status], b.booking_id, b.source === "S" ? "Staff" : "Online"]);
 
-export const customerPdf = (day, seatings) => {
+export const customerPdf = (day, sessions) => {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   header(doc, "Bookings by customer", day);
   let y = 30;
-  seatings.forEach((s, i) => {
+  sessions.forEach((s, i) => {
     const rows = customerRows(day, s);
-    const blocks = day.bookings.filter((b) => b.seating_id === s.seating_id && live(b) && b.kind === "B");
+    const blocks = sessionBookings(day, s).filter((b) => b.kind === "B");
     if (i && y > 160) { doc.addPage(); header(doc, "Bookings by customer", day); y = 30; }
     doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-    doc.text(`${s.label} ${time12(s.start_time)}  -  ${rows.length} bookings · ${s.guests} guests · ${s.reserved_seats}/${s.max_reserved_seats} seats reserved`, 10, y + 4);
+    doc.text(`${s.label}  -  ${rows.length} bookings · ${s.guests} guests${s.to_allocate ? ` · ${s.to_allocate} waiting for tables` : ""}`, 10, y + 4);
     doc.setFont("helvetica", "normal");
     autoTable(doc, {
-      startY: y + 7, head: [CUSTOMER_HEAD], body: rows.length ? rows : [["No bookings", "", "", "", "", "", "", "", ""]], theme: "grid",
-      styles: { fontSize: 10, cellPadding: 2 }, headStyles: { fillColor: ORANGE, textColor: 255 },
+      startY: y + 7, head: [CUSTOMER_HEAD], body: rows.length ? rows : [["", "No bookings", "", "", "", "", "", "", "", ""]], theme: "grid",
+      styles: { fontSize: 9.5, cellPadding: 1.8 }, headStyles: { fillColor: ORANGE, textColor: 255 },
       columnStyles: {
-        0: { fontStyle: "bold", cellWidth: 40 }, 1: { halign: "center", cellWidth: 18 }, 2: { fontStyle: "bold", cellWidth: 26 }, 3: { cellWidth: 31 },
-        4: { cellWidth: 50 }, 6: { cellWidth: 23 }, 7: { cellWidth: 24 }, 8: { cellWidth: 15 },
+        0: { fontStyle: "bold", cellWidth: 19 }, 1: { fontStyle: "bold", cellWidth: 38 }, 2: { halign: "center", cellWidth: 17 }, 3: { fontStyle: "bold", cellWidth: 26 },
+        4: { cellWidth: 29 }, 5: { cellWidth: 46 }, 7: { cellWidth: 21 }, 8: { cellWidth: 22 }, 9: { cellWidth: 14 },
       },
+      didParseCell: (d) => { if (d.section === "body" && d.column.index === 3 && d.cell.raw === "TO ALLOCATE") d.cell.styles.textColor = [178, 94, 0]; },
     });
     y = doc.lastAutoTable.finalY + 4;
     if (blocks.length) {
       doc.setFontSize(9); doc.setTextColor(91, 20, 120);
-      doc.text(`Staff blocks: ${blocks.map((b) => `${b.tables.join("+")} (${b.customer_name})`).join(", ")}`, 10, y + 2);
+      doc.text(`Staff blocks: ${blocks.map((b) => `${time12(b.start_time)} ${b.tables.join("+")} (${b.customer_name})`).join(", ")}`, 10, y + 2, { maxWidth: 270 });
       doc.setTextColor(...INK); y += 6;
     }
     y += 6;

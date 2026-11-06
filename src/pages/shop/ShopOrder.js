@@ -9,7 +9,7 @@ import MealPicker from "../../components/shop/MealPicker";
 import AddressFields, { emptyAddress } from "../../components/shop/AddressFields";
 import Loader from "../../components/Loader";
 import {
-  cad, niceDate, niceDateTime, priceFor, saveProfile, shopInfo, shopLogin, shopMe, shopSession, shopSignup, startPlan,
+  PLAN_TYPE, cad, niceDate, niceDateTime, priceFor, quote, saveProfile, shopInfo, shopLogin, shopMe, shopSession, shopSignup, startPlan, unitPrice,
 } from "../../utilities/shopApi";
 
 const STEPS = ["Plan", "Meals", "Your details", "Review & pay"];
@@ -19,7 +19,7 @@ export const TestModeNote = ({ mode }) =>
 
 const Totals = ({ p }) => (
   <Box sx={{ "& > div": { display: "flex", justifyContent: "space-between", py: 0.25 } }}>
-    <div><span>Plan</span><span>{cad(p.subtotal)}</span></div>
+    <div><span>Meals</span><span>{cad(p.subtotal)}</span></div>
     <div><span>Delivery</span><span>{p.fee ? cad(p.fee) : "Free"}</span></div>
     {p.gst > 0 && <div><span>GST</span><span>{cad(p.gst)}</span></div>}
     {p.qst > 0 && <div><span>QST</span><span>{cad(p.qst)}</span></div>}
@@ -35,6 +35,7 @@ const ShopOrder = () => {
   const [me, setMe] = useState(null);
   const [step, setStep] = useState(0);
   const [plan, setPlan] = useState(null);
+  const [type, setType] = useState(null);
   const [counts, setCounts] = useState({});
   const [diet, setDiet] = useState("");
   const [authTab, setAuthTab] = useState("new");
@@ -54,7 +55,8 @@ const ShopOrder = () => {
         setInfo(r);
         document.title = `Start your plan | ${r.shop.name}`;
         const want = r.plans.find((p) => p.plan_id === params.get("plan"));
-        if (want) { setPlan(want); setStep(1); }
+        if (want) { setPlan(want); setType(want.plan_type); setStep(1); }
+        else if (["V", "N", "C"].includes(params.get("type"))) setType(params.get("type"));
         const m = await loadMe();
         if (m?.subscription && ["A", "P"].includes(m.subscription.status)) navigate("/meals/account", { replace: true });
       } catch (e) { setError(e.message); }
@@ -64,7 +66,9 @@ const ShopOrder = () => {
 
   const total = Object.values(counts).reduce((s, n) => s + n, 0);
   const tax = info ? { taxable: info.shop.taxable, gst_rate: info.shop.gst_rate, qst_rate: info.shop.qst_rate } : null;
-  const price = priceFor(plan, me?.zone?.delivery_fee, tax);
+  const q = quote(plan, info?.menu || [], counts);
+  const price = priceFor(q.subtotal, me?.zone?.delivery_fee, tax);
+  const costlyOver = plan && plan.max_costly !== null && plan.max_costly !== undefined && q.costly > plan.max_costly;
   if (!info) return error ? <ShopLayout><Alert severity="error">{error}</Alert></ShopLayout> : <Loader />;
   const { shop, plans, week, menu } = info;
   if (!week) return (
@@ -95,21 +99,51 @@ const ShopOrder = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {step === 0 && (
-        <Grid container spacing={2}>
-          {plans.map((p) => (
-            <Grid item xs={12} sm={4} key={p.plan_id}>
-              <Card sx={{ borderColor: plan?.plan_id === p.plan_id ? "primary.main" : undefined, borderWidth: plan?.plan_id === p.plan_id ? 2 : 1 }}>
-                <CardActionArea onClick={() => { setPlan(p); setCounts({}); go(1); }}>
-                  <CardContent sx={{ textAlign: "center" }}>
-                    <Typography fontWeight={700}>{p.plan_name}</Typography>
-                    <Typography variant="h4" fontWeight={800} sx={{ my: 1 }}>{cad(p.price)}</Typography>
-                    <Typography color="text.secondary">{p.meals_per_week} meals a week</Typography>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <>
+          <Typography fontWeight={700} sx={{ mb: 1.5 }}>1. What would you like?</Typography>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {["V", "N", "C"].filter((t) => plans.some((p) => p.plan_type === t)).map((t) => {
+              const T = PLAN_TYPE[t];
+              const from = Math.min(...plans.filter((p) => p.plan_type === t && p.from_per_meal !== null).map((p) => p.from_per_meal));
+              const sel = type === t;
+              return (
+                <Grid item xs={12} sm={4} key={t}>
+                  <Card sx={{ height: "100%", borderRadius: 3, border: 2, borderColor: sel ? T.color : "divider", bgcolor: sel ? T.tint : "#fff" }}>
+                    <CardActionArea sx={{ height: "100%" }} onClick={() => { setType(t); setPlan(null); setCounts({}); }}>
+                      <CardContent>
+                        <Typography fontWeight={800} fontSize={22} sx={{ color: T.color }}>{T.label}</Typography>
+                        <Typography variant="body2" color="text.secondary">{T.blurb}</Typography>
+                        {Number.isFinite(from) && <Typography sx={{ mt: 1 }}>from <b>{cad(from)}</b> a meal</Typography>}
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+          {type && (
+            <>
+              <Typography fontWeight={700} sx={{ mb: 1.5 }}>2. How many meals a week?</Typography>
+              <Grid container spacing={2}>
+                {plans.filter((p) => p.plan_type === type).map((p) => (
+                  <Grid item xs={12} sm={4} key={p.plan_id}>
+                    <Card sx={{ borderRadius: 3, borderColor: plan?.plan_id === p.plan_id ? "primary.main" : undefined, borderWidth: plan?.plan_id === p.plan_id ? 2 : 1 }}>
+                      <CardActionArea onClick={() => { setPlan(p); setCounts({}); go(1); }} disabled={!p.dishes}>
+                        <CardContent sx={{ textAlign: "center" }}>
+                          <Typography fontWeight={700}>{p.plan_name}</Typography>
+                          <Typography variant="h4" fontWeight={800} sx={{ my: 1 }}>{p.meals_per_week} <Typography component="span" color="text.secondary">meals</Typography></Typography>
+                          <Typography color="text.secondary">{p.from_price !== null ? <>from <b>{cad(p.from_price)}</b> a week</> : "No dishes this week"}</Typography>
+                          {p.discount_pct > 0 && <Chip size="small" label={`${p.discount_pct}% off regular prices`} sx={{ mt: 1, bgcolor: "#fff1df" }} />}
+                          {p.max_costly !== null && <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>Up to {p.max_costly} premium dish{p.max_costly === 1 ? "" : "es"}</Typography>}
+                        </CardContent>
+                      </CardActionArea>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </>
+          )}
+        </>
       )}
 
       {step === 1 && plan && (
@@ -117,20 +151,27 @@ const ShopOrder = () => {
           <Card sx={{ position: "sticky", top: 64, zIndex: 2, mb: 2 }}>
             <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-                <Typography sx={{ flexGrow: 1 }}>
-                  <b>{plan.plan_name}</b> – chosen <b style={{ color: total === plan.meals_per_week ? "#2e7d32" : undefined }}>{total} of {plan.meals_per_week}</b> meals
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                  {[["", "All"], ["V", "Veg"], ["N", "Non-veg"]].map(([v, l]) => (
-                    <Chip key={l} label={l} onClick={() => setDiet(v)} color={diet === v ? "primary" : "default"} variant={diet === v ? "filled" : "outlined"} />
-                  ))}
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography>
+                    <b>{plan.plan_name}</b> – chosen <b style={{ color: total === plan.meals_per_week ? "#2e7d32" : undefined }}>{total} of {plan.meals_per_week}</b> meals · <b>{cad(q.subtotal)}</b>
+                  </Typography>
+                  {plan.max_costly !== null && <Typography variant="caption" sx={{ color: costlyOver ? "error.main" : "text.secondary" }}>Premium dishes: {q.costly} of {plan.max_costly} allowed</Typography>}
+                </Box>
+                {plan.plan_type === "C" && (
+                  <Stack direction="row" spacing={1}>
+                    {[["", "All"], ["V", "Veg"], ["N", "Non-veg"]].map(([v, l]) => (
+                      <Chip key={l} label={l} onClick={() => setDiet(v)} color={diet === v ? "primary" : "default"} variant={diet === v ? "filled" : "outlined"} />
+                    ))}
+                  </Stack>
+                )}
+                <Stack direction="row" spacing={1} justifyContent="flex-end">
+                  <Button onClick={() => go(0)}>Back</Button>
+                  <Button variant="contained" disabled={total !== plan.meals_per_week || costlyOver} onClick={() => go(me ? 3 : 2)} sx={{ flexGrow: { xs: 1, sm: 0 } }}>Continue</Button>
                 </Stack>
-                <Button onClick={() => go(0)}>Back</Button>
-                <Button variant="contained" disabled={total !== plan.meals_per_week} onClick={() => go(me ? 3 : 2)}>Continue</Button>
               </Stack>
             </CardContent>
           </Card>
-          <MealPicker menu={menu} counts={counts} onChange={setCounts} meals={plan.meals_per_week} diet={diet} />
+          <MealPicker menu={menu} counts={counts} onChange={setCounts} meals={plan.meals_per_week} diet={plan.plan_type === "C" ? diet : ""} plan={plan} />
         </>
       )}
 
@@ -172,8 +213,9 @@ const ShopOrder = () => {
             <Card sx={{ mb: 2 }}><CardContent>
               <Typography fontWeight={700} sx={{ mb: 1 }}>Your meals for {niceDate(week.delivery_date)}</Typography>
               {menu.filter((m) => counts[m.product_id]).map((m) => (
-                <Stack key={m.product_id} direction="row" justifyContent="space-between" sx={{ py: 0.25 }}>
-                  <Typography sx={{ textTransform: "capitalize" }}>{m.name.toLowerCase()}</Typography><Typography>× {counts[m.product_id]}</Typography>
+                <Stack key={m.product_id} direction="row" justifyContent="space-between" spacing={2} sx={{ py: 0.25 }}>
+                  <Typography sx={{ textTransform: "capitalize" }}>{m.name.toLowerCase()} <Typography component="span" color="text.secondary">× {counts[m.product_id]}</Typography></Typography>
+                  <Typography>{cad(counts[m.product_id] * unitPrice(plan, m))}</Typography>
                 </Stack>
               ))}
               <Button size="small" sx={{ mt: 1 }} onClick={() => go(1)}>Change meals</Button>
