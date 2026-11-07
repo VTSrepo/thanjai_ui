@@ -72,6 +72,8 @@ const ImportDialog = ({ open, onClose, onDone }) => {
       const p = parsePriceWorkbook(await readXlsxFile(f));
       if (!p.rows.length) throw new Error("No dishes found. Each sheet needs dish names in the first column.");
       setFile(f.name); setParsed(p);
+      // Veg / Non-Veg plans have a fixed weekly price; only a Combo discount in the file is offered
+      Object.keys(p.discounts).forEach((k) => { if (k !== "C") delete p.discounts[k]; });
       setUseDisc(Object.fromEntries(Object.keys(p.discounts).map((k) => [k, true])));
       const r = await importSubDishPrices({ rows: p.rows, preview: true });
       setPreview(r.rows);
@@ -145,7 +147,7 @@ const ImportDialog = ({ open, onClose, onDone }) => {
 };
 
 const DIET_OPTS = [["", "-"], ["V", "Veg"], ["N", "Non-veg"], ["E", "Egg"]];
-const defaultFor = (defaults, diet) => (diet === "V" ? defaults.V : ["N", "E"].includes(diet) ? defaults.N : undefined);
+const defaultFor = (defaults) => (defaults.C === undefined ? 0 : defaults.C);
 const num = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
 
 /** One product row; price and discount save when the field is left, switches save at once. */
@@ -153,7 +155,7 @@ const DishRow = ({ d, defaults, canEdit, onSave, onEdit }) => {
   const [price, setPrice] = useState(d.price ?? "");
   const [disc, setDisc] = useState(d.dish_discount ?? "");
   useEffect(() => { setPrice(d.price ?? ""); setDisc(d.dish_discount ?? ""); }, [d.price, d.dish_discount]);
-  const def = defaultFor(defaults, d.diet);
+  const def = defaultFor(defaults);
   const pct = num(disc) !== null ? num(disc) : def;
   const after = num(price) !== null && pct !== undefined ? num(price) * (1 - pct / 100) : null;
   const blurSave = (field, value, old) => { if (String(value ?? "") !== String(old ?? "")) onSave(d, { [field]: value === "" ? null : value }); };
@@ -178,7 +180,7 @@ const DishRow = ({ d, defaults, canEdit, onSave, onEdit }) => {
           InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }} error={d.sub_enabled === "Y" && num(price) === null} />
       </TableCell>
       <TableCell sx={{ width: 120 }}>
-        <TextField size="small" variant="standard" type="number" value={disc} disabled={!canEdit || !["V", "N", "E"].includes(d.diet)}
+        <TextField size="small" variant="standard" type="number" value={disc} disabled={!canEdit}
           placeholder={def !== undefined ? String(def) : "-"} onChange={(e) => setDisc(e.target.value)}
           onBlur={() => blurSave("dish_discount", disc, d.dish_discount)} inputProps={{ step: 1, min: 0, max: 90, "aria-label": `Discount ${d.product_name}` }}
           InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
@@ -192,25 +194,23 @@ const DishRow = ({ d, defaults, canEdit, onSave, onEdit }) => {
   );
 };
 
-/** Default discounts for Veg / Non-Veg plans (Combo plans charge regular prices). */
+/** Default discount for Combo plans (Veg / Non-Veg plans have a fixed weekly price, set under Plans). */
 const Defaults = ({ defaults, canEdit, onSaved }) => {
   const toast = useToast();
-  const [v, setV] = useState({ V: "", N: "" });
-  useEffect(() => setV({ V: defaults.V ?? "", N: defaults.N ?? "" }), [defaults]);
+  const [v, setV] = useState({ C: "" });
+  useEffect(() => setV({ C: defaults.C ?? 0 }), [defaults]);
   const save = async () => {
-    try { const r = await saveSubPlanDefaults({ V: v.V, N: v.N }); toast.success(r.message); onSaved(); } catch (e) { toast.error(e.message); }
+    try { const r = await saveSubPlanDefaults({ C: v.C }); toast.success(r.message); onSaved(); } catch (e) { toast.error(e.message); }
   };
   return (
     <Card sx={{ p: 2, mb: 2 }}>
-      <Typography fontWeight={700} sx={{ mb: 1 }}>Default discount</Typography>
+      <Typography fontWeight={700} sx={{ mb: 1 }}>Combo default discount</Typography>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
-        <TextField size="small" label="Veg plans" type="number" value={v.V} disabled={!canEdit} onChange={(e) => setV({ ...v, V: e.target.value })} sx={{ width: 150 }}
-          InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
-        <TextField size="small" label="Non-Veg plans" type="number" value={v.N} disabled={!canEdit} onChange={(e) => setV({ ...v, N: e.target.value })} sx={{ width: 150 }}
+        <TextField size="small" label="Combo plans" type="number" value={v.C} disabled={!canEdit} onChange={(e) => setV({ ...v, C: e.target.value })} sx={{ width: 150 }}
           InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
         {canEdit && <Button variant="contained" onClick={save}>Save defaults</Button>}
         <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
-          Taken off every dish's regular price in all Veg / Non-Veg plans. Enter a dish's own % in the list to override it. Combo plans (customer mixes veg and non-veg) charge the regular price.
+          Taken off every dish's regular price in Combo plans (customer mixes veg and non-veg). Enter a dish's own % in the list to override it. Veg / Non-Veg plans have a fixed weekly price - set it under Plans.
         </Typography>
       </Stack>
     </Card>
@@ -262,7 +262,7 @@ const DishPrices = ({ canEdit }) => {
         <TextField size="small" placeholder="Search name or code" value={q} onChange={(e) => setQ(e.target.value)} InputProps={{ startAdornment: <InputAdornment position="start">🔍</InputAdornment> }} />
       </Stack>
       <Card sx={{ overflowX: "auto" }}><Table size="small">
-        <TableHead><TableRow>{["Product", "Online", "Diet", "Regular price", "Own discount (blank = default)", "Veg / Non-Veg plan price", "Costly", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>{h}</TableCell>)}</TableRow></TableHead>
+        <TableHead><TableRow>{["Product", "Online", "Diet", "Regular price", "Own discount (blank = default)", "Combo price", "Costly", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>{h}</TableCell>)}</TableRow></TableHead>
         <TableBody>
           {!list.length && <TableRow><TableCell colSpan={8} sx={{ color: "text.secondary" }}>{tab === "ON" ? 'No dishes on the online menu yet - open "All products" and switch Online on, or import the price list.' : "Nothing here."}</TableCell></TableRow>}
           {list.map((d) => <DishRow key={d.product_id} d={d} defaults={defaults} canEdit={canEdit} onSave={save} onEdit={setEdit} />)}

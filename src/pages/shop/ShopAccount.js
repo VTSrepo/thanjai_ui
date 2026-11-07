@@ -198,7 +198,7 @@ const Plan = ({ me, reload }) => {
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Box>
             <Typography fontWeight={700}>{s.plan_name}</Typography>
-            <Typography color="text.secondary">{s.plan ? `${PLAN_TYPE[s.plan.plan_type]?.long || ""} · ` : ""}{s.meals_per_week} meals a week{s.plan?.discount_pct ? ` · ${s.plan.discount_pct}% off regular prices` : ""}{s.plan?.max_costly !== null && s.plan?.max_costly !== undefined ? ` · up to ${s.plan.max_costly} premium` : ""}</Typography>
+            <Typography color="text.secondary">{s.plan ? `${PLAN_TYPE[s.plan.plan_type]?.long || ""} · ` : ""}{s.meals_per_week} meals a week{s.plan?.fixed ? ` · ${cad(s.plan.price)} a week` : s.plan?.discount_pct ? ` · ${s.plan.discount_pct}% off regular prices` : ""}{s.plan?.max_costly !== null && s.plan?.max_costly !== undefined ? ` · up to ${s.plan.max_costly} premium` : ""}</Typography>
             <Typography variant="caption" color="text.secondary">You pay for the dishes you choose each week, plus delivery and tax.</Typography>
           </Box>
           <Chip label={SUB_LABEL[s.status] || s.status} color={s.status === "A" ? "success" : "default"} />
@@ -211,7 +211,7 @@ const Plan = ({ me, reload }) => {
             <FormControl size="small" sx={{ minWidth: 240 }}>
               <InputLabel>Plan</InputLabel>
               <Select label="Plan" value={planId} onChange={(e) => setPlanId(e.target.value)}>
-                {me.plans.map((p) => <MenuItem key={p.plan_id} value={p.plan_id}>{p.plan_name} – {p.meals_per_week} meals{p.from_price !== null ? `, from ${cad(p.from_price)}` : ""}</MenuItem>)}
+                {me.plans.map((p) => <MenuItem key={p.plan_id} value={p.plan_id}>{p.plan_name} – {p.meals_per_week} meals{p.fixed ? `, ${cad(p.price)} a week` : p.from_price !== null ? `, from ${cad(p.from_price)}` : ""}</MenuItem>)}
               </Select>
             </FormControl>
             <Button variant="outlined" disabled={busy || planId === s.plan_id} onClick={() => run({ action: "change_plan", plan_id: planId })}>Change plan</Button>

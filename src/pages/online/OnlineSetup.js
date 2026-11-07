@@ -52,6 +52,8 @@ const PlanDialog = ({ value, dishes, onClose, onSave }) => {
   const own = dishes.filter((d) => allowedIn(v.plan_type, d) && d.price !== null);
   const pct = Number(v.discount_pct || 0);
   const ex = own.slice(0, 3);
+  const fixed = (v.plan_type || "V") !== "C";
+  const meals = Number(v.meals_per_week) || 0;
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>{value.isNew ? "New plan" : `Edit ${value.plan_name}`}</DialogTitle>
@@ -67,7 +69,12 @@ const PlanDialog = ({ value, dishes, onClose, onSave }) => {
             </FormControl>
           </Grid>
           <Grid item xs={6} sm={4}><TextField fullWidth label="Meals per week" type="number" value={v.meals_per_week || ""} onChange={set("meals_per_week")} /></Grid>
-          <Grid item xs={6} sm={4}><TextField fullWidth label="Discount off regular prices" type="number" value={v.discount_pct ?? 0} onChange={set("discount_pct")} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} /></Grid>
+          {fixed ? (
+            <Grid item xs={6} sm={4}><TextField fullWidth label="Weekly price (CAD)" type="number" value={v.price || ""} onChange={set("price")} inputProps={{ step: 0.01, min: 0 }}
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }} helperText={Number(v.price) > 0 && meals ? `${cad(Number(v.price) / meals)} a meal` : "Fixed price for the week"} /></Grid>
+          ) : (
+            <Grid item xs={6} sm={4}><TextField fullWidth label="Discount off regular prices" type="number" value={v.discount_pct ?? 0} onChange={set("discount_pct")} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} /></Grid>
+          )}
           <Grid item xs={12} sm={6}><TextField fullWidth label="Costly dishes allowed per week" type="number" value={v.max_costly} onChange={set("max_costly")} helperText={`Leave empty for no limit. e.g. 2 = at most 2 of the ${v.meals_per_week || "N"} meals can be costly dishes.`} /></Grid>
           <Grid item xs={6} sm={3}><TextField fullWidth label="Order on the page" type="number" value={v.sort_order ?? 0} onChange={set("sort_order")} /></Grid>
           <Grid item xs={6} sm={3}>
@@ -76,10 +83,17 @@ const PlanDialog = ({ value, dishes, onClose, onSave }) => {
             </FormControl>
           </Grid>
           <Grid item xs={12}><TextField fullWidth label="Short description" multiline value={v.description || ""} onChange={set("description")} /></Grid>
+          {fixed ? (
+            <Grid item xs={12}>
+              <Alert severity="info" sx={{ py: 0.5 }}>
+                Customers pay <b>{Number(v.price) > 0 ? cad(v.price) : "the weekly price"}</b> and choose any {meals || "N"} {v.plan_type === "N" ? "non-veg / egg" : "veg"} dishes from the week's menu{v.max_costly !== "" ? ` (at most ${v.max_costly} costly)` : ""}. Delivery and tax are added.
+              </Alert>
+            </Grid>
+          ) : (<>
           <Grid item xs={12}>
             <Alert severity="info" sx={{ py: 0.5 }}>
               Customers pay the sum of the dishes they choose{pct ? `, each ${pct}% off its regular price` : " at regular prices"}.
-              {ex.length > 0 && <> e.g. {ex.map((d) => `${d.product_name.toLowerCase()} ${cad(d.price)} → ${cad(d.price * (1 - (Number(v.rows.find((r) => r.product_id === d.product_id)?.discount_pct ?? (v.plan_type !== "C" && d.dish_discount !== null && d.dish_discount !== undefined ? d.dish_discount : pct))) / 100))}`).join(" · ")}</>}
+              {ex.length > 0 && <> e.g. {ex.map((d) => `${d.product_name.toLowerCase()} ${cad(d.price)} → ${cad(d.price * (1 - (Number(v.rows.find((r) => r.product_id === d.product_id)?.discount_pct ?? (d.dish_discount !== null && d.dish_discount !== undefined ? d.dish_discount : pct))) / 100))}`).join(" · ")}</>}
               {!own.length && " No priced dishes of this type yet (Dish prices tab)."}
             </Alert>
           </Grid>
@@ -97,6 +111,7 @@ const PlanDialog = ({ value, dishes, onClose, onSave }) => {
             ))}
             <Button size="small" onClick={() => setV({ ...v, rows: [...v.rows, { product_id: null, discount_pct: "" }] })}>Add dish discount</Button>
           </Grid>
+          </>)}
         </Grid>
       </DialogContent>
       <DialogActions><Button onClick={onClose}>Cancel</Button>
@@ -120,18 +135,20 @@ const Plans = ({ canEdit }) => {
   if (!rows) return <Loader inline />;
   return (
     <>
-      {canEdit && <Button variant="contained" sx={{ mb: 2 }} onClick={() => setEdit({ isNew: true, plan_type: "V", status: "A", discount_pct: 0, sort_order: rows.length + 1 })}>Add plan</Button>}
+      {canEdit && <Button variant="contained" sx={{ mb: 2 }} onClick={() => setEdit({ isNew: true, plan_type: "V", status: "A", discount_pct: 0, price: "", sort_order: rows.length + 1 })}>Add plan</Button>}
+      {rows.some((p) => p.status === "A" && !p.ready) && <Alert severity="warning" sx={{ mb: 2 }}>Plans marked "set the weekly price" are hidden from customers until they have a price.</Alert>}
       <Card sx={{ overflowX: "auto" }}><Table size="small">
-        <TableHead><TableRow>{["Plan", "Type", "Meals / week", "Discount", "Costly allowed", "From (customers see)", "Status", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
+        <TableHead><TableRow>{["Plan", "Type", "Meals / week", "Price", "Costly allowed", "Customers see", "Status", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
         <TableBody>
           {rows.map((p) => (
             <TableRow key={p.plan_id}>
               <TableCell><b>{p.plan_name}</b> <Typography component="span" variant="caption" color="text.secondary">{p.plan_id}</Typography></TableCell>
               <TableCell><Chip size="small" variant="outlined" color={TYPE[p.plan_type]?.[1]} label={TYPE[p.plan_type]?.[0] || p.plan_type} /></TableCell>
               <TableCell>{p.meals_per_week}</TableCell>
-              <TableCell>{(() => { const n = Object.keys(p.overrides || {}).length; const base = p.discount_pct ? `${p.discount_pct}%` : n ? "None" : "-"; return n ? `${base} + ${n} dish discount${n === 1 ? "" : "s"}` : base; })()}</TableCell>
+              <TableCell>{p.plan_type !== "C" ? (Number(p.price) > 0 ? <b>{cad(p.price)} / week</b> : <Typography variant="caption" color="error">set the weekly price</Typography>)
+                : (() => { const n = Object.keys(p.overrides || {}).length; const base = p.discount_pct ? `${p.discount_pct}% off` : "Regular prices"; return n ? `${base} + ${n} dish discount${n === 1 ? "" : "s"}` : base; })()}</TableCell>
               <TableCell>{p.max_costly === null ? "No limit" : `${p.max_costly} of ${p.meals_per_week}`}</TableCell>
-              <TableCell>{p.from_price === null ? <Typography variant="caption" color="warning.dark">no priced dishes</Typography> : `from ${cad(p.from_price)} (${cad(p.from_per_meal)} / meal)`}</TableCell>
+              <TableCell>{p.from_price === null ? <Typography variant="caption" color="warning.dark">{p.plan_type !== "C" ? "hidden - no price" : "no priced dishes"}</Typography> : p.plan_type !== "C" ? `${cad(p.from_price)} (${cad(p.from_per_meal)} / meal), any dish` : `from ${cad(p.from_price)} (${cad(p.from_per_meal)} / meal)`}</TableCell>
               <TableCell><Chip size="small" label={p.status === "A" ? "Active" : "Inactive"} color={p.status === "A" ? "success" : "default"} /></TableCell>
               <TableCell>{canEdit && <Button size="small" onClick={() => setEdit(p)}>Edit</Button>}</TableCell>
             </TableRow>
@@ -139,7 +156,7 @@ const Plans = ({ canEdit }) => {
         </TableBody>
       </Table></Card>
       <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-        Customers pay the sum of the dishes they choose after the plan's discount (before delivery and tax). Price or discount changes apply to orders not yet charged.
+        Veg / Non-Veg plans: fixed weekly price, any dishes of that kind (costly limit applies). Combo plans: sum of the chosen dishes at regular price less the discount. Delivery and tax are added. Price changes apply to orders not yet charged.
       </Typography>
       <PlanDialog value={edit} dishes={dishes} onClose={() => setEdit(null)} onSave={save} />
     </>

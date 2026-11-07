@@ -73,7 +73,8 @@ const ShopHome = () => {
       return {
         type: t, plans: ps, sizes: [...new Set(ps.map((p) => p.meals_per_week))].sort((a, b) => a - b),
         from: priced.length ? Math.min(...priced.map((p) => p.from_per_meal)) : null,
-        discount: Math.max(0, ...ps.map((p) => p.discount_pct || 0)),
+        fixed: t !== "C",
+        discount: t === "C" ? Math.max(0, ...ps.map((p) => p.discount_pct || 0)) : 0,
         costly: ps.find((p) => p.max_costly !== null),
       };
     }).filter(Boolean);
@@ -145,7 +146,7 @@ const ShopHome = () => {
       </Box>
 
       {/* ---------- plans ---------- */}
-      <Section id="plans" eyebrow="Plans" title="Pick your kind of meal" sub="Every plan is priced by the dishes you choose - you only pay for what you pick, with the plan discount taken off.">
+      <Section id="plans" eyebrow="Plans" title="Pick your kind of meal" sub="Veg and Non-Veg: one weekly price - pick any dishes you like. Combo: mix veg and non-veg and pay for what you pick, with the plan discount taken off.">
         <Grid container spacing={2.5}>
           {types.map((t) => {
             const T = PLAN_TYPE[t.type];
@@ -158,10 +159,11 @@ const ShopHome = () => {
                       <Typography sx={{ fontFamily: SERIF, fontWeight: 800, fontSize: 30, color: T.color }}>{T.label}</Typography>
                       <Typography color="text.secondary" sx={{ minHeight: 48 }}>{T.blurb}</Typography>
                       <Typography sx={{ mt: 2 }}>
-                        {t.from !== null ? <>Starting from <Box component="span" sx={{ fontWeight: 800, fontSize: 26 }}>{cad(t.from)}</Box> a meal</> : "Prices coming soon"}
+                        {t.from !== null ? <>{t.fixed ? "From" : "Starting from"} <Box component="span" sx={{ fontWeight: 800, fontSize: 26 }}>{cad(t.from)}</Box> a meal</> : "Prices coming soon"}
                       </Typography>
                       <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                        {t.sizes.map((n) => <Chip key={n} label={`${n} meals`} variant="outlined" />)}
+                        {t.fixed ? t.plans.map((p) => <Chip key={p.plan_id} label={`${p.meals_per_week} meals · ${cad(p.price)}`} variant="outlined" />)
+                          : t.sizes.map((n) => <Chip key={n} label={`${n} meals`} variant="outlined" />)}
                       </Stack>
                       {t.costly && <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1.5 }}>Premium dishes limited per week (e.g. {t.costly.max_costly} in {t.costly.plan_name}).</Typography>}
                       <Box sx={{ mt: 2.5, py: 1.25, textAlign: "center", borderRadius: 99, bgcolor: T.color, color: "#fff", fontWeight: 800 }}>Choose {T.label}</Box>
@@ -242,7 +244,7 @@ const ShopHome = () => {
       <Section eyebrow="Questions" title="Good to know">
         <Box sx={{ maxWidth: 760, mx: "auto" }}>
           {[["Is it a subscription?", `Yes - your plan renews every week so you never miss a delivery. You can change your dishes, skip a week, pause or cancel from your account before each week's order cutoff.`],
-            ["How is the price worked out?", `You pay for the dishes you choose. Each dish has a regular price; your plan takes its discount off${bestOff ? ` (up to ${bestOff}%)` : ""}. Delivery and tax are added at checkout, and you see the total before you pay.`],
+            ["How is the price worked out?", `Veg and Non-Veg plans have one weekly price - choose any dishes of that kind (a few premium dishes may be limited). Combo plans add up the dishes you choose at their regular price${bestOff ? `, less up to ${bestOff}%` : ""}. Delivery and tax are added at checkout, and you see the total before you pay.`],
             ["What are Premium dishes?", "Some dishes cost us more to make (for example paneer, mutton or fish). Your plan lets you pick a few of them each week - the menu shows how many."],
             ["When do I need to order?", week ? `For ${niceDate(week.delivery_date)}, order by ${niceDateTime(week.cutoff_at)}. Each week's menu has its own cutoff.` : "Each week's menu has an order cutoff a few days before delivery."],
             ["What if I don't choose my dishes?", "We fill your plan with the chef's picks for that week (Veg customers get veg dishes)."],

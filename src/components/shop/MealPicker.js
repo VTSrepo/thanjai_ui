@@ -5,7 +5,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
 import SpaIcon from "@mui/icons-material/Spa";
 import StarIcon from "@mui/icons-material/Star";
-import { DIET, allowedIn, cad, unitPrice } from "../../utilities/shopApi";
+import { DIET, allowedIn, cad, isFixed, unitPrice } from "../../utilities/shopApi";
 
 export const Premium = () => <Chip size="small" icon={<StarIcon sx={{ fontSize: 14 }} />} label="Premium" sx={{ bgcolor: "#fff3d6", color: "#8a5a00", "& .MuiChip-icon": { color: "#d39a00" } }} />;
 
@@ -23,6 +23,7 @@ export const DishInfo = ({ m }) => (
 );
 
 export const PriceTag = ({ plan, m, size = "body1" }) => {
+  if (isFixed(plan)) return null; // Veg / Non-Veg: one weekly price, any dish
   const p = unitPrice(plan, m);
   if (p === null) return null;
   const off = plan && Number(m.price) > p;

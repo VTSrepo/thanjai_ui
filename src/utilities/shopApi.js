@@ -81,11 +81,14 @@ export const allowedIn = (plan, m) => {
   return plan.plan_type === "V" ? m.diet === "V" : ["N", "E"].includes(m.diet);
 };
 /** One meal of this dish in this plan, after the plan's (or the dish's own) discount. */
+/** Veg / Non-Veg plans have a fixed weekly price; Combo plans are priced by the dishes chosen. */
+export const isFixed = (plan) => !!plan && (plan.plan_type === "V" || plan.plan_type === "N");
 export const unitPrice = (plan, m) => {
+  if (isFixed(plan)) return Number(plan.price) > 0 ? r2(Number(plan.price) / plan.meals_per_week) : null;
   if (m.price === null || m.price === undefined) return null;
   if (!plan) return Number(m.price);
   const ov = plan.overrides && plan.overrides[m.product_id];
-  const own = m.dish_discount !== null && m.dish_discount !== undefined && plan.plan_type !== "C" ? Number(m.dish_discount) : null;
+  const own = m.dish_discount !== null && m.dish_discount !== undefined ? Number(m.dish_discount) : null;
   const pct = ov !== undefined ? Number(ov) : own !== null ? own : Number(plan.discount_pct || 0);
   return r2(Number(m.price) * (1 - pct / 100));
 };
@@ -99,5 +102,6 @@ export const quote = (plan, menu, counts) => {
     if (m.costly === "Y") costly += q;
     subtotal += q * (unitPrice(plan, m) || 0);
   });
+  if (isFixed(plan)) subtotal = Number(plan.price) || 0;
   return { subtotal: r2(subtotal), meals, costly };
 };

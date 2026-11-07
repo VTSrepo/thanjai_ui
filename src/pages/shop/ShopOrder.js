@@ -132,8 +132,8 @@ const ShopOrder = () => {
                         <CardContent sx={{ textAlign: "center" }}>
                           <Typography fontWeight={700}>{p.plan_name}</Typography>
                           <Typography variant="h4" fontWeight={800} sx={{ my: 1 }}>{p.meals_per_week} <Typography component="span" color="text.secondary">meals</Typography></Typography>
-                          <Typography color="text.secondary">{p.from_price !== null ? <>from <b>{cad(p.from_price)}</b> a week</> : "No dishes this week"}</Typography>
-                          {p.discount_pct > 0 && <Chip size="small" label={`${p.discount_pct}% off regular prices`} sx={{ mt: 1, bgcolor: "#fff1df" }} />}
+                          <Typography color="text.secondary">{!p.dishes ? "No dishes this week" : p.fixed ? <><b>{cad(p.price)}</b> a week · any {p.meals_per_week} dishes</> : <>from <b>{cad(p.from_price)}</b> a week</>}</Typography>
+                          {!p.fixed && p.discount_pct > 0 && <Chip size="small" label={`${p.discount_pct}% off regular prices`} sx={{ mt: 1, bgcolor: "#fff1df" }} />}
                           {p.max_costly !== null && <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>Up to {p.max_costly} premium dish{p.max_costly === 1 ? "" : "es"}</Typography>}
                         </CardContent>
                       </CardActionArea>
