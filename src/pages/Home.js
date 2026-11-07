@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { CONFIG } from "../config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import InvoiceAlerts from "../components/InvoiceAlerts";
+import { ReservationTilesGrid } from "../components/ReservationTiles";
 import { useUser, ROLE } from "../utilities/UserContext";
 import { fetchIndents } from "../utilities/service";
 
@@ -45,6 +46,7 @@ const Home = () => {
         <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
           Welcome, {user?.user_name}
         </Typography>
+        <ReservationTilesGrid />
         <InvoiceAlerts />
         {counts?.changes > 0 && (
           <Alert severity="warning" sx={{ mb: 2 }}

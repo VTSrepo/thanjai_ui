@@ -559,6 +559,7 @@ export const getTSListing = async () => {
 };
 
 // ---- Table reservations (staff) ----
+export const getResSummary = () => get(`/res/summary/${orgId()}`, "Could not load reservations");
 export const getResDay = (date) => get(`/res/day/${orgId()}?date=${encodeURIComponent(date)}`, "Could not load reservations");
 export const searchRes = (q) => get(`/res/search/${orgId()}?q=${encodeURIComponent(q)}`, "Could not search bookings");
 export const createRes = (b) => post("/res/booking", b, "Could not save the booking");
