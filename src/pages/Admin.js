@@ -1,121 +1,124 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Alert, Box, Button, Card, CardContent, CircularProgress, Grid2, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Card, CardActionArea, CardContent, Grid2, Stack, Typography } from "@mui/material";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { CONFIG } from "../config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
-import InvoiceAlerts from "../components/InvoiceAlerts";
-import StockAlerts from "../components/StockAlerts";
-import ProductionDataChart from "../components/ProductionDataChart";
-import { FormattedDate } from "../utilities/helpers";
-import { fetchIndents, getProductSummary } from "../utilities/service";
+import { LIGHT, Dot, stockLights, useStockAlerts, StockDetailsDialog } from "../components/StockAlerts";
+import { money } from "../utilities/helpers";
+import { fetchIndents, getReceivablesSummary } from "../utilities/service";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../utilities/UserContext";
 
-const rangeFor = (key) => {
-  const today = new Date();
-  const d = new Date(today);
-  if (key === "7d") d.setDate(d.getDate() - 6);
-  if (key === "month") d.setDate(1);
-  return { start_date: FormattedDate(d), end_date: FormattedDate(today) };
-};
+const DAY = 24 * 60 * 60 * 1000;
 
-const ChartCard = ({ title, loading, children }) => (
-  <Card sx={{ height: "100%" }}>
-    <CardContent>
-      <Typography fontWeight={700} sx={{ mb: 1 }}>{title}</Typography>
-      {loading ? <Stack alignItems="center" sx={{ py: 8 }}><CircularProgress /></Stack> : children}
-    </CardContent>
+/** One status tile: traffic light, title, one-line summary; click opens the detail. */
+const Tile = ({ light = "green", title, summary, sub, onClick, action = "Details" }) => (
+  <Card sx={{ height: "100%", borderLeft: 6, borderLeftColor: LIGHT[light].color }}>
+    <CardActionArea onClick={onClick} sx={{ height: "100%" }}>
+      <CardContent>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.75 }}>
+          <Dot light={light} />
+          <Typography fontWeight={700} sx={{ flexGrow: 1 }}>{title}</Typography>
+          <Typography variant="caption" sx={{ px: 1, py: 0.25, borderRadius: 1, bgcolor: LIGHT[light].bg, color: LIGHT[light].color, fontWeight: 700 }}>
+            {LIGHT[light].label}
+          </Typography>
+        </Stack>
+        <Typography variant="h6" sx={{ fontSize: 17, lineHeight: 1.3 }}>{summary}</Typography>
+        <Stack direction="row" alignItems="center" sx={{ mt: 0.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>{sub || " "}</Typography>
+          <Typography variant="body2" color="primary.dark" sx={{ display: "flex", alignItems: "center", fontWeight: 600 }}>
+            {action}<ChevronRightIcon fontSize="small" />
+          </Typography>
+        </Stack>
+      </CardContent>
+    </CardActionArea>
   </Card>
 );
 
+/**
+ * Admin / Operations home: one tile per area, each a green / amber / red light with a one-line summary.
+ * Click a tile for the detail (a list, or the screen that handles it).
+ */
 const Admin = () => {
   document.title = `Admin | ${CONFIG.title.name}`;
   const { user, can } = useUser();
-  const [quick, setQuick] = useState("today");
-  const [range, setRange] = useState(rangeFor("today"));
-  const [loading, setLoading] = useState(false);
-  const [byProduct, setByProduct] = useState({});
-  const [byEmployee, setByEmployee] = useState({});
-  const [toFinalize, setToFinalize] = useState(0);
   const navigate = useNavigate();
+  const showStock = can("INVENTORY") || can("BATCHES") || can("DASHBOARD");
+  const stock = useStockAlerts();
+  const lights = showStock ? stockLights(stock) : null;
+  const [detail, setDetail] = useState(null);
+  const [ind, setInd] = useState(null);
+  const [money_, setMoney] = useState(null);
 
-  // Accepted indents waiting for the admin's invoice decision (kitchen cannot dispatch until then)
   useEffect(() => {
-    fetchIndents(["R"], {}).then((l) => setToFinalize(l.length)).catch(() => {});
+    (async () => {
+      try {
+        const [accept, dispatch, onWay, toInvoice] = await Promise.all([
+          fetchIndents(["C"], {}), fetchIndents(["A", "F"], {}), fetchIndents(["D"], {}), fetchIndents(["R"], {}),
+        ]);
+        const old = toInvoice.filter((i) => i.received_date && Date.now() - new Date(i.received_date).getTime() > 2 * DAY).length;
+        setInd({ accept: accept.length, dispatch: dispatch.length, onWay: onWay.length, toInvoice: toInvoice.length, oldInvoice: old });
+      } catch (e) {
+        setInd(null);
+      }
+    })();
+    if (can("PAYMENTS")) getReceivablesSummary().then((s) => setMoney(s?.totals || null)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const load = useCallback(async (r) => {
-    setLoading(true);
-    try {
-      const [p, e] = await Promise.all([
-        getProductSummary({ ...r, type: "productwise" }).catch(() => null),
-        getProductSummary({ ...r, type: "employeewise" }).catch(() => null),
-      ]);
-      setByProduct(p?.dashboard || {});
-      setByEmployee(e?.dashboard || {});
-    } finally {
-      setLoading(false);
+  const tiles = [];
+  if (ind) {
+    const waiting = ind.accept + ind.dispatch;
+    tiles.push(
+      <Tile key="ind" title="Indents" light={waiting ? "amber" : "green"}
+        summary={waiting ? `${ind.accept} to accept · ${ind.dispatch} to dispatch` : "Nothing waiting at the kitchens"}
+        sub={`${ind.onWay} on the way to branches`} action="Open"
+        onClick={() => navigate("/indents", { state: { tab: ind.accept ? "accept" : "dispatch" } })} />
+    );
+    if (can("INVOICE_SETUP")) {
+      tiles.push(
+        <Tile key="inv" title="Invoices to issue" light={!ind.toInvoice ? "green" : ind.oldInvoice ? "red" : "amber"}
+          summary={ind.toInvoice ? `${ind.toInvoice} received indent(s) to invoice` : "All received indents invoiced"}
+          sub={ind.oldInvoice ? `${ind.oldInvoice} waiting more than 2 days` : ind.toInvoice ? "Finalize under Indents → To invoice" : ""}
+          action="Open" onClick={() => navigate("/indents", { state: { tab: "invoice" } })} />
+      );
     }
-  }, []);
-
-  useEffect(() => {
-    load(rangeFor("today"));
-  }, [load]);
-
-  const pickQuick = (e, v) => {
-    if (!v) return;
-    setQuick(v);
-    const r = rangeFor(v);
-    setRange(r);
-    load(r);
-  };
+  }
+  if (money_) {
+    const light = money_.overdue_count > 0 ? "red" : money_.due_soon_count > 0 ? "amber" : "green";
+    tiles.push(
+      <Tile key="pay" title="Payments" light={light}
+        summary={money_.overdue_count > 0 ? `${money_.overdue_count} overdue · ${money(money_.overdue_amt, true)}`
+          : money_.due_soon_count > 0 ? `${money_.due_soon_count} due in 7 days · ${money(money_.due_soon_amt, true)}` : "Nothing overdue"}
+        sub={money_.overdue_count > 0 && money_.due_soon_count > 0 ? `${money_.due_soon_count} more due in 7 days · ${money(money_.due_soon_amt, true)}` : ""}
+        action="Open" onClick={() => navigate("/payments")} />
+    );
+  }
+  if (lights) {
+    ["batch", "reorder", "expiry"].forEach((k) => {
+      const l = lights[k];
+      tiles.push(<Tile key={k} title={l.title} light={l.light} summary={l.summary} sub={l.sub} onClick={() => setDetail(k)} />);
+    });
+  }
 
   return (
     <>
       <ResponsiveAppBar />
-      <Box sx={{ p: 2, maxWidth: 1300, mx: "auto" }}>
-        <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Welcome, {user?.user_name}</Typography>
-        {toFinalize > 0 && (
-          <Alert severity="warning" sx={{ mb: 2 }}
-            action={<Button color="inherit" size="small" onClick={() => navigate("/indents", { state: { tab: "invoice" } })}>Open</Button>}>
-            {toFinalize} received indent(s) waiting for you to finalize and issue the invoice.
-          </Alert>
-        )}
-        {can("INVENTORY") && <StockAlerts />}
-        <InvoiceAlerts />
-
-        <Card sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography fontWeight={700} sx={{ mb: 1.5 }}>Production: made vs damaged</Typography>
-            <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
-              <ToggleButtonGroup exclusive size="small" color="primary" value={quick} onChange={pickQuick}>
-                <ToggleButton value="today">Today</ToggleButton>
-                <ToggleButton value="7d">7 days</ToggleButton>
-                <ToggleButton value="month">This month</ToggleButton>
-              </ToggleButtonGroup>
-              <TextField type="date" size="small" label="From" value={range.start_date} InputLabelProps={{ shrink: true }}
-                onChange={(e) => { setQuick(null); setRange((r) => ({ ...r, start_date: e.target.value })); }} />
-              <TextField type="date" size="small" label="To" value={range.end_date} InputLabelProps={{ shrink: true }}
-                onChange={(e) => { setQuick(null); setRange((r) => ({ ...r, end_date: e.target.value })); }} />
-              <Button variant="contained" disabled={!range.start_date || !range.end_date || loading} onClick={() => load(range)}>
-                Show
-              </Button>
+      <Box sx={{ p: 2, maxWidth: 1200, mx: "auto" }}>
+        <Typography variant="h6" fontWeight={700}>Welcome, {user?.user_name}</Typography>
+        <Stack direction="row" spacing={2} sx={{ mb: 2, color: "text.secondary", flexWrap: "wrap" }}>
+          {Object.entries(LIGHT).map(([k, v]) => (
+            <Stack key={k} direction="row" alignItems="center" spacing={0.5}>
+              <Dot light={k} size={10} /><Typography variant="caption">{k === "green" ? "All good" : k === "amber" ? "Check" : "Needs action"}</Typography>
             </Stack>
-          </CardContent>
-        </Card>
-
+          ))}
+        </Stack>
         <Grid2 container spacing={2}>
-          <Grid2 size={{ xs: 12, md: 6 }}>
-            <ChartCard title="By product" loading={loading}>
-              <ProductionDataChart filterBy="product" summary={byProduct} />
-            </ChartCard>
-          </Grid2>
-          <Grid2 size={{ xs: 12, md: 6 }}>
-            <ChartCard title="By employee" loading={loading}>
-              <ProductionDataChart filterBy="employee" summary={byEmployee} />
-            </ChartCard>
-          </Grid2>
+          {tiles.map((t) => <Grid2 key={t.key} size={{ xs: 12, sm: 6, md: 4 }}>{t}</Grid2>)}
         </Grid2>
+        {!tiles.length && <Typography color="text.secondary">Loading…</Typography>}
       </Box>
+      <StockDetailsDialog kind={detail} alerts={stock} onClose={() => setDetail(null)} />
     </>
   );
 };
