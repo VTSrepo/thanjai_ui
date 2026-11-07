@@ -232,6 +232,8 @@ export const getSubZones = () => get(`/sub/zones/${orgId()}`, "Could not load de
 export const saveSubZone = (b) => post("/sub/zone", b, "Could not save the zone");
 export const getSubDishes = () => get(`/sub/dishes/${orgId()}`, "Could not load dishes");
 export const saveSubDish = (b) => post("/sub/dish", b, "Could not save the dish");
+export const saveSubDishPricing = (b) => post("/sub/dishes/pricing", b, "Could not save");
+export const saveSubPlanDefaults = (b) => post("/sub/plans/defaults", b, "Could not save the default discounts");
 export const importSubDishPrices = (b) => post("/sub/dishes/import", b, "Could not import the prices");
 export const getSubWeeks = () => get(`/sub/weeks/${orgId()}`, "Could not load menu weeks");
 export const getSubWeek = (date) => get(`/sub/week/${orgId()}/${date}`, "Could not load the menu");

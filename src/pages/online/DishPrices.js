@@ -1,17 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert, Autocomplete, Box, Button, Card, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel,
-  InputAdornment, Stack, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography,
+  Alert, Autocomplete, Box, Button, Card, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel,
+  InputAdornment, Stack, Switch, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography,
 } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import Loader from "../../components/Loader";
 import { useToast } from "../../components/ToastProvider";
-import { getSubDishes, importSubDishPrices } from "../../utilities/service";
+import { getSubDishes, importSubDishPrices, saveSubDishPricing, saveSubPlanDefaults } from "../../utilities/service";
 import { DIET, cad } from "../../utilities/shopApi";
 import { DishDialog } from "./OnlineMenu";
 
 const NONVEG = /chicken|mutton|fish|egg|prawn|shrimp|lamb|goat|beef|keema/i;
-const KIND = { C: "Curry", M: "Combo meal" };
 
 /**
  * Reads a price list workbook: one sheet per group ("Veg", "Non Veg", "Combo"). Each sheet: dish name in the first
@@ -114,13 +113,12 @@ const ImportDialog = ({ open, onClose, onDone }) => {
             )}
             <Box sx={{ maxHeight: "55vh", overflow: "auto" }}>
               <Table size="small" stickyHeader>
-                <TableHead><TableRow>{["Sheet", "Dish in the file", "Kind", "Diet", "Regular price", "Product", "Now"].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
+                <TableHead><TableRow>{["Sheet", "Dish in the file", "Diet", "Regular price", "Product", "Now"].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
                 <TableBody>
                   {preview.map((r, i) => (
                     <TableRow key={i} sx={{ bgcolor: r.product_id ? undefined : "#fff8e1" }}>
                       <TableCell>{parsed.rows[i]?.sheet}</TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>{r.name}</TableCell>
-                      <TableCell>{KIND[r.kind]}</TableCell>
                       <TableCell>{DIET[r.diet]?.label || "-"}</TableCell>
                       <TableCell>{r.price === null ? <Typography variant="caption" color="text.secondary">no price</Typography> : cad(r.price)}</TableCell>
                       <TableCell sx={{ minWidth: 260 }}>
@@ -146,50 +144,128 @@ const ImportDialog = ({ open, onClose, onDone }) => {
   );
 };
 
-/** Regular prices, kind (curry / combo meal) and "costly" flag of every online dish. */
+const DIET_OPTS = [["", "-"], ["V", "Veg"], ["N", "Non-veg"], ["E", "Egg"]];
+const defaultFor = (defaults, diet) => (diet === "V" ? defaults.V : ["N", "E"].includes(diet) ? defaults.N : undefined);
+const num = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
+
+/** One product row; price and discount save when the field is left, switches save at once. */
+const DishRow = ({ d, defaults, canEdit, onSave, onEdit }) => {
+  const [price, setPrice] = useState(d.price ?? "");
+  const [disc, setDisc] = useState(d.dish_discount ?? "");
+  useEffect(() => { setPrice(d.price ?? ""); setDisc(d.dish_discount ?? ""); }, [d.price, d.dish_discount]);
+  const def = defaultFor(defaults, d.diet);
+  const pct = num(disc) !== null ? num(disc) : def;
+  const after = num(price) !== null && pct !== undefined ? num(price) * (1 - pct / 100) : null;
+  const blurSave = (field, value, old) => { if (String(value ?? "") !== String(old ?? "")) onSave(d, { [field]: value === "" ? null : value }); };
+  return (
+    <TableRow hover sx={{ opacity: d.sub_enabled === "Y" ? 1 : 0.75 }}>
+      <TableCell sx={{ minWidth: 200 }}>
+        <Typography fontWeight={600} sx={{ textTransform: "capitalize" }}>{d.product_name.toLowerCase()}</Typography>
+        <Typography variant="caption" color="text.secondary">{d.product_id}{d.short_code ? ` · ${d.short_code}` : ""}</Typography>
+      </TableCell>
+      <TableCell>
+        <Switch size="small" checked={d.sub_enabled === "Y"} disabled={!canEdit} onChange={(e) => onSave(d, { sub_enabled: e.target.checked ? "Y" : "N" })} inputProps={{ "aria-label": `Online ${d.product_name}` }} />
+      </TableCell>
+      <TableCell sx={{ minWidth: 110 }}>
+        <TextField select size="small" variant="standard" value={d.diet || ""} disabled={!canEdit} onChange={(e) => onSave(d, { diet: e.target.value || null })} SelectProps={{ native: true }}
+          error={d.sub_enabled === "Y" && !d.diet}>
+          {DIET_OPTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </TextField>
+      </TableCell>
+      <TableCell sx={{ width: 120 }}>
+        <TextField size="small" variant="standard" type="number" value={price} disabled={!canEdit} placeholder="no price" onChange={(e) => setPrice(e.target.value)}
+          onBlur={() => blurSave("price", price, d.price)} inputProps={{ step: 0.01, min: 0, "aria-label": `Price ${d.product_name}` }}
+          InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }} error={d.sub_enabled === "Y" && num(price) === null} />
+      </TableCell>
+      <TableCell sx={{ width: 120 }}>
+        <TextField size="small" variant="standard" type="number" value={disc} disabled={!canEdit || !["V", "N", "E"].includes(d.diet)}
+          placeholder={def !== undefined ? String(def) : "-"} onChange={(e) => setDisc(e.target.value)}
+          onBlur={() => blurSave("dish_discount", disc, d.dish_discount)} inputProps={{ step: 1, min: 0, max: 90, "aria-label": `Discount ${d.product_name}` }}
+          InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
+      </TableCell>
+      <TableCell>{after === null ? "" : <><b>{cad(after)}</b>{num(disc) !== null && <Typography component="span" variant="caption" color="primary.dark"> own %</Typography>}</>}</TableCell>
+      <TableCell>
+        <Checkbox size="small" checked={d.costly === "Y"} disabled={!canEdit} onChange={(e) => onSave(d, { costly: e.target.checked ? "Y" : "N" })} inputProps={{ "aria-label": `Costly ${d.product_name}` }} />
+      </TableCell>
+      <TableCell>{canEdit && <Button size="small" onClick={() => onEdit(d)}>Details</Button>}</TableCell>
+    </TableRow>
+  );
+};
+
+/** Default discounts for Veg / Non-Veg plans (Combo plans charge regular prices). */
+const Defaults = ({ defaults, canEdit, onSaved }) => {
+  const toast = useToast();
+  const [v, setV] = useState({ V: "", N: "" });
+  useEffect(() => setV({ V: defaults.V ?? "", N: defaults.N ?? "" }), [defaults]);
+  const save = async () => {
+    try { const r = await saveSubPlanDefaults({ V: v.V, N: v.N }); toast.success(r.message); onSaved(); } catch (e) { toast.error(e.message); }
+  };
+  return (
+    <Card sx={{ p: 2, mb: 2 }}>
+      <Typography fontWeight={700} sx={{ mb: 1 }}>Default discount</Typography>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }}>
+        <TextField size="small" label="Veg plans" type="number" value={v.V} disabled={!canEdit} onChange={(e) => setV({ ...v, V: e.target.value })} sx={{ width: 150 }}
+          InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
+        <TextField size="small" label="Non-Veg plans" type="number" value={v.N} disabled={!canEdit} onChange={(e) => setV({ ...v, N: e.target.value })} sx={{ width: 150 }}
+          InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
+        {canEdit && <Button variant="contained" onClick={save}>Save defaults</Button>}
+        <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+          Taken off every dish's regular price in all Veg / Non-Veg plans. Enter a dish's own % in the list to override it. Combo plans (customer mixes veg and non-veg) charge the regular price.
+        </Typography>
+      </Stack>
+    </Card>
+  );
+};
+
+/** Every product from Product Master with its online price, own discount, diet and "costly" flag. */
 const DishPrices = ({ canEdit }) => {
   const toast = useToast();
   const [rows, setRows] = useState(null);
+  const [defaults, setDefaults] = useState({});
   const [edit, setEdit] = useState(null);
   const [imp, setImp] = useState(false);
-  const [tab, setTab] = useState("C");
+  const [tab, setTab] = useState("ON");
+  const [diet, setDiet] = useState("");
   const [q, setQ] = useState("");
-  const load = useCallback(() => getSubDishes().then((r) => setRows(r.dishes)).catch((e) => toast.error(e.message)), [toast]);
+  const load = useCallback(() => getSubDishes().then((r) => { setRows(r.dishes); setDefaults(r.defaults || {}); }).catch((e) => toast.error(e.message)), [toast]);
   useEffect(() => { load(); }, [load]);
-  const list = useMemo(() => (rows || []).filter((d) => (d.sub_enabled === "Y" || d.price !== null) && (tab === "ALL" || d.kind === tab)
-    && (!q || d.product_name.toLowerCase().includes(q.toLowerCase()))), [rows, tab, q]);
+  const save = async (d, change) => {
+    const before = rows;
+    setRows((rs) => rs.map((x) => (x.product_id === d.product_id ? { ...x, ...change } : x)));
+    try { await saveSubDishPricing({ product_id: d.product_id, ...change }); } catch (e) { toast.error(e.message); setRows(before); }
+  };
+  const list = useMemo(() => (rows || []).filter((d) => (tab === "ALL" || (tab === "ON" ? d.sub_enabled === "Y" : d.sub_enabled === "Y" && (d.price === null || !d.diet)))
+    && (!diet || d.diet === diet || (diet === "N" && d.diet === "E"))
+    && (!q || `${d.product_name} ${d.product_id} ${d.short_code || ""}`.toLowerCase().includes(q.toLowerCase()))), [rows, tab, diet, q]);
   if (!rows) return <Loader inline />;
-  const online = rows.filter((d) => d.sub_enabled === "Y" || d.price !== null);
-  const missing = online.filter((d) => d.sub_enabled === "Y" && d.price === null).length;
+  const online = rows.filter((d) => d.sub_enabled === "Y");
+  const missing = online.filter((d) => d.price === null || !d.diet).length;
   return (
     <>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} sx={{ mb: 2 }}>
-        <Typography variant="body2" sx={{ flexGrow: 1 }}>Regular price of one meal. Each plan takes its discount off this price; <b>Costly</b> dishes are limited per plan (customers see them as "Premium").</Typography>
-        {canEdit && <Button variant="contained" startIcon={<UploadFileIcon />} onClick={() => setImp(true)}>Import from Excel</Button>}
+      <Defaults defaults={defaults} canEdit={canEdit} onSaved={load} />
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} sx={{ mb: 1.5 }}>
+        <Typography variant="body2" sx={{ flexGrow: 1 }}>
+          All products from Product Master. Switch <b>Online</b> on for dishes sold on the weekly menu, enter the regular price of one meal, and tick <b>Costly</b> for dishes limited per plan (customers see "Premium"). Changes save as you go.
+        </Typography>
+        {canEdit && <Button variant="outlined" startIcon={<UploadFileIcon />} onClick={() => setImp(true)}>Import prices from Excel</Button>}
       </Stack>
-      {missing > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{missing} online dish{missing > 1 ? "es have" : " has"} no price yet - they cannot be published on a weekly menu.</Alert>}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} sx={{ mb: 1 }}>
-        <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ flexGrow: 1 }}>
-          <Tab value="C" label={`Curries (${online.filter((d) => d.kind === "C").length})`} />
-          <Tab value="M" label={`Combo meals (${online.filter((d) => d.kind === "M").length})`} />
-          <Tab value="ALL" label="All" />
+      {missing > 0 && <Alert severity="warning" sx={{ mb: 1.5 }}>{missing} online dish{missing > 1 ? "es need" : " needs"} a price or diet - they cannot be published on a weekly menu. See the "Needs price / diet" tab.</Alert>}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }} sx={{ mb: 1 }}>
+        <Tabs value={tab} onChange={(e, v) => setTab(v)} variant="scrollable" sx={{ flexGrow: 1 }}>
+          <Tab value="ON" label={`On the online menu (${online.length})`} />
+          <Tab value="MISSING" label={`Needs price / diet (${missing})`} />
+          <Tab value="ALL" label={`All products (${rows.length})`} />
         </Tabs>
-        <TextField size="small" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} InputProps={{ startAdornment: <InputAdornment position="start">🔍</InputAdornment> }} />
+        <TextField select size="small" label="Diet" value={diet} onChange={(e) => setDiet(e.target.value)} SelectProps={{ native: true }} sx={{ width: 130 }}>
+          <option value="">All</option><option value="V">Veg</option><option value="N">Non-veg / egg</option>
+        </TextField>
+        <TextField size="small" placeholder="Search name or code" value={q} onChange={(e) => setQ(e.target.value)} InputProps={{ startAdornment: <InputAdornment position="start">🔍</InputAdornment> }} />
       </Stack>
       <Card sx={{ overflowX: "auto" }}><Table size="small">
-        <TableHead><TableRow>{["Dish", "Kind", "Diet", "Regular price", "Costly", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700 }}>{h}</TableCell>)}</TableRow></TableHead>
+        <TableHead><TableRow>{["Product", "Online", "Diet", "Regular price", "Own discount (blank = default)", "Veg / Non-Veg plan price", "Costly", ""].map((h) => <TableCell key={h} sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>{h}</TableCell>)}</TableRow></TableHead>
         <TableBody>
-          {!list.length && <TableRow><TableCell colSpan={6} sx={{ color: "text.secondary" }}>No dishes here yet. Import the price list, or tick "Available on the online weekly menu" in Product Master.</TableCell></TableRow>}
-          {list.map((d) => (
-            <TableRow key={d.product_id} hover>
-              <TableCell sx={{ textTransform: "capitalize", fontWeight: 600 }}>{d.product_name.toLowerCase()}</TableCell>
-              <TableCell>{KIND[d.kind]}</TableCell>
-              <TableCell>{DIET[d.diet] ? <Chip size="small" variant="outlined" color={DIET[d.diet].color} label={DIET[d.diet].label} /> : <Typography variant="caption" color="warning.dark">not set</Typography>}</TableCell>
-              <TableCell>{d.price === null ? <Typography variant="caption" color="warning.dark">no price</Typography> : cad(d.price)}</TableCell>
-              <TableCell>{d.costly === "Y" ? <Chip size="small" color="secondary" label="Costly" /> : ""}</TableCell>
-              <TableCell>{canEdit && <Button size="small" onClick={() => setEdit(d)}>Edit</Button>}</TableCell>
-            </TableRow>
-          ))}
+          {!list.length && <TableRow><TableCell colSpan={8} sx={{ color: "text.secondary" }}>{tab === "ON" ? 'No dishes on the online menu yet - open "All products" and switch Online on, or import the price list.' : "Nothing here."}</TableCell></TableRow>}
+          {list.map((d) => <DishRow key={d.product_id} d={d} defaults={defaults} canEdit={canEdit} onSave={save} onEdit={setEdit} />)}
         </TableBody>
       </Table></Card>
       <DishDialog dish={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); load(); }} />

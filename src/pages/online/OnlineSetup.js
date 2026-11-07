@@ -42,7 +42,7 @@ const EditDialog = ({ title, fields, value, onClose, onSave }) => {
 const STATUS_OPTS = [["A", "Active"], ["I", "Inactive (hidden)"]];
 
 const TYPE = { V: ["Veg", "success"], N: ["Non-Veg", "error"], C: ["Combo", "warning"] };
-const allowedIn = (type, d) => (type === "C" ? d.kind === "M" : d.kind === "C" && (type === "V" ? d.diet === "V" : ["N", "E"].includes(d.diet)));
+const allowedIn = (type, d) => (type === "C" ? true : type === "V" ? d.diet === "V" : ["N", "E"].includes(d.diet));
 
 const PlanDialog = ({ value, dishes, onClose, onSave }) => {
   const [v, setV] = useState(null);
@@ -62,7 +62,7 @@ const PlanDialog = ({ value, dishes, onClose, onSave }) => {
           <Grid item xs={12} sm={4}>
             <FormControl fullWidth><InputLabel>Type</InputLabel>
               <Select label="Type" value={v.plan_type || "V"} onChange={set("plan_type")}>
-                <MenuItem value="V">Veg - veg curries</MenuItem><MenuItem value="N">Non-Veg - non-veg and egg curries</MenuItem><MenuItem value="C">Combo - combo meals</MenuItem>
+                <MenuItem value="V">Veg - veg dishes</MenuItem><MenuItem value="N">Non-Veg - non-veg and egg dishes</MenuItem><MenuItem value="C">Combo - customer mixes veg and non-veg</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -79,7 +79,7 @@ const PlanDialog = ({ value, dishes, onClose, onSave }) => {
           <Grid item xs={12}>
             <Alert severity="info" sx={{ py: 0.5 }}>
               Customers pay the sum of the dishes they choose{pct ? `, each ${pct}% off its regular price` : " at regular prices"}.
-              {ex.length > 0 && <> e.g. {ex.map((d) => `${d.product_name.toLowerCase()} ${cad(d.price)} → ${cad(d.price * (1 - (Number(v.rows.find((r) => r.product_id === d.product_id)?.discount_pct ?? pct)) / 100))}`).join(" · ")}</>}
+              {ex.length > 0 && <> e.g. {ex.map((d) => `${d.product_name.toLowerCase()} ${cad(d.price)} → ${cad(d.price * (1 - (Number(v.rows.find((r) => r.product_id === d.product_id)?.discount_pct ?? (v.plan_type !== "C" && d.dish_discount !== null && d.dish_discount !== undefined ? d.dish_discount : pct))) / 100))}`).join(" · ")}</>}
               {!own.length && " No priced dishes of this type yet (Dish prices tab)."}
             </Alert>
           </Grid>

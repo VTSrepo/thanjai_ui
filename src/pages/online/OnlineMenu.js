@@ -34,13 +34,6 @@ export const DishDialog = ({ dish, onClose, onSaved }) => {
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField label="Regular price of one meal (CAD)" type="number" value={v.price} onChange={(e) => setV({ ...v, price: e.target.value })} inputProps={{ step: 0.01, min: 0 }} helperText="Each plan takes its discount off this" fullWidth />
-            <FormControl fullWidth>
-              <InputLabel>Kind</InputLabel>
-              <Select label="Kind" value={v.kind} onChange={(e) => setV({ ...v, kind: e.target.value })}>
-                <MenuItem value="C">Curry (Veg / Non-Veg plans)</MenuItem>
-                <MenuItem value="M">Combo meal (Combo plans)</MenuItem>
-              </Select>
-            </FormControl>
           </Stack>
           <Stack direction="row" alignItems="center" spacing={1}>
             <Switch checked={v.costly === "Y"} onChange={(e) => setV({ ...v, costly: e.target.checked ? "Y" : "N" })} />
@@ -181,7 +174,6 @@ const OnlineMenu = () => {
                         <Stack direction="row" spacing={0.5} alignItems="center">
                           <Typography fontWeight={600} noWrap>{d.product_name}</Typography>
                           {DIET[d.diet] && <Chip size="small" variant="outlined" color={DIET[d.diet].color} label={DIET[d.diet].label} />}
-                          <Chip size="small" variant="outlined" label={d.kind === "M" ? "Combo" : "Curry"} />
                           {d.costly === "Y" && <Chip size="small" color="secondary" label="Costly" />}
                           <Typography variant="body2" sx={{ ml: 0.5, fontWeight: 700, color: d.price === null ? "error.main" : "text.primary" }}>{d.price === null ? "no price" : `$${Number(d.price).toFixed(2)}`}</Typography>
                         </Stack>

@@ -70,16 +70,14 @@ export const priceFor = (subtotal, fee, tax) => {
 };
 
 export const PLAN_TYPE = {
-  V: { label: "Veg", long: "Veg curries", color: "#2e7d32", tint: "#edf7ee", blurb: "Paneer, dals, sambar and seasonal vegetable curries." },
-  N: { label: "Non-Veg", long: "Non-veg curries", color: "#c62828", tint: "#fdecec", blurb: "Chicken, mutton, fish and egg curries, South Indian style." },
-  C: { label: "Combo", long: "Combo meals", color: "#e07800", tint: "#fff3e0", blurb: "Complete meals - biryanis, curry with naan, rice or parotta." },
+  V: { label: "Veg", long: "Veg dishes", color: "#2e7d32", tint: "#edf7ee", blurb: "Paneer, dals, sambar and seasonal vegetable curries." },
+  N: { label: "Non-Veg", long: "Non-veg dishes", color: "#c62828", tint: "#fdecec", blurb: "Chicken, mutton, fish and egg curries, South Indian style." },
+  C: { label: "Combo", long: "Mix veg & non-veg", color: "#e07800", tint: "#fff3e0", blurb: "Mix and match - pick any veg or non-veg dish from the week's menu." },
 };
 /** Can this dish be chosen in this plan? (same rule as the server) */
 export const allowedIn = (plan, m) => {
   if (!plan) return true;
-  const kind = m.kind || "C";
-  if (plan.plan_type === "C") return kind === "M";
-  if (kind !== "C") return false;
+  if (plan.plan_type === "C") return true;
   return plan.plan_type === "V" ? m.diet === "V" : ["N", "E"].includes(m.diet);
 };
 /** One meal of this dish in this plan, after the plan's (or the dish's own) discount. */
@@ -87,7 +85,8 @@ export const unitPrice = (plan, m) => {
   if (m.price === null || m.price === undefined) return null;
   if (!plan) return Number(m.price);
   const ov = plan.overrides && plan.overrides[m.product_id];
-  const pct = ov !== undefined ? Number(ov) : Number(plan.discount_pct || 0);
+  const own = m.dish_discount !== null && m.dish_discount !== undefined && plan.plan_type !== "C" ? Number(m.dish_discount) : null;
+  const pct = ov !== undefined ? Number(ov) : own !== null ? own : Number(plan.discount_pct || 0);
   return r2(Number(m.price) * (1 - pct / 100));
 };
 /** Subtotal, meals and premium meals chosen. counts = { product_id: qty } */

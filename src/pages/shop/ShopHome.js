@@ -100,7 +100,7 @@ const ShopHome = () => {
             Real South Indian meals. <Box component="span" sx={{ color: BRAND }}>Cooked fresh every week.</Box>
           </Typography>
           <Typography sx={{ fontSize: { xs: 17, sm: 19 }, color: "text.secondary", mt: 2, maxWidth: 520 }}>
-            Choose Veg, Non-Veg or Combo meals from {shop.name}'s kitchen and get them delivered every {day}. Skip, pause or cancel any time.
+            Choose Veg, Non-Veg or Combo (mix of both) meals from {shop.name}'s kitchen and get them delivered every {day}. Skip, pause or cancel any time.
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} sx={{ mt: 3 }}>
             <Button component={Link} to="/meals/order" size="large" variant="contained" sx={{ px: 4, py: 1.5, fontSize: 17, borderRadius: 99 }}>Build your plan</Button>
