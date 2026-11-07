@@ -9,7 +9,7 @@ import MealPicker from "../../components/shop/MealPicker";
 import AddressFields, { emptyAddress } from "../../components/shop/AddressFields";
 import Loader from "../../components/Loader";
 import {
-  PLAN_TYPE, cad, niceDate, niceDateTime, priceFor, quote, saveProfile, shopInfo, shopLogin, shopMe, shopSession, shopSignup, startPlan, unitPrice,
+  PLAN_TYPE, cad, niceDate, niceDateTime, priceFor, quote, saveProfile, shopInfo, shopLogin, shopMe, shopSession, shopSignup, startPlan, unitPrice, isFixed,
 } from "../../utilities/shopApi";
 
 const STEPS = ["Plan", "Meals", "Your details", "Review & pay"];
@@ -215,9 +215,14 @@ const ShopOrder = () => {
               {menu.filter((m) => counts[m.product_id]).map((m) => (
                 <Stack key={m.product_id} direction="row" justifyContent="space-between" spacing={2} sx={{ py: 0.25 }}>
                   <Typography sx={{ textTransform: "capitalize" }}>{m.name.toLowerCase()} <Typography component="span" color="text.secondary">× {counts[m.product_id]}</Typography></Typography>
-                  <Typography>{cad(counts[m.product_id] * unitPrice(plan, m))}</Typography>
+                  {!isFixed(plan) && <Typography>{cad(counts[m.product_id] * unitPrice(plan, m))}</Typography>}
                 </Stack>
               ))}
+              {isFixed(plan) && (
+                <Stack direction="row" justifyContent="space-between" sx={{ pt: 1, mt: 0.5, borderTop: 1, borderColor: "divider" }}>
+                  <Typography fontWeight={600}>{plan.plan_name} - weekly price</Typography><Typography fontWeight={600}>{cad(plan.price)}</Typography>
+                </Stack>
+              )}
               <Button size="small" sx={{ mt: 1 }} onClick={() => go(1)}>Change meals</Button>
             </CardContent></Card>
             <Card><CardContent>
