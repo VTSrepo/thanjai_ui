@@ -328,7 +328,13 @@ const Reservations = () => {
       <ResponsiveAppBar />
       <Box sx={{ p: 2, maxWidth: 1400, mx: "auto" }}>
         <PageHeader title="Reservations" subtitle="Floor plan by time, bookings, staff blocks and tables to allocate - updates every 30 seconds"
-          action={<Button component={Link} to={`/reservations/reports?date=${date}`} startIcon={<PrintIcon />}>Reports</Button>} />
+          action={<Stack direction="row" spacing={1}>
+            {canEdit && session && slot && !allocating && (
+              <Button variant="contained" startIcon={<EventSeatIcon />} onClick={() => setDialog({ mode: "create", initial: { kind: "C", tables: [], guests: "" } })}>New booking</Button>
+            )}
+            <Button component={Link} to={`/reservations/reports?date=${date}`} startIcon={<PrintIcon />}>Reports</Button>
+          </Stack>} />
+        {!canEdit && <Alert severity="info" sx={{ mb: 2 }}>View only - your role cannot add or change bookings (Master → Role: give RES_BOOKINGS edit rights).</Alert>}
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }} sx={{ mb: 2 }}>
           <Stack direction="row" spacing={0.5} alignItems="center">
@@ -423,13 +429,13 @@ const Reservations = () => {
                           <Typography sx={{ flexGrow: 1 }} variant="body2">
                             {selected.length
                               ? <><b>{selected.join(" + ")}</b> selected · {selChairs} chairs{allocating ? ` for ${allocating.guests} guests` : ""} · {time12(time)} for {dur} min</>
-                              : allocating ? `Click free tables for ${allocating.guests} guests.` : `Click free tables to book them at ${time12(time)} for a phone guest or block them.`}
+                              : allocating ? `Click free tables for ${allocating.guests} guests.` : `Click free tables to book them at ${time12(time)} for a phone guest or block them - or book without tables and allocate later.`}
                           </Typography>
                           {allocating ? (
                             <Button variant="contained" color="warning" startIcon={<TableRestaurantIcon />} disabled={!selected.length || selChairs < allocating.guests} onClick={saveAllocate}>Allocate &amp; e-mail guest</Button>
                           ) : (
                             <>
-                              <Button variant="contained" startIcon={<EventSeatIcon />} onClick={() => setDialog({ mode: "create", initial: { kind: "C", tables: selected, guests: selChairs || "" } })}>{selected.length ? "Book" : "Book (allocate later)"}</Button>
+                              <Button variant="contained" startIcon={<EventSeatIcon />} onClick={() => setDialog({ mode: "create", initial: { kind: "C", tables: selected, guests: selChairs || "" } })}>{selected.length ? "Book these tables" : "Book without tables"}</Button>
                               <Button variant="outlined" color="secondary" startIcon={<BlockIcon />} disabled={!selected.length} onClick={() => setDialog({ mode: "create", initial: { kind: "B", tables: selected } })}>Block</Button>
                             </>
                           )}

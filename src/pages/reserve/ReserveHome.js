@@ -116,20 +116,22 @@ const ReserveHome = () => {
   const suggest = (s, g) => {
     const best = bestTables(freeFor(s), g, s.seats_left);
     setChosen(best ? best.map((t) => t.table_id) : []);
-    setPickNote(best ? `We picked ${best.map((t) => t.table_id).join(" + ")} for you${best.length > 1 ? " - our staff will put them together" : ""}. Tap the floor plan to change.` : "");
+    setPickNote(best ? `We chose ${best.map((t) => t.table_id).join(" + ")} for you${best.length > 1 ? " - our staff will put them together" : ""}. Tap the floor plan to change.` : "");
     if (!best) setChosen([]);
   };
 
+  // no tables are picked automatically: the guest taps tables, or asks for "Choose the best table for me"
   const pickSlot = (s) => {
     setSeatingId(slotKey(s)); setNotice(""); setError("");
-    suggest(s, guests);
+    setChosen((c) => c.filter((id) => !s.taken.includes(id)));
+    setPickNote("");
     glide(tablesRef);
   };
 
   const pickGuests = (g) => {
-    setGuests(g); setNotice(""); setError("");
-    if (slot && g <= maxParty && fits(slot, g)) suggest(slot, g);
-    else { setSeatingId(null); setChosen([]); setPickNote(""); if (g <= maxParty) glide(timeRef); }
+    setGuests(g); setNotice(""); setError(""); setPickNote("");
+    if (slot && g <= maxParty && fits(slot, g)) setChosen([]);
+    else { setSeatingId(null); setChosen([]); if (g <= maxParty) glide(timeRef); }
   };
 
   const requestOnly = !!slot && slot.state === "open" && !bigParty && !combo(slot, guests) && slot.seats_left >= guests;
@@ -312,7 +314,7 @@ const ReserveHome = () => {
               </Box>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} justifyContent="space-between" sx={{ mt: 1.5 }}>
                 <Typography variant="body2" sx={{ color: status.ok || requestOnly ? "#3BB273" : slot ? GOLD : "text.secondary", fontWeight: 600 }}>
-                  {requestOnly ? `Time booked for ${guests} guests - our staff choose your tables` : slot ? status.message : "Tip: on a phone, slide the floor plan sideways to see every table."}
+                  {requestOnly ? `Time booked for ${guests} guests - our staff choose your tables` : slot ? (chosen.length ? status.message : `Tap a free table for ${guests} guest${guests === 1 ? "" : "s"}, or let us choose`) : "Tip: on a phone, slide the floor plan sideways to see every table."}
                 </Typography>
                 <Button variant="outlined" color="secondary" size="small" startIcon={<AutoFixHighIcon />} disabled={!slot || requestOnly} onClick={() => slot && suggest(slot, guests)} sx={{ borderRadius: 99, flexShrink: 0 }}>
                   Choose the best table for me
