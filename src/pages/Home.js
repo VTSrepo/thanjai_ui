@@ -8,6 +8,7 @@ import { CONFIG } from "../config-global";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import InvoiceAlerts from "../components/InvoiceAlerts";
 import { ReservationTilesGrid } from "../components/ReservationTiles";
+import { OnlineTilesGrid } from "../components/OnlineTiles";
 import { useUser, ROLE } from "../utilities/UserContext";
 import { fetchIndents } from "../utilities/service";
 
@@ -47,6 +48,7 @@ const Home = () => {
           Welcome, {user?.user_name}
         </Typography>
         <ReservationTilesGrid />
+        <OnlineTilesGrid />
         <InvoiceAlerts />
         {counts?.changes > 0 && (
           <Alert severity="warning" sx={{ mb: 2 }}

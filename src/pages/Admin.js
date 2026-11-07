@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../utilities/UserContext";
 import Tile from "../components/StatusTile";
 import { useReservationTiles } from "../components/ReservationTiles";
+import { useOnlineTiles } from "../components/OnlineTiles";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -44,6 +45,7 @@ const Admin = () => {
   }, []);
 
   const resTiles = useReservationTiles();
+  const onlineTiles = useOnlineTiles();
   const tiles = [];
   if (ind) {
     const waiting = ind.accept + ind.dispatch;
@@ -73,6 +75,7 @@ const Admin = () => {
     );
   }
   tiles.push(...resTiles);
+  tiles.push(...onlineTiles);
   if (lights) {
     ["batch", "reorder", "expiry"].forEach((k) => {
       const l = lights[k];

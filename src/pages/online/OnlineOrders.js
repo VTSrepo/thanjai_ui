@@ -9,6 +9,7 @@ import ResponsiveAppBar from "../../components/ResponsiveAppBar";
 import PageHeader from "../../components/PageHeader";
 import Loader from "../../components/Loader";
 import { useToast } from "../../components/ToastProvider";
+import { useSearchParams } from "react-router-dom";
 import { useUser } from "../../utilities/UserContext";
 import { chargeSubOrder, getSubOrders, getSubWeeks, runSubCutoff, sendSubKitchen, setSubOrderStatus } from "../../utilities/service";
 import { cad, niceDate, niceDateTime } from "../../utilities/shopApi";
@@ -72,13 +73,15 @@ const OnlineOrders = () => {
   const [confirm, setConfirm] = useState(null);
   const [manual, setManual] = useState(null);
 
+  const [params] = useSearchParams();
   useEffect(() => {
     getSubWeeks().then((r) => {
       setWeeks(r.weeks);
-      const open = [...r.weeks].reverse().find((w) => w.status !== "K") || r.weeks[0];
+      const asked = params.get("date") && r.weeks.find((w) => w.delivery_date === params.get("date"));
+      const open = asked || [...r.weeks].reverse().find((w) => w.status !== "K") || r.weeks[0];
       if (open) setDate(open.delivery_date);
     }).catch((e) => toast.error(e.message));
-  }, [toast]);
+  }, [toast]); // eslint-disable-line react-hooks/exhaustive-deps
   const load = useCallback(() => {
     if (!date) return;
     setData(null); setSel([]);
