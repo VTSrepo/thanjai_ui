@@ -178,15 +178,17 @@ const ReserveHome = () => {
     phone: digits(form.phone).length < 10 && "Enter a phone number we can reach you on",
     email: !EMAIL_RE.test(form.email.trim()) && "Enter a valid e-mail - your confirmation goes there",
   };
-  const ready = !!slot && slot.state === "open" && (status.ok || requestOnly) && !bigParty;
+  // tables are optional: with none chosen, our staff allocate them (the time must still have room for the group)
+  const noTables = !!slot && !chosen.length && slot.seats_left >= guests;
+  const ready = !!slot && slot.state === "open" && (status.ok || requestOnly || noTables) && !bigParty;
 
   const submit = async () => {
     setTried(true); setError("");
-    if (!ready) { setError(slot ? status.message : "Choose a time and a table first"); return; }
+    if (!ready) { setError(slot ? (chosen.length ? `${status.message} - or remove your tables and our staff will choose` : status.message) : "Choose a time first"); return; }
     if (Object.values(fieldErr).some(Boolean)) { detailsRef.current?.scrollIntoView({ behavior: "smooth" }); return; }
     setBusy(true);
     try {
-      const r = await reserveBook({ booking_date: date, seating_id: slot.seating_id, start_time: slot.start_time, guests, table_ids: requestOnly ? [] : chosen, ...form });
+      const r = await reserveBook({ booking_date: date, seating_id: slot.seating_id, start_time: slot.start_time, guests, table_ids: requestOnly || noTables ? [] : chosen, ...form });
       navigate(`/reserve/booking/${r.booking.manage_token}?new=1${r.email_sent ? "" : "&nomail=1"}`);
     } catch (e) {
       setError(e.message);
@@ -299,7 +301,7 @@ const ReserveHome = () => {
               ))}
             </Step>
 
-            <Step n={3} title="Choose your table" innerRef={tablesRef}
+            <Step n={3} title="Choose your table (optional)" innerRef={tablesRef}
               hint={slot ? `${slot.seats_left} reservable seats left at ${time12(slot.start_time)}` : ""}>
               <Legend items={[["Free", LG.free], ["Booked", LG.full], ["Selected", LG.sel]]} />
               <Box sx={{ position: "relative" }}>
@@ -313,8 +315,8 @@ const ReserveHome = () => {
                 )}
               </Box>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} justifyContent="space-between" sx={{ mt: 1.5 }}>
-                <Typography variant="body2" sx={{ color: status.ok || requestOnly ? "#3BB273" : slot ? GOLD : "text.secondary", fontWeight: 600 }}>
-                  {requestOnly ? `Time booked for ${guests} guests - our staff choose your tables` : slot ? (chosen.length ? status.message : `Tap a free table for ${guests} guest${guests === 1 ? "" : "s"}, or let us choose`) : "Tip: on a phone, slide the floor plan sideways to see every table."}
+                <Typography variant="body2" sx={{ color: status.ok || requestOnly || noTables ? "#3BB273" : slot ? GOLD : "text.secondary", fontWeight: 600 }}>
+                  {requestOnly ? `Time booked for ${guests} guests - our staff choose your tables` : slot ? (chosen.length ? status.message : `Optional: tap a free table, or skip this step and our staff will choose your table`) : "Tip: on a phone, slide the floor plan sideways to see every table."}
                 </Typography>
                 <Button variant="outlined" color="secondary" size="small" startIcon={<AutoFixHighIcon />} disabled={!slot || requestOnly} onClick={() => slot && suggest(slot, guests)} sx={{ borderRadius: 99, flexShrink: 0 }}>
                   Choose the best table for me
@@ -322,7 +324,7 @@ const ReserveHome = () => {
               </Stack>
               {guests > 4 && slot && !requestOnly && <Typography variant="caption" sx={{ display: "block", mt: 1, color: "text.secondary" }}>Booths A1-A6 seat up to 4 and cannot be joined, so bigger groups get B or C tables.</Typography>}
               {pickNote && <Typography variant="body2" sx={{ mt: 1, color: "text.secondary", fontStyle: "italic" }}>{pickNote}</Typography>}
-              {slot && (status.ok || requestOnly) && (
+              {slot && (status.ok || requestOnly || noTables) && (
                 <Button fullWidth variant="outlined" color="secondary" onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
                   sx={{ display: { xs: "flex", md: "none" }, mt: 2, borderRadius: "10px" }}>Next: your details ↓</Button>
               )}
@@ -350,7 +352,7 @@ const ReserveHome = () => {
               {[["Date", date ? longDate(date).replace(/, \d{4}$/, "") : null, "Choose a date"],
                 ["Guests", bigParty ? `${maxParty}+ - please call` : `${guests} guest${guests === 1 ? "" : "s"}`],
                 ["Time", slot ? `${time12(slot.start_time)} · ${slot.label}` : null, "Choose a time"],
-                ["Table", requestOnly ? "Our staff will choose" : chosen.length ? `${chosen.join(" + ")} · ${chairs} chairs` : null, "Choose a table"]].map(([k, v, ph]) => (
+                ["Table", requestOnly || noTables ? "Our staff will choose (or pick one)" : chosen.length ? `${chosen.join(" + ")} · ${chairs} chairs` : null, "Optional - choose a table"]].map(([k, v, ph]) => (
                 <Box key={k} sx={{ py: 1.2, borderBottom: "1px dashed", borderColor: "divider" }}>
                   <Typography sx={{ fontSize: 9, fontWeight: 800, letterSpacing: ".3em", textTransform: "uppercase", color: "text.secondary" }}>{k}</Typography>
                   <Typography sx={{ fontWeight: v ? 600 : 400, fontStyle: v ? "normal" : "italic", color: v ? "text.primary" : "#666" }}>{v || ph}</Typography>
@@ -383,7 +385,7 @@ const ReserveHome = () => {
           px: 2, pt: 1.25, pb: "calc(10px + env(safe-area-inset-bottom))", bgcolor: "rgba(20,20,20,.96)", borderTop: `1px solid ${ORANGE}`, backdropFilter: "blur(6px)" }}>
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography noWrap sx={{ fontWeight: 700, fontSize: 14 }}>{new Date(`${date}T12:00:00`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })} · {time12(slot.start_time)} · {guests} guests</Typography>
-            <Typography noWrap sx={{ fontSize: 12, color: status.ok || requestOnly ? "#3BB273" : GOLD }}>{requestOnly ? "Our staff will choose your table" : chosen.length ? `Table ${chosen.join(" + ")}` : "Choose a table"}</Typography>
+            <Typography noWrap sx={{ fontSize: 12, color: status.ok || requestOnly || noTables ? "#3BB273" : GOLD }}>{requestOnly || noTables ? "Our staff will choose your table" : `Table ${chosen.join(" + ")}`}</Typography>
           </Box>
           <Button onClick={submit} disabled={busy} sx={{ px: 3, borderRadius: "10px", background: GRAD, color: "#fff", fontWeight: 800, "&:hover": { background: GRAD }, opacity: ready ? 1 : 0.6 }}>
             {busy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : "Reserve"}

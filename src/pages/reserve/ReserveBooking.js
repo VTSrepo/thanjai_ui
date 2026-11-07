@@ -45,7 +45,7 @@ const ReserveBooking = () => {
               </Box>
               <Eyebrow>{cancelled ? "Cancelled" : isNew ? "Confirmed" : "Your booking"}</Eyebrow>
               <Typography component="h1" sx={{ fontFamily: SERIF, fontSize: { xs: 32, sm: 44 }, mt: 1.5 }}>
-                {cancelled ? "Booking cancelled" : isNew ? "Your table is booked!" : "See you soon"}
+                {cancelled ? "Booking cancelled" : isNew ? (b.tables.length ? "Your table is booked!" : "Your reservation is booked!") : "See you soon"}
               </Typography>
               {!cancelled && (
                 <Typography sx={{ color: "text.secondary", fontStyle: "italic", mt: 1 }}>
