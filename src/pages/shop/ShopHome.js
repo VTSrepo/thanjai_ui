@@ -96,7 +96,7 @@ const ShopHome = () => {
       {/* ---------- hero ---------- */}
       <Grid container spacing={{ xs: 3, md: 6 }} alignItems="center" sx={{ pt: { xs: 1, sm: 4 }, pb: { xs: 4, sm: 6 } }}>
         <Grid item xs={12} md={6}>
-          {bestOff > 0 && <Chip label={`${bestOff}% off regular prices on weekly plans`} sx={{ bgcolor: "#fff1df", color: "#8a4a00", fontWeight: 700, mb: 2 }} />}
+          {bestOff > 0 && <Chip label={`${bestOff}% off regular prices on Combo plans`} sx={{ bgcolor: "#fff1df", color: "#8a4a00", fontWeight: 700, mb: 2 }} />}
           <Typography component="h1" sx={{ fontFamily: SERIF, fontWeight: 800, fontSize: { xs: 38, sm: 54 }, lineHeight: 1.08 }}>
             Real South Indian meals. <Box component="span" sx={{ color: BRAND }}>Cooked fresh every week.</Box>
           </Typography>

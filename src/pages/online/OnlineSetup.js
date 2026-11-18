@@ -191,7 +191,7 @@ const Zones = ({ canEdit }) => {
       </Table></Card>
       <EditDialog title={edit?.isNew ? "New delivery zone" : `Edit ${edit?.zone_name}`} value={edit} onClose={() => setEdit(null)} onSave={save}
         fields={[["zone_id", "Code (e.g. LAVAL)", { lockOnEdit: true }], ["zone_name", "Name shown to customers"],
-          ["postal_prefixes", "Postal codes starting with", { multiline: true, help: "Comma separated, 1-3 characters each: H7 = all of Laval, H3B = one area. The first matching zone wins." }],
+          ["postal_prefixes", "Postal codes starting with", { multiline: true, help: "Comma separated, 1-3 characters each: H7 = all of Laval, H3B = one area. The most specific match wins (H3B before H3 before H)." }],
           ["delivery_fee", "Delivery fee per week (CAD)", { type: "number" }], ["sort_order", "Order", { type: "number" }], ["status", "Status", { select: STATUS_OPTS }]]} />
     </>
   );
